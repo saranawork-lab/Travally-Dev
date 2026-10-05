@@ -8,7 +8,7 @@ import { ActivityFilters } from "@/components/activities/ActivityFilters";
 import { TripCard } from "@/components/travel/TripCard";
 import { TripFilters } from "@/components/travel/TripFilters";
 import { DatabaseHealthGuard } from "@/components/common/DatabaseHealthGuard";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Sparkles } from "lucide-react";
 import Link from "next/link";
 
 interface DiscoverClientProps {
