@@ -1186,6 +1186,106 @@ html.dark ::-webkit-scrollbar-thumb:hover {
   }
 }
 
+/* ==========================================================
+   ADVANCED 3D DOCK, VFX & LUMINOUS ANIMATIONS
+   ========================================================== */
+
+@keyframes dockLevitate {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-2.5px);
+  }
+}
+
+@keyframes vfxShimmerSweep {
+  0% {
+    transform: translateX(-150%) skewX(-20deg);
+  }
+  100% {
+    transform: translateX(250%) skewX(-20deg);
+  }
+}
+
+@keyframes vfxAuraBreathe {
+  0%, 100% {
+    opacity: 0.55;
+    transform: scale(0.96);
+    filter: blur(12px);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
+    filter: blur(16px);
+  }
+}
+
+@keyframes vfxIconPop3D {
+  0% {
+    transform: scale(0.7) rotate(-12deg) translateY(4px);
+  }
+  60% {
+    transform: scale(1.18) rotate(4deg) translateY(-2px);
+  }
+  100% {
+    transform: scale(1) rotate(0deg) translateY(0);
+  }
+}
+
+@keyframes vfxTextSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(8px) scale(0.9);
+    filter: blur(3px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+    filter: blur(0px);
+  }
+}
+
+@keyframes vfxHaloPulse {
+  0% {
+    transform: scale(0.85);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+}
+
+@keyframes vfxBadgeBounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.1);
+  }
+}
+
+.animate-vfx-shimmer {
+  animation: vfxShimmerSweep 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-vfx-aura {
+  animation: vfxAuraBreathe 3s ease-in-out infinite;
+}
+
+.animate-vfx-icon {
+  animation: vfxIconPop3D 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.animate-vfx-text {
+  animation: vfxTextSlideIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-vfx-badge {
+  animation: vfxBadgeBounce 2.5s ease-in-out infinite;
+}
+
 /* Reduced motion preference */
 @media (prefers-reduced-motion: reduce) {
 

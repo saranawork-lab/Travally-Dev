@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import { cookies } from "next/headers";
+import crypto from "crypto";
 import db from "./db";
 
 const JWT_SECRET = process.env.JWT_SECRET || "travally-fallback-secret-for-dev";
@@ -18,13 +19,28 @@ export interface SessionUser {
   membershipNumber?: string | null;
 }
 
-export function signToken(payload: { userId: string; email: string; role: string }): string {
+export function signToken(payload: {
+  userId: string;
+  email: string;
+  role: string;
+  sessionToken?: string;
+}): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "90d" });
 }
 
-function verifyToken(token: string): { userId: string; email: string; role: string } | null {
+function verifyToken(token: string): {
+  userId: string;
+  email: string;
+  role: string;
+  sessionToken?: string;
+} | null {
   try {
-    return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
+    return jwt.verify(token, JWT_SECRET) as {
+      userId: string;
+      email: string;
+      role: string;
+      sessionToken?: string;
+    };
   } catch {
     return null;
   }
@@ -36,8 +52,25 @@ export function isValidObjectId(id?: string | null): boolean {
 }
 
 /**
+ * Creates and persists a new unique activeSessionToken for the user,
+ * invalidating any older active sessions on other browsers or devices.
+ */
+export async function createActiveSession(userId: string): Promise<string> {
+  const sessionToken = crypto.randomUUID();
+  try {
+    await db.user.update({
+      where: { id: userId },
+      data: { activeSessionToken: sessionToken } as any,
+    });
+  } catch (e: any) {
+    console.warn("Could not set activeSessionToken in DB:", e?.message);
+  }
+  return sessionToken;
+}
+
+/**
  * Retrieves the current session user from HTTP-only cookie.
- * Also checks database to return full profile and role.
+ * Validates single-active-session by matching sessionToken with database.
  */
 export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
@@ -60,12 +93,24 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       if (!user) {
         return null;
       }
+
+      // ── SINGLE ACTIVE SESSION ENFORCEMENT ──
+      // If user has an activeSessionToken in DB and this session token doesn't match,
+      // it means a newer login occurred on another device/browser. Invalidate older session!
+      if (user.activeSessionToken && decoded.sessionToken !== user.activeSessionToken) {
+        console.log(
+          `[SingleSession] Session invalidated for user ${user.id} - active login detected on another device/browser.`
+        );
+        return null;
+      }
     } catch (dbError: any) {
       if (dbError?.message?.includes("Malformed ObjectID")) {
         return null;
       }
-      console.warn("DB lookup error in getCurrentUser, falling back to session token:", dbError?.message);
-      // Graceful fallback to avoid session drops during intermittent database connection hiccups
+      console.warn(
+        "DB lookup error in getCurrentUser, falling back to session token:",
+        dbError?.message
+      );
       return {
         id: decoded.userId,
         email: decoded.email,
@@ -98,7 +143,8 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       verificationStatus: user.profile?.verificationStatus || "UNVERIFIED",
       city: user.profile?.city || null,
       joinRank,
-      membershipNumber: user.profile?.membershipNumber || `TRV-${String(joinRank).padStart(4, "0")}`,
+      membershipNumber:
+        user.profile?.membershipNumber || `TRV-${String(joinRank).padStart(4, "0")}`,
     };
   } catch (error: any) {
     if (

@@ -17,6 +17,7 @@ import {
   Sparkles,
   MapPin,
 } from "lucide-react";
+import { ringtone } from "@/lib/ringtone";
 
 export interface CallParticipant {
   id: string;
@@ -43,6 +44,7 @@ const ICE_SERVERS: RTCConfiguration = {
   iceServers: [
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
+    { urls: "stun:stun2.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
     { urls: "stun:stun.services.mozilla.com" },
   ],
@@ -86,9 +88,11 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const pendingIceCandidatesRef = useRef<any[]>([]);
 
-  // Clean up all WebRTC media streams & connections
+  // Clean up all WebRTC media streams, audio ringtones & connections
   const cleanupWebRTC = () => {
+    ringtone.stop();
     if (pollRef.current) clearInterval(pollRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
 
@@ -116,23 +120,45 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
       setIsSpeakerOn(true);
       setMicError(null);
       setCallId(initialCallId || null);
+      pendingIceCandidatesRef.current = [];
+
+      // If outgoing call, play outgoing ring tone
+      if (!isIncomingCall) {
+        ringtone.playOutgoing();
+      }
     } else {
       cleanupWebRTC();
     }
+
+    const handleBeforeUnload = () => {
+      const currentCallId = callId || initialCallId;
+      if (currentCallId) {
+        navigator.sendBeacon(
+          `/api/calls/${currentCallId}`,
+          JSON.stringify({ action: "END" })
+        );
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
     return () => {
       cleanupWebRTC();
+      window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isOpen, initialCallId, isIncomingCall]);
+  }, [isOpen, initialCallId, isIncomingCall, callId]);
 
   // Handle call timer when CONNECTED
   useEffect(() => {
     if (callStatus === "CONNECTED") {
+      ringtone.stop();
       timerRef.current = setInterval(() => {
         setCallDuration((prev) => prev + 1);
       }, 1000);
       return () => {
         if (timerRef.current) clearInterval(timerRef.current);
       };
+    } else if (callStatus === "DECLINED" || callStatus === "ENDED") {
+      ringtone.playCallEnded();
     }
   }, [callStatus]);
 
@@ -155,7 +181,7 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
   // Setup WebRTC connection and signaling
   const initWebRTC = async (existingCallId?: string) => {
     try {
-      // 1. Get microphone access
+      // 1. Get microphone access with crystal clear voice filters
       let stream: MediaStream | null = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -164,6 +190,7 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
             noiseSuppression: true,
             autoGainControl: true,
           },
+          video: false,
         });
         localStreamRef.current = stream;
       } catch (err: any) {
@@ -171,7 +198,7 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
         setMicError("Microphone permission required for outgoing audio.");
       }
 
-      // 2. Initialize RTCPeerConnection with Google STUN
+      // 2. Initialize RTCPeerConnection with Google & Cloudflare STUN
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
 
@@ -184,26 +211,52 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
 
       // Receive remote audio track
       pc.ontrack = (event) => {
-        if (remoteAudioRef.current && event.streams[0]) {
-          remoteAudioRef.current.srcObject = event.streams[0];
-          remoteAudioRef.current.play().catch(() => {});
+        const remoteStream = event.streams[0] || new MediaStream([event.track]);
+        if (remoteAudioRef.current) {
+          remoteAudioRef.current.srcObject = remoteStream;
+          remoteAudioRef.current.play().catch((e) => {
+            console.warn("Audio autoplay blocked by browser:", e);
+          });
         }
       };
 
       let currentCallId = existingCallId || callId;
 
+      // Helper to flush buffered ICE candidates
+      const flushCandidates = (targetId: string) => {
+        if (pendingIceCandidatesRef.current.length > 0) {
+          pendingIceCandidatesRef.current.forEach((cand) => {
+            fetch(`/api/calls/${targetId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "ICE_CANDIDATE",
+                fromCaller: !isIncomingCall,
+                candidate: cand,
+              }),
+            }).catch(() => {});
+          });
+          pendingIceCandidatesRef.current = [];
+        }
+      };
+
       // Handle ICE candidates
       pc.onicecandidate = (event) => {
-        if (event.candidate && currentCallId) {
-          fetch(`/api/calls/${currentCallId}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              action: "ICE_CANDIDATE",
-              fromCaller: !isIncomingCall,
-              candidate: event.candidate,
-            }),
-          }).catch(() => {});
+        if (event.candidate) {
+          if (currentCallId) {
+            fetch(`/api/calls/${currentCallId}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                action: "ICE_CANDIDATE",
+                fromCaller: !isIncomingCall,
+                candidate: event.candidate,
+              }),
+            }).catch(() => {});
+          } else {
+            // Buffer candidate until callId is established
+            pendingIceCandidatesRef.current.push(event.candidate);
+          }
         }
       };
 
@@ -225,6 +278,7 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
           }),
         });
 
+        flushCandidates(currentCallId);
         setCallStatus("CONNECTED");
       } else {
         // CALLER: Create offer and initiate call
@@ -248,8 +302,13 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
           const data = await res.json();
           currentCallId = data.call?.id;
           setCallId(currentCallId);
+          if (currentCallId) {
+            flushCandidates(currentCallId);
+          }
         }
       }
+
+      const appliedCandidatesRef = new Set<string>();
 
       // 4. Poll call status & exchange signaling state
       if (pollRef.current) clearInterval(pollRef.current);
@@ -276,7 +335,7 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
             setCallStatus("ENDED");
             setTimeout(() => {
               onClose();
-            }, 600);
+            }, 800);
             return;
           }
 
@@ -290,24 +349,31 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
             setCallStatus("CONNECTED");
           }
 
-          // Apply remote candidates
-          const candidatesToApply = isIncomingCall
-            ? call.callerCandidates
-            : call.recipientCandidates;
+          // Apply remote candidates ONLY if remote description is already set
+          if (pc.currentRemoteDescription) {
+            const candidatesToApply = isIncomingCall
+              ? call.callerCandidates
+              : call.recipientCandidates;
 
-          if (candidatesToApply && candidatesToApply.length > 0) {
-            for (const cand of candidatesToApply) {
-              try {
-                await pc.addIceCandidate(new RTCIceCandidate(cand));
-              } catch {
-                // ignore duplicate candidate
+            if (candidatesToApply && candidatesToApply.length > 0) {
+              for (const cand of candidatesToApply) {
+                // Use a simple hash to track applied candidates
+                const candHash = cand.candidate || JSON.stringify(cand);
+                if (!appliedCandidatesRef.has(candHash)) {
+                  appliedCandidatesRef.add(candHash);
+                  try {
+                    await pc.addIceCandidate(new RTCIceCandidate(cand));
+                  } catch (e) {
+                    console.warn("Failed to add ICE candidate", e);
+                  }
+                }
               }
             }
           }
         } catch (e) {
           console.error("Signaling poll error:", e);
         }
-      }, 1200);
+      }, 1000);
     } catch (err) {
       console.error("WebRTC initialization error:", err);
     }
@@ -366,49 +432,57 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
     }, 400);
   };
 
-  const formatTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return `${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+  const formatDuration = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const remainingSecs = secs % 60;
+    return `${mins.toString().padStart(2, "0")}:${remainingSecs
+      .toString()
+      .padStart(2, "0")}`;
   };
 
-  const activeCallingParticipants = otherParticipants.filter((p) =>
+  const activeCalledParticipants = otherParticipants.filter((p) =>
     selectedIds.includes(p.id)
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-md animate-fade-in select-none">
-      {/* Hidden audio element for receiving remote peer audio */}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xl animate-fade-in select-none">
+      {/* Hidden HTML Audio Element to play remote WebRTC voice streams directly */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
-      {/* ── PHASE 1: GROUP CALL PARTICIPANT SELECTOR ── */}
-      {phase === "SELECT_MEMBERS" ? (
-        <div className="w-full max-w-md bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/80 shadow-2xl p-5 sm:p-6 space-y-4 animate-scale-up">
+      {/* PHASE 1: SELECT GROUP MEMBERS */}
+      {phase === "SELECT_MEMBERS" && (
+        <div className="w-full max-w-md bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/80 shadow-2xl p-6 space-y-5 animate-scale-in text-slate-900 dark:text-white">
           <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-emerald-950/60">
-            <div>
-              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
-                Start Group Voice Call
-              </h2>
-              <p className="text-xs text-slate-500">
-                Choose who you want to include in this voice call
-              </p>
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                <PhoneCall className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-extrabold text-base text-slate-900 dark:text-white">
+                  Start Group Voice Call
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Select companions to invite into this encrypted room.
+                </p>
+              </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#18241f] transition"
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-emerald-950/50 transition cursor-pointer"
             >
-              <X className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
           </div>
 
-          <div className="flex items-center justify-between py-1">
-            <span className="text-xs font-bold text-slate-700 dark:text-slate-300">
-              {selectedIds.length} of {otherParticipants.length} selected
+          <div className="flex items-center justify-between px-1 text-xs">
+            <span className="font-bold text-slate-600 dark:text-slate-400">
+              Members ({selectedIds.length}/{otherParticipants.length} selected)
             </span>
             <button
               type="button"
               onClick={toggleSelectAll}
-              className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline"
+              className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
             >
               {selectedIds.length === otherParticipants.length
                 ? "Deselect All"
@@ -416,67 +490,60 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
             </button>
           </div>
 
-          <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1 scrollbar-none">
-            {otherParticipants.map((member) => {
-              const isChecked = selectedIds.includes(member.id);
+          <div className="max-h-60 overflow-y-auto space-y-2 pr-1 scrollbar-thin">
+            {otherParticipants.map((p) => {
+              const isSelected = selectedIds.includes(p.id);
               return (
-                <label
-                  key={member.id}
-                  onClick={() => toggleSelectMember(member.id)}
-                  className={`flex items-center justify-between p-3 rounded-2xl border transition-all cursor-pointer ${
-                    isChecked
-                      ? "bg-emerald-50/70 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/80 shadow-xs"
-                      : "bg-slate-50/50 dark:bg-[#16201b]/50 border-slate-200/80 dark:border-emerald-950/60 hover:border-slate-300"
+                <div
+                  key={p.id}
+                  onClick={() => toggleSelectMember(p.id)}
+                  className={`flex items-center justify-between p-3 rounded-2xl border transition cursor-pointer select-none ${
+                    isSelected
+                      ? "bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800"
+                      : "bg-slate-50 dark:bg-[#16201b] border-slate-200/80 dark:border-emerald-950/60 opacity-60 hover:opacity-100"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    {member.avatarUrl ? (
-                      <img
-                        src={member.avatarUrl}
-                        alt={member.displayName}
-                        className="w-10 h-10 rounded-full object-cover ring-2 ring-emerald-500/20"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-emerald-500 to-teal-700 text-white font-bold text-sm flex items-center justify-center shadow-xs">
-                        {member.displayName.charAt(0).toUpperCase()}
-                      </div>
-                    )}
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white font-bold flex items-center justify-center text-sm shadow-xs overflow-hidden">
+                      {p.avatarUrl ? (
+                        <img
+                          src={p.avatarUrl}
+                          alt={p.displayName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        (p.displayName || "U").charAt(0).toUpperCase()
+                      )}
+                    </div>
                     <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-xs font-bold text-slate-900 dark:text-white">
-                          {member.displayName}
-                        </span>
-                        {member.isHost && (
-                          <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-orange-100 dark:bg-orange-950/60 text-orange-700 dark:text-orange-300">
-                            Host
-                          </span>
-                        )}
-                      </div>
-                      <span className="text-[11px] text-slate-400">
-                        Group Traveler
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        {p.displayName}
+                      </h4>
+                      <span className="text-[10px] text-slate-500">
+                        {p.isHost ? "Expedition Host" : "Verified Companion"}
                       </span>
                     </div>
                   </div>
 
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center transition-colors ${
-                      isChecked
-                        ? "bg-emerald-500 text-white shadow-xs"
-                        : "border-2 border-slate-300 dark:border-slate-600 bg-white dark:bg-[#1a2620]"
+                    className={`w-5 h-5 rounded-full flex items-center justify-center border transition ${
+                      isSelected
+                        ? "bg-emerald-600 border-emerald-600 text-white"
+                        : "border-slate-300 dark:border-slate-600"
                     }`}
                   >
-                    {isChecked && <Check className="w-4 h-4 stroke-[3]" />}
+                    {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
                   </div>
-                </label>
+                </div>
               );
             })}
           </div>
 
-          <div className="pt-2 flex items-center justify-end gap-3 border-t border-slate-100 dark:border-emerald-950/60">
+          <div className="flex items-center justify-end gap-3 pt-2 border-t border-slate-100 dark:border-emerald-950/60">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#1a2620] transition"
+              className="px-4 py-2.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#18241f] transition cursor-pointer"
             >
               Cancel
             </button>
@@ -484,202 +551,139 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
               type="button"
               onClick={handleStartCall}
               disabled={selectedIds.length === 0}
-              className="px-6 py-2.5 rounded-full text-xs font-extrabold text-emerald-950 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/90 dark:border-emerald-700 shadow-xs transition disabled:opacity-40 flex items-center gap-2"
+              className="px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/30 transition-all active:scale-95 cursor-pointer"
             >
-              <Phone className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-300" />
-              <span>Start Call ({selectedIds.length})</span>
+              <Phone className="w-3.5 h-3.5" />
+              <span>Call Selected ({selectedIds.length})</span>
             </button>
           </div>
         </div>
-      ) : (
-        /* ── PHASE 2: ACTIVE VOICE CALL OVERLAY (LUMINOUS SPATIAL AUDIO CAPSULE) ── */
-        <div className="relative w-full max-w-lg max-h-[92vh] overflow-y-auto rounded-[38px] sm:rounded-[44px] p-6 sm:p-8 flex flex-col items-center justify-between min-h-[440px] sm:min-h-[480px] animate-scale-up overflow-hidden backdrop-blur-2xl bg-gradient-to-b from-white/95 via-emerald-50/60 to-teal-50/85 dark:from-[#0d1613]/95 dark:via-[#08100d]/95 dark:to-[#040806]/98 border border-white/80 dark:border-emerald-500/25 shadow-[0_25px_80px_-15px_rgba(16,185,129,0.25),0_10px_30px_-5px_rgba(0,0,0,0.05)] dark:shadow-[0_30px_90px_-15px_rgba(0,0,0,0.9),0_0_40px_rgba(16,185,129,0.15)] ring-1 ring-emerald-500/20 text-slate-900 dark:text-white">
-          {/* Ambient Aura Background */}
-          <div className="absolute -top-28 inset-x-0 h-56 bg-gradient-to-b from-emerald-400/20 via-teal-400/10 to-transparent blur-3xl pointer-events-none animate-aura-breathe" />
-          <div className="absolute -bottom-24 -left-20 w-56 h-56 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+      )}
 
-          {/* Top header status */}
-          <div className="w-full flex items-center justify-between z-10 text-xs">
-            <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-500/10 dark:bg-emerald-500/20 border border-emerald-500/25 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 font-bold text-[11px] shadow-xs">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-              <span>WebRTC Direct Audio</span>
+      {/* PHASE 2: ACTIVE CALL SCREEN */}
+      {phase === "ACTIVE_CALL" && (
+        <div className="w-full max-w-sm sm:max-w-md bg-gradient-to-b from-slate-900 via-[#0d1612] to-[#080d0a] text-white rounded-3xl border border-emerald-500/25 shadow-2xl p-6 sm:p-8 flex flex-col items-center justify-between min-h-[500px] animate-scale-in relative overflow-hidden">
+          {/* Top Status Bar */}
+          <div className="w-full flex items-center justify-between text-xs text-slate-400">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-[11px] font-bold text-emerald-400">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
+              <span>P2P WebRTC Encrypted</span>
             </div>
 
-            <div className="flex items-center gap-2">
-              {callStatus === "RINGING" ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-700 dark:text-amber-300 font-semibold text-xs animate-pulse">
-                  <Radio className="w-3.5 h-3.5" />
-                  <span>Ringing...</span>
-                </div>
-              ) : callStatus === "DECLINED" ? (
-                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500/15 border border-rose-500/30 text-rose-600 dark:text-rose-400 font-bold text-xs">
-                  <PhoneOff className="w-3.5 h-3.5" />
-                  <span>Call Declined</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/80 dark:bg-white/10 border border-slate-200/80 dark:border-white/10 text-slate-800 dark:text-emerald-300 font-mono text-xs font-bold tracking-wider shadow-xs">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span>{formatTimer(callDuration)}</span>
-                </div>
-              )}
-            </div>
+            {callStatus === "CONNECTED" && (
+              <span className="font-mono text-xs font-bold text-emerald-400 bg-emerald-950/80 px-2.5 py-0.5 rounded-full border border-emerald-800/60">
+                {formatDuration(callDuration)}
+              </span>
+            )}
           </div>
 
-          {/* Call participants visual area */}
-          <div className="my-auto w-full flex flex-col items-center justify-center py-5 z-10">
-            {!hasMultipleOthers || activeCallingParticipants.length === 1 ? (
-              /* Single 1:1 call layout */
-              <div className="flex flex-col items-center text-center space-y-3">
-                <div className="relative my-2">
-                  {/* Concentric Sonic Radar Rings */}
-                  <div className="absolute -inset-6 rounded-full border border-emerald-400/25 dark:border-emerald-400/30 animate-radar-ripple pointer-events-none" />
-                  <div className="absolute -inset-3 rounded-full border border-teal-400/35 dark:border-teal-400/40 animate-ping opacity-50 pointer-events-none" />
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-tr from-emerald-500/20 to-teal-400/20 blur-md" />
+          {/* Caller / Participants Avatar Area */}
+          <div className="flex flex-col items-center justify-center my-auto space-y-4 text-center">
+            <div className="relative">
+              {/* Ringing pulse animation rings */}
+              {callStatus === "RINGING" && (
+                <>
+                  <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-ping" />
+                  <div className="absolute -inset-4 rounded-full border-2 border-emerald-500/30 animate-pulse" />
+                </>
+              )}
 
-                  {activeCallingParticipants[0]?.avatarUrl ? (
-                    <img
-                      src={activeCallingParticipants[0]?.avatarUrl}
-                      alt={activeCallingParticipants[0]?.displayName}
-                      className="w-28 h-28 sm:w-32 sm:h-32 rounded-full object-cover relative z-10 ring-4 ring-white dark:ring-[#131c18] shadow-2xl"
-                    />
-                  ) : (
-                    <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-tr from-emerald-600 via-teal-600 to-emerald-400 text-white font-black text-3xl sm:text-4xl flex items-center justify-center relative z-10 ring-4 ring-white dark:ring-[#131c18] shadow-2xl">
-                      {(
-                        activeCallingParticipants[0]?.displayName || "U"
-                      ).charAt(0).toUpperCase()}
-                    </div>
-                  )}
-
-                  {/* Corner Voice Beacon */}
-                  <div className="absolute -bottom-1 -right-1 z-20 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-500 to-teal-600 text-white flex items-center justify-center shadow-md ring-2 ring-white dark:ring-[#08110e]">
-                    <Phone className="w-4 h-4 animate-pulse" />
-                  </div>
-                </div>
-
-                <div className="mt-2">
-                  <h2 className="text-2xl sm:text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                    {activeCallingParticipants[0]?.displayName ||
-                      conversationTitle ||
-                      "Travel Companion"}
-                  </h2>
-                  <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-1">
-                    {callStatus === "RINGING"
-                      ? isIncomingCall
-                        ? "Incoming voice invitation..."
-                        : "Waiting for answer..."
-                      : callStatus === "DECLINED"
-                      ? "User declined the call"
-                      : "Voice Connected"}
-                  </p>
-                </div>
-
-                {/* Animated Frequency Equalizer Bars */}
-                <div className="flex items-center justify-center gap-1.5 h-8 my-3">
-                  {[0.35, 0.65, 0.95, 0.55, 0.85, 1.0, 0.7, 0.9, 0.75, 0.6, 0.85, 0.45, 0.7, 0.35].map(
-                    (scale, i) => (
-                      <span
-                        key={i}
-                        className="w-1 sm:w-1.5 rounded-full bg-gradient-to-t from-emerald-600 via-emerald-500 to-teal-400 dark:from-emerald-400 dark:to-teal-300 transition-all"
-                        style={{
-                          height: `${Math.round(scale * 28)}px`,
-                          animation:
-                            callStatus === "CONNECTED"
-                              ? "audioWave 1.1s ease-in-out infinite"
-                              : callStatus === "RINGING"
-                              ? "audioWave 1.8s ease-in-out infinite"
-                              : "none",
-                          animationDelay: `${i * 80}ms`,
-                          opacity: callStatus === "CONNECTED" ? 1 : 0.4,
-                        }}
+              {/* Avatar Grid / Single Avatar */}
+              {activeCalledParticipants.length === 1 ? (
+                <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-400 shadow-2xl shadow-emerald-500/20">
+                  <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden flex items-center justify-center text-3xl font-black text-emerald-400">
+                    {activeCalledParticipants[0]?.avatarUrl ? (
+                      <img
+                        src={activeCalledParticipants[0].avatarUrl}
+                        alt={activeCalledParticipants[0].displayName}
+                        className="w-full h-full object-cover"
                       />
-                    )
-                  )}
-                </div>
-
-                <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 dark:text-emerald-400 tracking-wide uppercase">
-                  <Sparkles className="w-3 h-3" />
-                  <span>
-                    {callStatus === "CONNECTED"
-                      ? "Encrypted HD Voice Stream"
-                      : "Establishing peer-to-peer connection..."}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              /* Group Call Grid layout */
-              <div className="w-full space-y-4">
-                <h3 className="text-center text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest">
-                  Group Call • {activeCallingParticipants.length + 1} Travelers
-                </h3>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {/* Self card */}
-                  <div className="p-3.5 rounded-2xl bg-white/70 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex flex-col items-center text-center shadow-xs">
-                    <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-600 to-teal-700 text-white font-bold flex items-center justify-center text-sm mb-2 shadow-xs ring-2 ring-emerald-500/30">
-                      {(currentUser?.displayName || "You").charAt(0).toUpperCase()}
-                    </div>
-                    <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-full">
-                      You {isMuted ? "(Muted)" : ""}
-                    </span>
-                    <span className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5 font-semibold">
-                      {isMuted ? "Mic Off" : "Active"}
-                    </span>
+                    ) : (
+                      (activeCalledParticipants[0]?.displayName || "U")
+                        .charAt(0)
+                        .toUpperCase()
+                    )}
                   </div>
-
-                  {/* Remote participants */}
-                  {activeCallingParticipants.map((member) => (
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2 p-2 bg-white/5 rounded-3xl border border-white/10">
+                  {activeCalledParticipants.slice(0, 4).map((p) => (
                     <div
-                      key={member.id}
-                      className="p-3.5 rounded-2xl bg-white/70 dark:bg-white/5 border border-slate-200/80 dark:border-white/10 flex flex-col items-center text-center shadow-xs"
+                      key={p.id}
+                      className="w-14 h-14 rounded-2xl bg-emerald-800/80 overflow-hidden flex items-center justify-center text-sm font-bold text-white border border-white/20"
                     >
-                      {member.avatarUrl ? (
+                      {p.avatarUrl ? (
                         <img
-                          src={member.avatarUrl}
-                          alt={member.displayName}
-                          className="w-12 h-12 rounded-full object-cover mb-2 ring-2 ring-emerald-500/40"
+                          src={p.avatarUrl}
+                          alt={p.displayName}
+                          className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-12 h-12 rounded-full bg-teal-800 text-white font-bold flex items-center justify-center text-sm mb-2 shadow-xs">
-                          {member.displayName.charAt(0).toUpperCase()}
-                        </div>
+                        (p.displayName || "U").charAt(0).toUpperCase()
                       )}
-                      <span className="text-xs font-bold text-slate-900 dark:text-white truncate max-w-full">
-                        {member.displayName}
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                        {callStatus === "RINGING"
-                          ? "Ringing..."
-                          : "Connected 🎙️"}
-                      </span>
                     </div>
                   ))}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            {/* Mic Permission notice if applicable */}
+            {/* Names & Current State */}
+            <div className="space-y-1">
+              <h3 className="font-black text-xl sm:text-2xl text-white tracking-tight">
+                {activeCalledParticipants.length === 1
+                  ? activeCalledParticipants[0]?.displayName
+                  : conversationTitle || "Group Companion Call"}
+              </h3>
+              <p className="text-xs font-semibold">
+                {callStatus === "RINGING" && (
+                  <span className="text-emerald-400 flex items-center justify-center gap-1.5 animate-pulse">
+                    <Radio className="w-3.5 h-3.5" />
+                    <span>Ringing companion...</span>
+                  </span>
+                )}
+                {callStatus === "CONNECTED" && (
+                  <span className="text-emerald-400 flex items-center justify-center gap-1.5 font-bold">
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                    <span>Live Audio Connected</span>
+                  </span>
+                )}
+                {callStatus === "DECLINED" && (
+                  <span className="text-rose-400 flex items-center justify-center gap-1.5 font-bold">
+                    <PhoneOff className="w-3.5 h-3.5" />
+                    <span>Call Declined</span>
+                  </span>
+                )}
+                {callStatus === "ENDED" && (
+                  <span className="text-slate-400 flex items-center justify-center gap-1.5">
+                    <span>Call Ended</span>
+                  </span>
+                )}
+              </p>
+            </div>
+
             {micError && (
-              <div className="mt-4 px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-500/15 border border-amber-300 dark:border-amber-500/30 text-amber-800 dark:text-amber-300 text-xs flex items-center gap-2 text-center">
-                <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+              <div className="p-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-[11px] text-rose-300 flex items-center gap-2 max-w-xs">
+                <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
                 <span>{micError}</span>
               </div>
             )}
           </div>
 
-          {/* Bottom Call Controls Floating Island Dock */}
-          <div className="w-full flex items-center justify-center gap-5 sm:gap-7 z-10 pt-4 mt-2 border-t border-slate-200/80 dark:border-white/10">
-            {/* Mute Mic Button */}
+          {/* Action Control Buttons (Mute, Speaker, End) */}
+          <div className="w-full flex items-center justify-center gap-4 sm:gap-6 pt-6 border-t border-white/10">
+            {/* Mute Button */}
             <button
               type="button"
               onClick={() => setIsMuted(!isMuted)}
               className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 shadow-md cursor-pointer group ${
                 isMuted
-                  ? "bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-500/40 shadow-rose-500/10"
-                  : "bg-white dark:bg-white/10 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/20 border border-slate-200 dark:border-white/15 shadow-slate-200/50"
+                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-rose-500/10"
+                  : "bg-white/10 text-white hover:bg-white/20 border border-white/15"
               }`}
               title={isMuted ? "Unmute microphone" : "Mute microphone"}
             >
               {isMuted ? (
-                <MicOff className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                <MicOff className="w-5 h-5 text-rose-400" />
               ) : (
                 <Mic className="w-5 h-5 group-hover:scale-110 transition-transform" />
               )}
@@ -694,15 +698,15 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
               onClick={() => setIsSpeakerOn(!isSpeakerOn)}
               className={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center transition-all active:scale-95 shadow-md cursor-pointer group ${
                 !isSpeakerOn
-                  ? "bg-rose-50 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border border-rose-300 dark:border-rose-500/40 shadow-rose-500/10"
-                  : "bg-white dark:bg-white/10 text-slate-700 dark:text-white hover:bg-slate-100 dark:hover:bg-white/20 border border-slate-200 dark:border-white/15 shadow-slate-200/50"
+                  ? "bg-rose-500/20 text-rose-400 border border-rose-500/40 shadow-rose-500/10"
+                  : "bg-white/10 text-white hover:bg-white/20 border border-white/15"
               }`}
               title={isSpeakerOn ? "Turn speaker off" : "Turn speaker on"}
             >
               {isSpeakerOn ? (
                 <Volume2 className="w-5 h-5 group-hover:scale-110 transition-transform" />
               ) : (
-                <VolumeX className="w-5 h-5 text-rose-600 dark:text-rose-400" />
+                <VolumeX className="w-5 h-5 text-rose-400" />
               )}
               <span className="text-[10px] font-bold mt-1">Speaker</span>
             </button>
@@ -723,4 +727,3 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
     </div>
   );
 };
-

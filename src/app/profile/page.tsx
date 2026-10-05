@@ -33,7 +33,7 @@ export default function MyProfilePage() {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
-  const [activeTab, setActiveTab] = useState<"pass" | "profile" | "badges">("profile");
+  const [activeTab, setActiveTab] = useState<"profile" | "pass_badges">("profile");
 
   // Form states
   const [displayName, setDisplayName] = useState("");
@@ -184,34 +184,7 @@ export default function MyProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            My Profile &amp; Member Pass
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Manage your companion profile, interactive 3D Founding Pass, and verified badges.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-xs font-bold bg-slate-100 dark:bg-emerald-950/80 text-slate-700 dark:text-emerald-300 border-slate-200 dark:border-emerald-800/60 shadow-2xs">
-            <span>{userBadge.badgeIcon}</span>
-            <span>#{userRank}</span>
-          </div>
-          <button
-            type="button"
-            onClick={async () => {
-              await logout();
-              window.location.href = "/login";
-            }}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 font-bold text-xs border border-rose-200 dark:border-rose-800/60 transition shadow-xs"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </div>
+
 
       {/* Profile & Pass Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-emerald-950/70 pb-2 overflow-x-auto scrollbar-none">
@@ -230,28 +203,15 @@ export default function MyProfilePage() {
 
         <button
           type="button"
-          onClick={() => setActiveTab("pass")}
+          onClick={() => setActiveTab("pass_badges")}
           className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] ${
-            activeTab === "pass"
+            activeTab === "pass_badges"
               ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
               : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#131c18]"
           }`}
         >
           <CreditCard className="w-4 h-4 text-amber-300" />
-          <span>3D Virtual Pass</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("badges")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] ${
-            activeTab === "badges"
-              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#131c18]"
-          }`}
-        >
-          <Award className="w-4 h-4 text-emerald-400" />
-          <span>Badges &amp; Verification</span>
+          <span>3D Pass &amp; Badges</span>
         </button>
       </div>
 
@@ -293,17 +253,7 @@ export default function MyProfilePage() {
                 </div>
               </div>
 
-              {/* Pass Quick Action */}
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab("pass")}
-                  className="px-3.5 py-2 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs font-bold border border-amber-200 dark:border-amber-800/60 flex items-center gap-1.5 transition hover:scale-105"
-                >
-                  <CreditCard className="w-4 h-4 text-amber-500" />
-                  <span>View 3D Pass</span>
-                </button>
-              </div>
+
             </div>
 
             {/* Form Fields: Display Name, City, Gender */}
@@ -551,9 +501,10 @@ export default function MyProfilePage() {
         </form>
       )}
 
-      {/* ── TAB 2: VIRTUAL MEMBERSHIP PASS ── */}
-      {activeTab === "pass" && (
+      {/* ── TAB 2: VIRTUAL MEMBERSHIP PASS & BADGES ── */}
+      {activeTab === "pass_badges" && (
         <div className="space-y-6 animate-fade-in">
+          {/* 1. 3D Pass Card */}
           <div className="bg-gradient-to-b from-slate-50 to-white dark:from-[#111815] dark:to-[#0d1411] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-8 md:p-10 shadow-sm space-y-6">
             <div className="text-center max-w-lg mx-auto space-y-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
@@ -595,12 +546,8 @@ export default function MyProfilePage() {
               </button>
             </div>
           </div>
-        </div>
-      )}
 
-      {/* ── TAB 3: BADGES & VERIFICATION ── */}
-      {activeTab === "badges" && (
-        <div className="space-y-6 animate-fade-in">
+          {/* 2. Verified Badges & Trust Tier */}
           <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             <div className="space-y-1">
               <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
@@ -612,31 +559,7 @@ export default function MyProfilePage() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              {/* Rank Badge Box */}
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/70 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Founding Rank Badge
-                  </span>
-                  <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                    {userBadge.badgeIcon} #{userRank}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-xl">
-                    {userBadge.badgeIcon}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      Verified Member #{userRank}
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      Permanent verified founding rank.
-                    </p>
-                  </div>
-                </div>
-              </div>
+            <div className="pt-2">
 
               {/* Identity Verification Status */}
               <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/70 space-y-3">

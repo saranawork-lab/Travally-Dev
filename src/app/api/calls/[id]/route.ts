@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import db from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import {
   getCallById,
@@ -50,7 +51,10 @@ export async function POST(
 
     const call = getCallById(params.id);
     if (!call) {
-      return NextResponse.json({ call: null, ended: true, message: "Call has ended" }, { status: 200 });
+      return NextResponse.json(
+        { call: null, ended: true, message: "Call has ended" },
+        { status: 200 }
+      );
     }
 
     let updated = call;
@@ -59,15 +63,84 @@ export async function POST(
       case "ANSWER":
         updated = answerCall(params.id, user.id, sdpAnswer) || call;
         break;
-      case "DECLINE":
+
+      case "DECLINE": {
+        const wasRinging = call.status === "RINGING";
         updated = declineCall(params.id) || call;
+
+        // Log missed call notification for recipient
+        if (wasRinging && call.conversationId) {
+          try {
+            // Save missed call record in conversation chat
+            await db.message.create({
+              data: {
+                conversationId: call.conversationId,
+                senderId: call.callerId,
+                content: `📞 Declined voice call from ${call.callerName}`,
+              },
+            });
+
+            // Notify recipient about missed call
+            if (user.id !== call.callerId) {
+              await db.notification.create({
+                data: {
+                  userId: user.id,
+                  type: "NEW_MESSAGE",
+                  title: "📞 Missed Call",
+                  body: `You missed a voice call from ${call.callerName}`,
+                  actionUrl: `/chats/${call.conversationId}`,
+                },
+              });
+            }
+          } catch (e) {
+            console.error("Error creating missed call record:", e);
+          }
+        }
         break;
-      case "END":
+      }
+
+      case "END": {
+        const wasNeverConnected = call.status === "RINGING";
         updated = endCall(params.id) || call;
+
+        // If caller ended before recipient answered, log missed call
+        if (wasNeverConnected && call.conversationId) {
+          try {
+            await db.message.create({
+              data: {
+                conversationId: call.conversationId,
+                senderId: call.callerId,
+                content: `📞 Missed voice call from ${call.callerName}`,
+              },
+            });
+
+            // Create missed call notification for all participants
+            const recipientIds = call.participantIds.filter(
+              (id) => id !== call.callerId
+            );
+
+            for (const recipientId of recipientIds) {
+              await db.notification.create({
+                data: {
+                  userId: recipientId,
+                  type: "NEW_MESSAGE",
+                  title: "📞 Missed Call",
+                  body: `Missed voice call from ${call.callerName}`,
+                  actionUrl: `/chats/${call.conversationId}`,
+                },
+              });
+            }
+          } catch (e) {
+            console.error("Error creating missed call notification:", e);
+          }
+        }
         break;
+      }
+
       case "ICE_CANDIDATE":
         addIceCandidate(params.id, Boolean(fromCaller), candidate);
         break;
+
       default:
         return NextResponse.json(
           { error: `Unknown action: ${action}` },

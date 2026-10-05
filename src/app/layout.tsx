@@ -9,6 +9,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { AuthProvider } from "@/context/AuthContext";
 import BrandIntroLoader from "@/components/common/BrandIntroLoader";
 import DesktopSidebar from "@/components/layout/DesktopSidebar";
+import { GlobalIncomingCallListener } from "@/components/chat/GlobalIncomingCallListener";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -124,6 +125,7 @@ export default async function RootLayout({
         <ThemeProvider>
           <AuthProvider initialUser={currentUser}>
             <BrandIntroLoader />
+            <GlobalIncomingCallListener />
             <Navbar initialUser={currentUser} />
             <div className="flex-1 flex min-w-0">
               <DesktopSidebar initialUser={currentUser} />

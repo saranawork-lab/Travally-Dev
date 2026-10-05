@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { signToken, AuthService } from "@/lib/auth";
+import { signToken, AuthService, createActiveSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
@@ -212,10 +212,12 @@ export async function GET(req: NextRequest) {
     }
 
     // 4. Issue session token and cookie
+    const sessionToken = await createActiveSession(user.id);
     const token = signToken({
       userId: user.id,
       email: user.email,
       role: user.role,
+      sessionToken,
     });
 
     const targetPath = isProfileComplete ? "/discover" : "/onboarding";

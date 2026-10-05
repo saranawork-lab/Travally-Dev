@@ -52,16 +52,32 @@ export const AuthProvider: React.FC<{
       const res = await fetch("/api/auth/me");
       if (res.ok) {
         const data = await res.json();
-        setCurrentUser(data?.user || null);
+        if (!data?.user) {
+          setCurrentUser((prev) => {
+            if (prev) {
+              // Session was invalidated because user logged in on another device
+              if (typeof window !== "undefined") {
+                window.dispatchEvent(new Event("travally_auth_changed"));
+              }
+              router.push("/login?reason=session_expired");
+            }
+            return null;
+          });
+        } else {
+          setCurrentUser(data.user);
+        }
       } else {
-        setCurrentUser(null);
+        setCurrentUser((prev) => {
+          if (prev) router.push("/login?reason=session_expired");
+          return null;
+        });
       }
     } catch {
-      setCurrentUser(null);
+      // Intermittent network glitch: preserve state
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   const logout = useCallback(async () => {
     try {
@@ -79,7 +95,6 @@ export const AuthProvider: React.FC<{
   }, [router]);
 
   useEffect(() => {
-    // If initialUser was not supplied (or undefined), check /api/auth/me once on mount
     if (initialUser === undefined) {
       refreshUser();
     }
@@ -93,6 +108,28 @@ export const AuthProvider: React.FC<{
       window.removeEventListener("travally_auth_changed", handleAuthEvent);
     };
   }, [initialUser, refreshUser]);
+
+  // Periodic Single Active Session Verification (Polls every 6 seconds when logged in)
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const intervalId = setInterval(() => {
+      refreshUser();
+    }, 6000);
+
+    const handleFocus = () => {
+      refreshUser();
+    };
+
+    window.addEventListener("focus", handleFocus);
+    document.addEventListener("visibilitychange", handleFocus);
+
+    return () => {
+      clearInterval(intervalId);
+      window.removeEventListener("focus", handleFocus);
+      document.removeEventListener("visibilitychange", handleFocus);
+    };
+  }, [currentUser, refreshUser]);
 
   return (
     <AuthContext.Provider

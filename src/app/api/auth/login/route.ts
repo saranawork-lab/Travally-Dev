@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { signToken, AuthService } from "@/lib/auth";
+import { signToken, AuthService, createActiveSession } from "@/lib/auth";
 import { findUserByIdentifier } from "@/lib/userAccountLookup";
 
 // Default Indian demo persona profiles if needed for on-the-fly MongoDB seeding
@@ -176,10 +176,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
     }
 
+    const sessionToken = await createActiveSession(user.id);
     const token = signToken({
       userId: user.id,
       email: user.email,
       role: user.role,
+      sessionToken,
     });
 
     const response = NextResponse.json({

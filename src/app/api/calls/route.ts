@@ -4,6 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import {
   startCall,
   getActiveCallByConversation,
+  getActiveCallForUser,
 } from "@/lib/callSignaling";
 
 export const dynamic = "force-dynamic";
@@ -18,15 +19,14 @@ export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
     const conversationId = searchParams.get("conversationId");
 
-    if (!conversationId) {
-      return NextResponse.json(
-        { error: "conversationId is required" },
-        { status: 400 }
-      );
+    if (conversationId) {
+      const activeCall = getActiveCallByConversation(conversationId);
+      return NextResponse.json({ activeCall });
     }
 
-    const activeCall = getActiveCallByConversation(conversationId);
-    return NextResponse.json({ activeCall });
+    // Global check for user's incoming call on any screen
+    const incomingCall = getActiveCallForUser(user.id);
+    return NextResponse.json({ activeCall: incomingCall, incomingCall });
   } catch (error) {
     console.error("GET /api/calls error:", error);
     return NextResponse.json(

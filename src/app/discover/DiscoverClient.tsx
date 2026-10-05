@@ -204,24 +204,24 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
 
   return (
     <DatabaseHealthGuard>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 pb-28 md:pb-12">
+      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 pb-32 sm:pb-16">
         {/* Top Banner & Mode Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-slate-200/80 dark:border-emerald-950/60">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-slate-200/80 dark:border-emerald-950/60">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              {mode === "companion" ? "Discover Companions" : "Discover Travel Expeditions"}
+            <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              {mode === "companion" ? "Discover Companions" : "Discover Expeditions"}
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl">
               {mode === "companion"
-                ? "Find verified partners for movies, cafes, walks, and shared everyday activities"
+                ? "Find verified partners for movies, cafes, sports, and shared activities"
                 : "Find compatible travel partners for upcoming multi-day trips and adventures"}
             </p>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            {/* Show ModeToggle on mobile only; on desktop, laptop, and tablet, it is in the top Navbar */}
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
+            {/* Show ModeToggle on mobile with compact size */}
             <div className="sm:hidden">
-              <ModeToggle currentMode={mode} onModeChange={handleModeChange} />
+              <ModeToggle currentMode={mode} onModeChange={handleModeChange} size="sm" />
             </div>
 
             <Link

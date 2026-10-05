@@ -158,7 +158,6 @@ export default function CreateActivityPage() {
         throw new Error("Cannot select a date and time in the past.");
       }
 
-      // Location and max companions removed from form; handled with sensible defaults
       const payload = {
         ...formData,
         locationName: "Flexible / Local Area",
@@ -176,8 +175,6 @@ export default function CreateActivityPage() {
         throw new Error(data.error || "Failed to create activity");
       }
 
-      // Use window.location.href for immediate perceived performance (browser loading spinner)
-      // instead of silent Next.js router.push which waits for server rendering.
       window.location.href = `/activities/${data.activity.id}`;
     } catch (err: any) {
       setError(err.message || "Failed to create activity");
@@ -187,65 +184,70 @@ export default function CreateActivityPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 pb-28">
-      {/* Top Breadcrumb */}
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 pb-36 sm:pb-28">
+      {/* Top Breadcrumb Navigation */}
       <div>
         <Link
           href="/discover?mode=companion"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-brand-600 dark:hover:text-brand-400 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition transform hover:-translate-x-0.5 active:scale-95"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
           <span>Back to Activities</span>
         </Link>
       </div>
 
-      <div className="bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-md relative overflow-hidden">
-        {/* Step Progress Header */}
-        <div className="mb-6 pb-4 border-b border-slate-200 dark:border-dark-border flex items-center justify-between">
-          <div>
-            <div className="mb-3">
-              <ModeToggle 
-                currentMode="companion" 
+      <div className="bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-5 sm:p-8 shadow-lg relative overflow-hidden transition-all duration-300">
+        {/* Animated 2-Step Progress Indicator Bar */}
+        <div className="w-full bg-slate-100 dark:bg-emerald-950/40 h-1.5 rounded-full overflow-hidden mb-6">
+          <div
+            className="bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 h-full transition-all duration-500 ease-out rounded-full shadow-xs"
+            style={{ width: step === 1 ? "50%" : "100%" }}
+          />
+        </div>
+
+        {/* Responsive Step Progress Header */}
+        <div className="mb-6 pb-4 border-b border-slate-100 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3 flex-wrap">
+              <ModeToggle
+                currentMode="companion"
                 onModeChange={(mode) => {
                   if (mode === "travel") window.location.href = "/travel/create";
-                }} 
-                size="sm" 
+                }}
+                size="sm"
               />
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
+                Step {step} of 2
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Post an Activity
             </h1>
-            <p className="text-xs sm:text-sm text-slate-700 dark:text-slate-300 mt-1 font-medium">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
               {step === 1
                 ? "First, choose the activity tag or category you want to do."
                 : "Fill in the details for your planned activity."}
             </p>
           </div>
-
-          {/* Stepper Pill */}
-          <div className="text-right">
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-dark-elevated text-xs font-bold text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-dark-border">
-              Step {step} of 2
-            </span>
-          </div>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs font-semibold text-rose-800 dark:text-rose-200">
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-800 text-xs font-semibold text-rose-800 dark:text-rose-200 animate-shake">
             {error}
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 1: CHOOSE ACTIVITY TAG (SLIDE CONTAINER) */}
+        {/* STEP 1: CHOOSE ACTIVITY TAG */}
         {/* ========================================================================= */}
         {step === 1 && (
-          <div className="animate-slide-in-left space-y-6">
+          <div className="space-y-6 animate-fade-in">
             <div className="space-y-1">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                Select Activity Tag
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-emerald-500" />
+                <span>Select Activity Tag</span>
               </h2>
-              <p className="text-xs text-slate-700 dark:text-slate-300 font-medium">
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
                 Tap on any tag below to continue. The form will slide forward automatically.
               </p>
             </div>
@@ -258,31 +260,31 @@ export default function CreateActivityPage() {
                     key={cat.id}
                     type="button"
                     onClick={() => handleSelectCategory(cat.id)}
-                    className={`p-4 rounded-2xl text-left border-2 transition-all flex items-start gap-3.5 group hover:shadow-md ${
+                    className={`p-4 rounded-2xl text-left border-2 transition-all duration-200 flex items-start gap-3.5 group transform active:scale-[0.98] hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
                       isSelected
-                        ? "bg-brand-50 dark:bg-brand-950/70 border-brand-500 text-slate-900 dark:text-white ring-2 ring-brand-500/30"
-                        : "bg-slate-50 dark:bg-dark-elevated border-slate-200 dark:border-dark-border text-slate-900 dark:text-slate-100 hover:border-brand-400 dark:hover:border-brand-500 hover:bg-white dark:hover:bg-dark-card"
+                        ? "bg-emerald-50 dark:bg-emerald-950/70 border-emerald-500 text-slate-900 dark:text-white ring-2 ring-emerald-500/30"
+                        : "bg-slate-50/80 dark:bg-dark-elevated border-slate-200/90 dark:border-dark-border text-slate-900 dark:text-slate-100 hover:border-emerald-400 dark:hover:border-emerald-500 hover:bg-white dark:hover:bg-dark-card"
                     }`}
                   >
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-dark-card shadow-sm border border-slate-200 dark:border-dark-border shrink-0 group-hover:scale-110 transition-transform">
+                    <div className="p-2.5 rounded-xl bg-white dark:bg-dark-card shadow-xs border border-slate-200 dark:border-dark-border shrink-0 group-hover:scale-110 transition-transform">
                       {cat.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-1">
                         <span className="block text-sm font-bold text-slate-900 dark:text-white">
                           {cat.label}
                         </span>
                         {cat.popular && (
-                          <span className="text-[10px] font-bold text-brand-700 dark:text-brand-300 bg-brand-100 dark:bg-brand-900/60 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-900/60 px-2 py-0.5 rounded-full shrink-0">
                             Popular
                           </span>
                         )}
                       </div>
-                      <span className="block text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2 font-medium">
+                      <span className="block text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 font-medium leading-relaxed">
                         {cat.hint}
                       </span>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-brand-600 dark:group-hover:text-brand-400 self-center shrink-0 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 self-center shrink-0 group-hover:translate-x-1 transition-all" />
                   </button>
                 );
               })}
@@ -291,19 +293,19 @@ export default function CreateActivityPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* STEP 2: DETAILS FORM (SLIDES IN WHEN TAG IS SELECTED) */}
+        {/* STEP 2: DETAILS FORM */}
         {/* ========================================================================= */}
         {step === 2 && (
-          <div className="animate-slide-in-right space-y-6">
+          <div className="space-y-6 animate-fade-in">
             {/* Active Tag Bar & Change Button */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-brand-50 dark:bg-brand-950/60 border border-brand-200 dark:border-brand-800">
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-white dark:bg-dark-elevated shadow-xs">
                   {selectedCategoryObj?.icon}
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-brand-800 dark:text-brand-300 uppercase tracking-wider block">
-                    Selected Tag
+                  <span className="text-[10px] font-bold text-emerald-800 dark:text-emerald-300 uppercase tracking-wider block">
+                    Selected Category Tag
                   </span>
                   <span className="text-sm font-extrabold text-slate-900 dark:text-white">
                     {selectedCategoryObj?.label}
@@ -313,7 +315,7 @@ export default function CreateActivityPage() {
               <button
                 type="button"
                 onClick={handleBackToTags}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-brand-700 dark:text-brand-300 bg-white dark:bg-dark-card border border-brand-300 dark:border-brand-700 hover:bg-brand-100 dark:hover:bg-dark-elevated transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-white dark:bg-dark-card border border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-dark-elevated transition shadow-2xs active:scale-95 min-h-[36px]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Change Tag</span>
@@ -333,13 +335,13 @@ export default function CreateActivityPage() {
                     placeholder="e.g. Screening of Wim Wenders 'Perfect Days' + Post-Film Coffee"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-4 py-2.5 text-xs text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-4 py-3 text-xs text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all min-h-[44px]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Description & Plan *
+                    Description &amp; Plan *
                   </label>
                   <textarea
                     required
@@ -347,7 +349,7 @@ export default function CreateActivityPage() {
                     placeholder="Describe what you plan to do, why you're excited about this activity, and what kind of companion would enjoy joining..."
                     value={formData.description}
                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated p-4 text-xs text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 leading-relaxed"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated p-4 text-xs text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed transition-all"
                   />
                 </div>
               </div>
@@ -364,7 +366,7 @@ export default function CreateActivityPage() {
                     min={new Date().toISOString().split("T")[0]}
                     value={formData.date}
                     onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-h-[44px]"
                   />
                 </div>
 
@@ -377,7 +379,7 @@ export default function CreateActivityPage() {
                     type="time"
                     value={formData.startTime}
                     onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-h-[44px]"
                   />
                 </div>
 
@@ -392,12 +394,12 @@ export default function CreateActivityPage() {
                     max="12"
                     value={formData.approxDurationHours}
                     onChange={(e) => setFormData({ ...formData, approxDurationHours: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-h-[44px]"
                   />
                 </div>
               </div>
 
-              {/* Preferences: Gender & Cutoff (Location and Max Companions removed) */}
+              {/* Preferences: Gender & Cutoff */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
@@ -406,7 +408,7 @@ export default function CreateActivityPage() {
                   <select
                     value={formData.genderPreference}
                     onChange={(e) => setFormData({ ...formData, genderPreference: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-h-[44px]"
                   >
                     <option value="ANY">Any gender welcome</option>
                     <option value="FEMALE_ONLY">Women only</option>
@@ -421,7 +423,7 @@ export default function CreateActivityPage() {
                   <select
                     value={formData.cutoffHoursBeforeStart}
                     onChange={(e) => setFormData({ ...formData, cutoffHoursBeforeStart: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-h-[44px]"
                   >
                     <option value="1">1 hour before start (Default)</option>
                     <option value="0.5">30 minutes before start</option>
@@ -444,11 +446,11 @@ export default function CreateActivityPage() {
                   placeholder="e.g. Please purchase ticket in advance, or bring comfortable shoes"
                   value={formData.additionalRequirements}
                   onChange={(e) => setFormData({ ...formData, additionalRequirements: e.target.value })}
-                  className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                  className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 min-h-[44px]"
                 />
               </div>
 
-              {/* Optional Image */}
+              {/* Cover Image Upload */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
                   Cover Image (Optional)
@@ -457,18 +459,18 @@ export default function CreateActivityPage() {
                   {formData.imageUrl ? (
                     <div className="relative w-full h-40 rounded-2xl overflow-hidden border border-slate-200 dark:border-dark-border shadow-sm">
                       <img src={formData.imageUrl} alt="Upload preview" className="w-full h-full object-cover" />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setFormData({ ...formData, imageUrl: "" })}
-                        className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white rounded-full p-1.5 hover:bg-rose-500 transition-colors shadow-md"
+                        className="absolute top-2 right-2 bg-black/60 backdrop-blur-md text-white rounded-full p-1.5 hover:bg-rose-500 transition-colors shadow-md active:scale-95"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
-                    <label className="flex flex-col items-center justify-center w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 dark:border-dark-border bg-slate-50 dark:bg-dark-elevated hover:bg-slate-100 dark:hover:bg-dark-card hover:border-brand-400 dark:hover:border-brand-500 transition-colors cursor-pointer group">
+                    <label className="flex flex-col items-center justify-center w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 dark:border-dark-border bg-slate-50 dark:bg-dark-elevated hover:bg-slate-100 dark:hover:bg-dark-card hover:border-emerald-400 dark:hover:border-emerald-500 transition-colors cursor-pointer group">
                       <div className="flex flex-col items-center justify-center">
-                        <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-brand-500 mb-2 transition-colors" />
+                        <UploadCloud className="w-8 h-8 text-slate-400 group-hover:text-emerald-500 mb-2 transition-colors" />
                         <p className="text-xs text-slate-600 dark:text-slate-300 font-semibold">Click to upload an image</p>
                         <p className="text-[10px] text-slate-400 mt-1">JPEG, PNG, WEBP up to 5MB</p>
                       </div>
@@ -478,38 +480,38 @@ export default function CreateActivityPage() {
                 </div>
               </div>
 
-              {/* Notice */}
+              {/* Safety & Review Notice */}
               <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-elevated border border-slate-200 dark:border-dark-border text-xs text-slate-700 dark:text-slate-300 space-y-1">
                 <span className="font-bold text-slate-900 dark:text-white block">
-                  Organizer Review & Safety
+                  Organizer Review &amp; Safety
                 </span>
                 <p className="text-xs leading-relaxed text-slate-600 dark:text-slate-300">
                   Interested companions will submit requests. You review their profile and approve before the private 1-on-1 or group chat is unlocked.
                 </p>
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-2 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-dark-border">
+              {/* Action Buttons with Bottom Safety Spacing */}
+              <div className="pt-3 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-dark-border flex-wrap">
                 <button
                   type="button"
                   onClick={handleBackToTags}
-                  className="px-4 py-2.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-elevated transition flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-dark-elevated transition flex items-center gap-1.5 active:scale-95 min-h-[44px]"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Tags</span>
                 </button>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 ml-auto">
                   <Link
                     href="/discover?mode=companion"
-                    className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-elevated transition"
+                    className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-dark-elevated transition active:scale-95 flex items-center justify-center min-h-[44px]"
                   >
                     Cancel
                   </Link>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-6 py-2.5 rounded-full text-xs font-extrabold text-emerald-950 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 disabled:opacity-60 transition shadow-xs flex items-center gap-1.5"
+                    className="px-6 py-2.5 rounded-full text-xs font-extrabold text-emerald-950 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 disabled:opacity-60 transition shadow-xs flex items-center gap-1.5 active:scale-95 min-h-[44px]"
                   >
                     <CheckCircle2 className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
                     <span>{isSubmitting ? "Publishing..." : "Publish Activity"}</span>

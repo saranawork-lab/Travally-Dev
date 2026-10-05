@@ -40,6 +40,10 @@ const cleanupStaleCalls = () => {
       if (now - (call.endedAt || call.createdAt) > 60000) {
         activeCalls.delete(id);
       }
+    } else if (call.status === "RINGING" && now - call.createdAt > 45000) {
+      // Ringing timeout (45s without answer) -> mark as ended/missed
+      call.status = "ENDED";
+      call.endedAt = now;
     } else if (now - call.createdAt > 300000) {
       activeCalls.delete(id);
     }
@@ -95,6 +99,22 @@ export const getActiveCallByConversation = (
       !found &&
       call.conversationId === conversationId &&
       (call.status === "RINGING" || call.status === "CONNECTED")
+    ) {
+      found = call;
+    }
+  });
+  return found;
+};
+
+export const getActiveCallForUser = (userId: string): ActiveCall | null => {
+  cleanupStaleCalls();
+  let found: ActiveCall | null = null;
+  activeCalls.forEach((call) => {
+    if (
+      !found &&
+      call.status === "RINGING" &&
+      call.callerId !== userId &&
+      (call.participantIds.length === 0 || call.participantIds.includes(userId))
     ) {
       found = call;
     }

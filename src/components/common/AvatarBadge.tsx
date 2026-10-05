@@ -126,14 +126,19 @@ export function AvatarBadge({
             src={actualUrl}
             alt={actualName || "Avatar"}
             className="w-full h-full object-cover select-none"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = 'none';
+              const nextSibling = (e.target as HTMLImageElement).nextElementSibling as HTMLElement;
+              if (nextSibling) nextSibling.style.display = 'flex';
+            }}
           />
-        ) : actualName ? (
-          <span className={`font-black text-emerald-800 dark:text-emerald-300 ${config.text} select-none`}>
-            {actualName.charAt(0).toUpperCase()}
-          </span>
-        ) : (
-          <User className="w-1/2 h-1/2 text-slate-400" />
-        )}
+        ) : null}
+        
+        <span 
+          className={`font-black text-emerald-800 dark:text-emerald-300 ${config.text} select-none ${actualUrl ? 'hidden' : 'flex'} items-center justify-center w-full h-full`}
+        >
+          {actualName ? actualName.charAt(0).toUpperCase() : <User className="w-1/2 h-1/2 text-slate-400" />}
+        </span>
       </div>
 
       {/* Ribbon / Pill Banner Under Avatar */}

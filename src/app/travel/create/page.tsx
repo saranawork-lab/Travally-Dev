@@ -169,8 +169,6 @@ export default function CreateTravelPlanPage() {
         throw new Error(data.error || "Failed to create travel plan");
       }
 
-      // Use window.location.href for immediate perceived performance (browser loading spinner)
-      // instead of silent Next.js router.push which waits for server rendering.
       window.location.href = `/travel/${data.travelPlan.id}`;
     } catch (err: any) {
       setError(err.message || "Failed to create travel plan");
@@ -180,59 +178,65 @@ export default function CreateTravelPlanPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 pb-28">
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 pb-36 sm:pb-28">
       <div>
         <Link
           href="/discover?mode=travel"
-          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-orange-500 dark:hover:text-orange-400 transition"
+          className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-300 hover:text-orange-500 dark:hover:text-orange-400 transition transform hover:-translate-x-0.5 active:scale-95"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-4 h-4 text-orange-500" />
           <span>Back to Travel Expeditions</span>
         </Link>
       </div>
 
-      <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 p-6 sm:p-8 shadow-xl relative overflow-hidden">
+      <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 p-5 sm:p-8 shadow-xl relative overflow-hidden transition-all duration-300">
+        {/* Progress Bar */}
+        <div className="w-full bg-slate-100 dark:bg-emerald-950/40 h-1.5 rounded-full overflow-hidden mb-6">
+          <div
+            className="bg-gradient-to-r from-orange-500 via-amber-400 to-orange-500 h-full transition-all duration-500 ease-out rounded-full shadow-xs"
+            style={{ width: step === 1 ? "50%" : "100%" }}
+          />
+        </div>
+
         {/* Step Progress Header */}
-        <div className="mb-6 pb-4 border-b border-slate-100 dark:border-emerald-950/60 flex items-center justify-between">
-          <div>
-            <div className="mb-3">
-              <ModeToggle 
-                currentMode="travel" 
+        <div className="mb-6 pb-4 border-b border-slate-100 dark:border-emerald-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="flex items-center gap-3 flex-wrap">
+              <ModeToggle
+                currentMode="travel"
                 onModeChange={(mode) => {
                   if (mode === "companion") window.location.href = "/activities/create";
-                }} 
-                size="sm" 
+                }}
+                size="sm"
               />
+              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-950/60 text-xs font-bold text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60 shadow-2xs">
+                Step {step} of 2
+              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Publish a Travel Plan
             </h1>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 mt-1 font-medium">
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 font-medium">
               {step === 1
                 ? "First, select your travel style tag."
                 : "Enter your destination, dates, and journey details."}
             </p>
           </div>
-
-          <div className="text-right">
-            <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-slate-100 dark:bg-[#16201b] text-xs font-bold text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-emerald-950/60">
-              Step {step} of 2
-            </span>
-          </div>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-900/60 text-xs font-semibold text-rose-800 dark:text-rose-200">
+          <div className="mb-6 p-4 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-300 dark:border-rose-900/60 text-xs font-semibold text-rose-800 dark:text-rose-200 animate-shake">
             {error}
           </div>
         )}
 
         {/* STEP 1: CHOOSE TRAVEL STYLE TAG */}
         {step === 1 && (
-          <div className="animate-slide-in-left space-y-6">
+          <div className="space-y-6 animate-fade-in">
             <div className="space-y-1">
-              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white">
-                Select Your Travel Style
+              <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Compass className="w-4 h-4 text-orange-500" />
+                <span>Select Your Travel Style</span>
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-400 font-medium">
                 Tap on any style tag below to slide forward to trip details.
@@ -247,31 +251,31 @@ export default function CreateTravelPlanPage() {
                     key={st.id}
                     type="button"
                     onClick={() => handleSelectStyle(st.id)}
-                    className={`p-4 rounded-2xl text-left border-2 transition-all flex items-start gap-3.5 group hover:shadow-md ${
+                    className={`p-4 rounded-2xl text-left border-2 transition-all duration-200 flex items-start gap-3.5 group transform active:scale-[0.98] hover:-translate-y-0.5 hover:shadow-md cursor-pointer ${
                       isSelected
-                        ? "bg-orange-50 dark:bg-orange-950/70 border-orange-500 text-slate-900 dark:text-white ring-2 ring-orange-500/30"
-                        : "bg-slate-50 dark:bg-[#16201b] border-slate-200 dark:border-emerald-950/70 text-slate-900 dark:text-slate-100 hover:border-orange-400 dark:hover:border-orange-500 hover:bg-white dark:hover:bg-[#18241f]"
+                        ? "bg-orange-50 dark:bg-orange-950/60 border-orange-500 text-slate-900 dark:text-white ring-2 ring-orange-500/30"
+                        : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/60 text-slate-900 dark:text-slate-100 hover:border-orange-400 dark:hover:border-orange-500 hover:bg-white dark:hover:bg-[#131c18]"
                     }`}
                   >
-                    <div className="p-2.5 rounded-xl bg-white dark:bg-[#1c2822] shadow-sm border border-slate-200 dark:border-emerald-950/80 shrink-0 group-hover:scale-110 transition-transform">
+                    <div className="p-2.5 rounded-xl bg-white dark:bg-[#18241f] shadow-xs border border-slate-200 dark:border-emerald-950/60 shrink-0 group-hover:scale-110 transition-transform">
                       {st.icon}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between gap-1">
                         <span className="block text-sm font-bold text-slate-900 dark:text-white">
                           {st.label}
                         </span>
                         {st.popular && (
-                          <span className="text-[10px] font-bold text-orange-800 dark:text-orange-200 bg-orange-100 dark:bg-orange-900/60 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold text-orange-700 dark:text-orange-300 bg-orange-100 dark:bg-orange-950/80 px-2 py-0.5 rounded-full shrink-0">
                             Popular
                           </span>
                         )}
                       </div>
-                      <span className="block text-xs text-slate-600 dark:text-slate-300 mt-1 line-clamp-2 font-medium">
+                      <span className="block text-xs text-slate-600 dark:text-slate-400 mt-1 line-clamp-2 font-medium leading-relaxed">
                         {st.desc}
                       </span>
                     </div>
-                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-orange-500 dark:group-hover:text-orange-400 self-center shrink-0 group-hover:translate-x-1 transition-all" />
+                    <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-orange-500 self-center shrink-0 group-hover:translate-x-1 transition-all" />
                   </button>
                 );
               })}
@@ -281,15 +285,15 @@ export default function CreateTravelPlanPage() {
 
         {/* STEP 2: TRIP DETAILS */}
         {step === 2 && (
-          <div className="animate-slide-in-right space-y-6">
-            {/* Active Style Bar & Back Button */}
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-orange-50 dark:bg-orange-950/60 border border-orange-200 dark:border-orange-800/60">
+          <div className="space-y-6 animate-fade-in">
+            {/* Active Style Bar */}
+            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200 dark:border-orange-900/50 flex-wrap gap-2">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-white dark:bg-[#16201b] shadow-xs">
                   {selectedStyleObj?.icon}
                 </div>
                 <div>
-                  <span className="text-[11px] font-bold text-orange-800 dark:text-orange-300 uppercase tracking-wider block">
+                  <span className="text-[10px] font-bold text-orange-800 dark:text-orange-300 uppercase tracking-wider block">
                     Selected Travel Style
                   </span>
                   <span className="text-sm font-extrabold text-slate-900 dark:text-white">
@@ -300,7 +304,7 @@ export default function CreateTravelPlanPage() {
               <button
                 type="button"
                 onClick={handleBackToStyles}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-orange-800 dark:text-orange-300 bg-white dark:bg-[#16201b] border border-orange-300 dark:border-orange-700 hover:bg-orange-100 dark:hover:bg-[#1c2822] transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-orange-700 dark:text-orange-300 bg-white dark:bg-[#16201b] border border-orange-300 dark:border-orange-800 hover:bg-orange-100 dark:hover:bg-[#1b2721] transition shadow-2xs active:scale-95 min-h-[36px]"
               >
                 <ArrowLeft className="w-3.5 h-3.5" />
                 <span>Change Style</span>
@@ -312,29 +316,29 @@ export default function CreateTravelPlanPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Destination City / Region *
+                    Destination City or Region *
                   </label>
                   <input
                     required
                     type="text"
-                    placeholder="e.g. Tokyo & Kyoto, Japan"
+                    placeholder="e.g. Kasol & Parvati Valley, Himachal"
                     value={formData.destination}
                     onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-4 py-3 text-xs text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Departure City *
+                    Starting / Departure City *
                   </label>
                   <input
                     required
                     type="text"
-                    placeholder="e.g. San Francisco or Flexible"
+                    placeholder="e.g. Chandigarh or New Delhi"
                     value={formData.departureCity}
                     onChange={(e) => setFormData({ ...formData, departureCity: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-4 py-3 text-xs text-slate-900 dark:text-white font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
                   />
                 </div>
               </div>
@@ -343,7 +347,7 @@ export default function CreateTravelPlanPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Travel Start Date *
+                    Start Date *
                   </label>
                   <input
                     required
@@ -351,13 +355,13 @@ export default function CreateTravelPlanPage() {
                     min={new Date().toISOString().split("T")[0]}
                     value={formData.startDate}
                     onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Travel End Date *
+                    End Date *
                   </label>
                   <input
                     required
@@ -365,50 +369,74 @@ export default function CreateTravelPlanPage() {
                     min={formData.startDate || new Date().toISOString().split("T")[0]}
                     value={formData.endDate}
                     onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
                   />
                 </div>
               </div>
 
-              {/* Budget & Accommodation */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {/* Budget Range */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Min Budget (₹ INR)
+                    Estimated Min Budget per Person (₹)
                   </label>
                   <input
                     type="number"
+                    step="500"
+                    placeholder="8000"
                     value={formData.budgetMin}
                     onChange={(e) => setFormData({ ...formData, budgetMin: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Max Budget (₹ INR)
+                    Estimated Max Budget per Person (₹)
                   </label>
                   <input
                     type="number"
+                    step="500"
+                    placeholder="15000"
                     value={formData.budgetMax}
                     onChange={(e) => setFormData({ ...formData, budgetMax: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
                   />
                 </div>
+              </div>
 
+              {/* Preferences */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                    Accommodation
+                    Accommodation Preference
                   </label>
                   <select
                     value={formData.accommodationPreference}
                     onChange={(e) => setFormData({ ...formData, accommodationPreference: e.target.value })}
-                    className="w-full rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
                   >
-                    <option value="HOSTEL">Zostel / Backpackers Hostels</option>
-                    <option value="HOMESTAY">Local Homestays</option>
-                    <option value="HOTEL">Boutique Hotels & Resorts</option>
-                    <option value="FLEXIBLE">Flexible / Camping</option>
+                    <option value="HOSTEL">Backpacker Hostel / Homestay</option>
+                    <option value="HOTEL">3-Star Hotel / Resort</option>
+                    <option value="LUXURY">Boutique Stay / Villa</option>
+                    <option value="FLEXIBLE">Flexible / Decide Together</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
+                    Transit Preference
+                  </label>
+                  <select
+                    value={formData.transportPreference}
+                    onChange={(e) => setFormData({ ...formData, transportPreference: e.target.value })}
+                    className="w-full rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500 min-h-[44px]"
+                  >
+                    <option value="TRAIN">Train Journey</option>
+                    <option value="FLIGHT">Flight</option>
+                    <option value="BUS">Sleeper Bus / Volvo</option>
+                    <option value="SELF_DRIVE">Self Drive Car / Bike</option>
+                    <option value="FLEXIBLE">Flexible</option>
                   </select>
                 </div>
               </div>
@@ -416,12 +444,12 @@ export default function CreateTravelPlanPage() {
               {/* Planned Attractions */}
               <div>
                 <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                  Planned Highlights & Attractions
+                  Planned Attractions &amp; Key Stops
                 </label>
                 <div className="flex gap-2 mb-2">
                   <input
                     type="text"
-                    placeholder="Add an attraction (e.g. Kasol Chalal trail, Hampi ruins, Munnar tea estate)"
+                    placeholder="Add a landmark or trail stop..."
                     value={attractionInput}
                     onChange={(e) => setAttractionInput(e.target.value)}
                     onKeyDown={(e) => {
@@ -430,75 +458,29 @@ export default function CreateTravelPlanPage() {
                         addAttraction();
                       }
                     }}
-                    className="flex-1 rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
+                    className="flex-1 rounded-2xl border border-slate-300 dark:border-emerald-950/80 bg-white dark:bg-[#16201b] px-3.5 py-2 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/20 min-h-[44px]"
                   />
                   <button
                     type="button"
                     onClick={addAttraction}
-                    className="px-4 py-2 rounded-2xl text-xs font-bold bg-slate-100 dark:bg-[#18241f] text-slate-900 dark:text-slate-100 hover:bg-slate-200 transition"
+                    className="px-4 py-2 rounded-2xl text-xs font-bold bg-orange-100 dark:bg-orange-950/60 text-orange-800 dark:text-orange-300 hover:bg-orange-200 transition min-h-[44px] shrink-0 active:scale-95"
                   >
                     Add
                   </button>
                 </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {attractions.map((att, i) => (
+                <div className="flex flex-wrap gap-2">
+                  {attractions.map((att, idx) => (
                     <span
-                      key={i}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-slate-100 dark:bg-[#16201b] text-xs font-medium text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-emerald-950/70"
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-50 dark:bg-orange-950/40 text-orange-900 dark:text-orange-200 text-xs font-semibold border border-orange-200 dark:border-orange-800/60 shadow-2xs"
                     >
                       <span>{att}</span>
                       <button
                         type="button"
-                        onClick={() => removeAttraction(i)}
-                        className="text-slate-400 hover:text-rose-500"
+                        onClick={() => removeAttraction(idx)}
+                        className="hover:text-rose-500 transition"
                       >
-                        <X className="w-3 h-3" />
-                      </button>
-                    </span>
-                  ))}
-                </div>
-              </div>
-
-              {/* Trip Passions & Interests */}
-              <div>
-                <label className="block text-xs font-bold text-slate-900 dark:text-slate-100 mb-1.5">
-                  Trip Passions & Common Interests
-                </label>
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Add an interest (e.g. Hiking, Museums, Food tours)"
-                    value={interestInput}
-                    onChange={(e) => setInterestInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addInterest();
-                      }
-                    }}
-                    className="flex-1 rounded-2xl border border-slate-200 dark:border-emerald-950/70 bg-white dark:bg-[#16201b] px-3.5 py-2.5 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-orange-500/25 focus:border-orange-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={addInterest}
-                    className="px-4 py-2 rounded-2xl text-xs font-bold bg-slate-100 dark:bg-[#18241f] text-slate-900 dark:text-slate-100 hover:bg-slate-200 transition"
-                  >
-                    Add
-                  </button>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {interests.map((it, i) => (
-                    <span
-                      key={i}
-                      className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-orange-50 dark:bg-orange-950/50 text-xs font-medium text-orange-800 dark:text-orange-200 border border-orange-200 dark:border-orange-800/60"
-                    >
-                      <span>{it}</span>
-                      <button
-                        type="button"
-                        onClick={() => removeInterest(i)}
-                        className="text-orange-400 hover:text-rose-500"
-                      >
-                        <X className="w-3 h-3" />
+                        <X className="w-3.5 h-3.5" />
                       </button>
                     </span>
                   ))}
@@ -506,30 +488,30 @@ export default function CreateTravelPlanPage() {
               </div>
 
               {/* Action Buttons */}
-              <div className="pt-4 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-emerald-950/60">
+              <div className="pt-3 flex items-center justify-between gap-3 border-t border-slate-100 dark:border-emerald-950/60 flex-wrap">
                 <button
                   type="button"
                   onClick={handleBackToStyles}
-                  className="px-4 py-2.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#16201b] transition flex items-center gap-1.5"
+                  className="px-4 py-2.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#16201b] transition flex items-center gap-1.5 active:scale-95 min-h-[44px]"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
                   <span>Back to Styles</span>
                 </button>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 ml-auto">
                   <Link
                     href="/discover?mode=travel"
-                    className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#16201b] transition"
+                    className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#16201b] transition active:scale-95 flex items-center justify-center min-h-[44px]"
                   >
                     Cancel
                   </Link>
                   <button
                     type="submit"
                     disabled={isSubmitting}
-                    className="px-6 py-2.5 rounded-full text-xs font-extrabold text-orange-950 dark:text-orange-200 bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-950/70 hover:from-orange-200 hover:to-amber-100 border border-orange-300/80 dark:border-orange-800/60 disabled:opacity-60 transition shadow-xs flex items-center gap-1.5"
+                    className="px-6 py-2.5 rounded-full text-xs font-extrabold text-orange-950 dark:text-orange-200 bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-950/70 hover:from-orange-200 hover:to-amber-100 border border-orange-300/80 dark:border-orange-800/60 disabled:opacity-60 transition shadow-xs flex items-center gap-1.5 active:scale-95 min-h-[44px]"
                   >
-                    <CheckCircle2 className="w-4 h-4 text-orange-700 dark:text-orange-300" />
-                    <span>{isSubmitting ? "Publishing..." : "Publish Travel Plan"}</span>
+                    <CheckCircle2 className="w-4 h-4 text-orange-600 dark:text-orange-400" />
+                    <span>{isSubmitting ? "Publishing..." : "Publish Expedition"}</span>
                   </button>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import bcrypt from "bcryptjs";
-import { signToken, AuthService } from "@/lib/auth";
+import { signToken, AuthService, createActiveSession } from "@/lib/auth";
 import { evaluatePassword, getPasswordErrorMessage } from "@/lib/passwordValidation";
 import { extractDigits } from "@/lib/userAccountLookup";
 
@@ -173,10 +173,12 @@ export async function POST(req: NextRequest) {
       include: { profile: true },
     });
 
+    const sessionToken = await createActiveSession(newUser.id);
     const token = signToken({
       userId: newUser.id,
       email: newUser.email,
       role: newUser.role,
+      sessionToken,
     });
 
     const response = NextResponse.json({

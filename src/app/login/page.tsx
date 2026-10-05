@@ -22,6 +22,10 @@ function LoginForm() {
     if (urlError) {
       setError(decodeURIComponent(urlError));
     }
+    const reason = searchParams?.get("reason");
+    if (reason === "session_expired") {
+      setError("Logged out: Your account was logged in on another browser or device.");
+    }
   }, [searchParams]);
 
   // Authenticate user with given credentials
