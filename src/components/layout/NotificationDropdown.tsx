@@ -227,5 +227,4 @@ export const NotificationDropdown: React.FC = () => {
   );
 };
 
-export default NotificationDropdown;
 

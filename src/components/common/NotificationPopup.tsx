@@ -147,4 +147,3 @@ export const NotificationPopup: React.FC<NotificationPopupProps> = ({
   );
 };
 
-export default NotificationPopup;

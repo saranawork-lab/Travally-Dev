@@ -215,4 +215,3 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
   );
 };
 
-export default JoinRequestModal;

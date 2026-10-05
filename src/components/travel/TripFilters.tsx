@@ -20,7 +20,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-export const TRAVEL_STYLES = [
+const TRAVEL_STYLES = [
   { id: "ALL", label: "All Styles", icon: Compass },
   { id: "CULTURAL", label: "Cultural & Heritage", icon: Landmark },
   { id: "SLOW_TRAVEL", label: "Slow Travel", icon: Footprints },
@@ -30,7 +30,7 @@ export const TRAVEL_STYLES = [
   { id: "LUXURY", label: "Boutique & Luxury", icon: Gem },
 ];
 
-export const TRIP_SORT_OPTIONS = [
+const TRIP_SORT_OPTIONS = [
   { id: "UPCOMING", label: "Departure Soonest", icon: Calendar },
   { id: "SPOTS_LEFT", label: "Most Spots Available", icon: Users },
   { id: "NEWEST", label: "Recently Posted", icon: Sparkles },
@@ -309,4 +309,3 @@ export const TripFilters: React.FC<TripFiltersProps> = ({
   );
 };
 
-export default TripFilters;

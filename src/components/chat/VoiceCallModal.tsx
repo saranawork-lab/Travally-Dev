@@ -724,4 +724,3 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
   );
 };
 
-export default VoiceCallModal;

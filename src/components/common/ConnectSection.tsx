@@ -288,4 +288,3 @@ export const ConnectSection: React.FC = () => {
   );
 };
 
-export default ConnectSection;

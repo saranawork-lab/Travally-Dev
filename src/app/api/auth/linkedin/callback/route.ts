@@ -218,7 +218,7 @@ export async function GET(req: NextRequest) {
       role: user.role,
     });
 
-    const targetPath = isProfileComplete ? "/tracking" : "/onboarding";
+    const targetPath = isProfileComplete ? "/discover" : "/onboarding";
     const successRedirect = new URL(targetPath, requestOrigin);
     if (isProfileComplete) {
       successRedirect.searchParams.set("verified", "linkedin");

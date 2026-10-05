@@ -22,7 +22,7 @@ export function signToken(payload: { userId: string; email: string; role: string
   return jwt.sign(payload, JWT_SECRET, { expiresIn: "90d" });
 }
 
-export function verifyToken(token: string): { userId: string; email: string; role: string } | null {
+function verifyToken(token: string): { userId: string; email: string; role: string } | null {
   try {
     return jwt.verify(token, JWT_SECRET) as { userId: string; email: string; role: string };
   } catch {

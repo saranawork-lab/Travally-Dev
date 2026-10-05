@@ -370,4 +370,3 @@ export const TripCard: React.FC<TripCardProps> = ({
   );
 };
 
-export default TripCard;

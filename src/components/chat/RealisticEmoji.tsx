@@ -200,4 +200,3 @@ export const RealisticEmoji: React.FC<RealisticEmojiProps> = ({
   );
 };
 
-export default RealisticEmoji;

@@ -11,7 +11,7 @@ export function extractDigits(phone: string): string {
  * Checks if a given phone number is already registered to another user.
  * Matches against the last 10 digits to accommodate country code variations (+91, 0, etc.).
  */
-export async function isPhoneNumberRegistered(
+async function isPhoneNumberRegistered(
   phoneNumber: string,
   excludeUserId?: string
 ): Promise<{ isTaken: boolean; existingUserId?: string }> {

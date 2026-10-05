@@ -12,7 +12,7 @@
  *   - Other members (e.g. 101, 142, 205) have normal member ranking without the exclusive milestone badge.
  */
 
-export type BadgeTier = "MEMBER";
+type BadgeTier = "MEMBER";
 
 export interface UserBadge {
   hasBadge: boolean;

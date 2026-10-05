@@ -43,7 +43,7 @@ function LoginForm() {
       }
 
       // Hard redirect to ensure browser reloads session cookies cleanly
-      const targetUrl = data?.redirectUrl || (data?.user?.role === "ADMIN" ? "/admin" : "/tracking");
+      const targetUrl = data?.redirectUrl || (data?.user?.role === "ADMIN" ? "/admin" : "/discover");
       window.location.href = targetUrl;
     } catch (err: any) {
       setError(err.message || "Failed to log in");

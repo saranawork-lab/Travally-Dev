@@ -343,4 +343,3 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   );
 };
 
-export default ActivityCard;

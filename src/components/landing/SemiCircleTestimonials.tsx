@@ -10,7 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 
-export interface TestimonialItem {
+interface TestimonialItem {
   name: string;
   avatarUrl?: string;
   city: string;

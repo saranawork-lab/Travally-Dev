@@ -164,8 +164,8 @@ export async function GET(req: NextRequest) {
       role: user.role,
     });
 
-    // If profile is already complete, go straight to tracking; otherwise ask remaining data in /onboarding
-    const targetPath = isProfileComplete ? "/tracking" : "/onboarding";
+    // If profile is already complete, go straight to discover; otherwise ask remaining data in /onboarding
+    const targetPath = isProfileComplete ? "/discover" : "/onboarding";
     const redirectUrl = new URL(targetPath, requestOrigin);
     if (!isProfileComplete) {
       redirectUrl.searchParams.set("google", "true");

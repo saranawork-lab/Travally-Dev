@@ -186,4 +186,3 @@ export const MessageStatusBeacon: React.FC<MessageStatusBeaconProps> = ({
   );
 };
 
-export default MessageStatusBeacon;

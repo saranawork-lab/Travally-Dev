@@ -1,7 +1,7 @@
 import { ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
-export function cn(...inputs: ClassValue[]) {
+function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
@@ -43,7 +43,7 @@ export function formatTimeAgo(date: Date | string): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function isActivityUpcoming(date: Date | string, startTime: string): boolean {
+function isActivityUpcoming(date: Date | string, startTime: string): boolean {
   const d = typeof date === "string" ? new Date(date) : new Date(date);
   if (isNaN(d.getTime())) return false;
   const [hours, minutes] = (startTime || "00:00").split(":").map(Number);

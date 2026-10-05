@@ -20,7 +20,7 @@ import {
   RotateCcw,
 } from "lucide-react";
 
-export const CATEGORIES = [
+const CATEGORIES = [
   { id: "ALL", label: "All Activities", icon: Sparkles },
   { id: "MOVIES", label: "Movies & Cinema", icon: Film },
   { id: "FOOD_CAFES", label: "Street Food & Cafes", icon: Coffee },
@@ -31,7 +31,7 @@ export const CATEGORIES = [
   { id: "SHOPPING", label: "Shopping & Bazaars", icon: ShoppingBag },
 ];
 
-export const SORT_OPTIONS = [
+const SORT_OPTIONS = [
   { id: "UPCOMING", label: "Upcoming Soonest", icon: Calendar },
   { id: "SPOTS_LEFT", label: "Most Spots Available", icon: Users },
   { id: "NEWEST", label: "Recently Added", icon: Sparkles },
@@ -312,4 +312,3 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
   );
 };
 
-export default ActivityFilters;

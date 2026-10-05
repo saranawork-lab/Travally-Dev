@@ -115,4 +115,3 @@ export const LiquidWaveButton: React.FC<LiquidWaveButtonProps> = ({
   );
 };
 
-export default LiquidWaveButton;

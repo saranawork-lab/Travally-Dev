@@ -4,7 +4,7 @@
  * Each category tag has ONE specific assigned image visible to all users.
  */
 
-export const CATEGORY_ASSIGNED_IMAGES: Record<string, string> = {
+const CATEGORY_ASSIGNED_IMAGES: Record<string, string> = {
   MOVIES: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=900&auto=format&fit=crop&q=80",
   FOOD_CAFES: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=900&auto=format&fit=crop&q=80",
   WALKING: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=900&auto=format&fit=crop&q=80",
@@ -15,7 +15,7 @@ export const CATEGORY_ASSIGNED_IMAGES: Record<string, string> = {
   OTHER: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=900&auto=format&fit=crop&q=80",
 };
 
-export const CATEGORY_META: Record<
+const CATEGORY_META: Record<
   string,
   {
     label: string;

@@ -193,7 +193,7 @@ export async function POST(req: NextRequest) {
         isVerified: user.profile?.isVerified,
         verificationStatus: user.profile?.verificationStatus,
       },
-      redirectUrl: user.role === "ADMIN" ? "/admin" : "/tracking",
+      redirectUrl: user.role === "ADMIN" ? "/admin" : "/discover",
     });
 
     response.cookies.set({

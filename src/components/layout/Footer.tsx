@@ -21,7 +21,7 @@ interface FooterProps {
   initialUser?: any;
 }
 
-export const Footer: React.FC<FooterProps> = () => {
+const Footer: React.FC<FooterProps> = () => {
   const pathname = usePathname();
   const { currentUser } = useAuth();
 

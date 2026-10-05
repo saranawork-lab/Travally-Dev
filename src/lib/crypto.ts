@@ -89,7 +89,7 @@ function base64ToBuffer(base64: string): Uint8Array {
   return bytes;
 }
 
-export interface EncryptedPayload {
+interface EncryptedPayload {
   e2ee: true;
   v: number;
   iv: string; // base64

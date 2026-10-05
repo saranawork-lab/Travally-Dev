@@ -61,4 +61,3 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   );
 };
 
-export default ModeToggle;

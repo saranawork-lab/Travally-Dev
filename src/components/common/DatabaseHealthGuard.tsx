@@ -118,4 +118,3 @@ export const DatabaseHealthGuard: React.FC<DatabaseHealthGuardProps> = ({
   );
 };
 
-export default DatabaseHealthGuard;

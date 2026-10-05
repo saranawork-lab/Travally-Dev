@@ -26,7 +26,7 @@ interface BottomNavProps {
   initialUser?: any;
 }
 
-export const BottomNav: React.FC<BottomNavProps> = () => {
+const BottomNav: React.FC<BottomNavProps> = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, logout } = useAuth();

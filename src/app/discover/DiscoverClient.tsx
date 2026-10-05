@@ -8,7 +8,7 @@ import { ActivityFilters } from "@/components/activities/ActivityFilters";
 import { TripCard } from "@/components/travel/TripCard";
 import { TripFilters } from "@/components/travel/TripFilters";
 import { DatabaseHealthGuard } from "@/components/common/DatabaseHealthGuard";
-import { PlusCircle, Sparkles } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import Link from "next/link";
 
 interface DiscoverClientProps {
@@ -355,16 +355,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
             )}
           </section>
         )}
-        {/* Subtle Live Tracking Button */}
-        <div className="flex justify-center mt-12 pb-8">
-          <Link 
-            href="/tracking" 
-            className="text-[10px] text-slate-400 dark:text-slate-600 hover:text-slate-600 dark:hover:text-slate-400 transition-colors duration-300 flex items-center gap-1.5 opacity-50 hover:opacity-100"
-          >
-            <Sparkles className="w-3 h-3" />
-            <span>View Live Tracking</span>
-          </Link>
-        </div>
+
       </div>
     </DatabaseHealthGuard>
   );

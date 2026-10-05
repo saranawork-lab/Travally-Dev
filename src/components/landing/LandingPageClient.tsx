@@ -31,7 +31,7 @@ import {
   Coffee,
 } from "lucide-react";
 import { ConnectSection } from "@/components/common/ConnectSection";
-import { FirstComePassNotification } from "./FirstComePassNotification";
+
 
 /**
  * 3D Tilt Component with Interactive Mouse Perspective & High-Performance Mobile Mode
@@ -123,7 +123,7 @@ function useScrollReveal() {
   return { ref, isVisible: true };
 }
 
-export function LandingPageClient() {
+function LandingPageClient() {
   const [activeHeroBg, setActiveHeroBg] = useState(0);
 
   const heroDestinations = [
@@ -173,14 +173,7 @@ export function LandingPageClient() {
     return () => clearInterval(timer);
   }, []);
 
-  // Limited seats popup notification every time a user enters the landing page
-  const [showLimitedSeatsPopup, setShowLimitedSeatsPopup] = useState(false);
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowLimitedSeatsPopup(true);
-    }, 600);
-    return () => clearTimeout(timer);
-  }, []);
+
 
   const companionReveal = useScrollReveal();
   const travelReveal = useScrollReveal();
@@ -314,11 +307,7 @@ export function LandingPageClient() {
   return (
     <div className="relative min-h-screen bg-white dark:bg-[#090d0b] text-slate-900 dark:text-slate-100 transition-colors duration-300 font-sans overflow-x-clip">
       {/* Limited Seats Popup Notification Every Time User Enters Landing Page */}
-      <FirstComePassNotification
-        show={showLimitedSeatsPopup}
-        duration={15000}
-        onClose={() => setShowLimitedSeatsPopup(false)}
-      />
+      {/* Limited Seats Popup Notification Removed */}
 
 
       {/* Background Gradient Meshes for Lower Sections */}

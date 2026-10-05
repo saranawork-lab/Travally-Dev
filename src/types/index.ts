@@ -8,7 +8,7 @@
 
 // ── User & Profile ──────────────────────────────────────────────
 
-export interface SessionUser {
+interface SessionUser {
   id: string;
   email: string;
   role: string;
@@ -19,7 +19,7 @@ export interface SessionUser {
   city: string | null;
 }
 
-export interface UserProfile {
+interface UserProfile {
   displayName: string;
   avatarUrl?: string | null;
   bio?: string | null;
@@ -37,7 +37,7 @@ export interface UserProfile {
 
 // ── Activity ────────────────────────────────────────────────────
 
-export interface ActivityOrganizer {
+interface ActivityOrganizer {
   id: string;
   email: string;
   profile?: UserProfile | null;
@@ -67,7 +67,7 @@ export interface Activity {
 
 // ── Travel Plan ─────────────────────────────────────────────────
 
-export interface TravelPlan {
+interface TravelPlan {
   id: string;
   destination: string;
   departureCity: string;
@@ -92,12 +92,12 @@ export interface TravelPlan {
 
 // ── Join Request ────────────────────────────────────────────────
 
-export interface JoinRequestSummary {
+interface JoinRequestSummary {
   id: string;
   status: string;
 }
 
-export interface JoinRequestFull extends JoinRequestSummary {
+interface JoinRequestFull extends JoinRequestSummary {
   type: string;
   introMessage?: string | null;
   createdAt: string | Date;
@@ -113,14 +113,14 @@ export interface JoinRequestFull extends JoinRequestSummary {
 
 // ── Compatibility Scoring ───────────────────────────────────────
 
-export interface TravelCompatibilityFactor {
+interface TravelCompatibilityFactor {
   name: string;
   weight: number;
   score: number;
   detail: string;
 }
 
-export interface CompatibilityResult {
+interface CompatibilityResult {
   overallScore: number;
   matchLevel: "High" | "Good" | "Moderate" | "Exploratory";
   badgeColor: string;
@@ -128,7 +128,7 @@ export interface CompatibilityResult {
   factors: TravelCompatibilityFactor[];
 }
 
-export interface UserTravelProfile {
+interface UserTravelProfile {
   destinationPreferences?: string[];
   departureCity?: string;
   travelDates?: { start: Date; end: Date };
@@ -137,7 +137,7 @@ export interface UserTravelProfile {
   budgetRange?: { min: number; max: number };
 }
 
-export interface TripTarget {
+interface TripTarget {
   destination: string;
   departureCity: string;
   startDate: Date | string;
@@ -150,7 +150,7 @@ export interface TripTarget {
 
 // ── Chat & Messaging ───────────────────────────────────────────
 
-export interface Conversation {
+interface Conversation {
   id: string;
   type: string;
   title: string;
@@ -159,7 +159,7 @@ export interface Conversation {
   messages?: ChatMessage[];
 }
 
-export interface ChatMessage {
+interface ChatMessage {
   id: string;
   content: string;
   senderId: string;
@@ -172,7 +172,7 @@ export interface ChatMessage {
 
 // ── Notification ────────────────────────────────────────────────
 
-export interface AppNotification {
+interface AppNotification {
   id: string;
   type: string;
   title: string;
@@ -184,7 +184,7 @@ export interface AppNotification {
 
 // ── Safety ──────────────────────────────────────────────────────
 
-export interface BlockRecord {
+interface BlockRecord {
   id: string;
   blockerId: string;
   blockedId: string;
@@ -192,7 +192,7 @@ export interface BlockRecord {
   createdAt: string | Date;
 }
 
-export interface Report {
+interface Report {
   id: string;
   reporterId: string;
   targetType: "USER" | "ACTIVITY" | "TRAVEL";
@@ -214,7 +214,7 @@ export type ActivityCategory =
   | "CITY_EXPLORATION"
   | "OTHER";
 
-export type TravelStyle =
+type TravelStyle =
   | "BACKPACKING"
   | "CULTURAL"
   | "SLOW_TRAVEL"
@@ -223,13 +223,13 @@ export type TravelStyle =
   | "ROAD_TRIP"
   | "RELAXATION";
 
-export type RequestStatus =
+type RequestStatus =
   | "PENDING"
   | "ACCEPTED"
   | "DECLINED"
   | "CANCELLED"
   | "EXPIRED";
 
-export type ActivityStatus = "OPEN" | "FULL" | "CANCELLED" | "EXPIRED";
+type ActivityStatus = "OPEN" | "FULL" | "CANCELLED" | "EXPIRED";
 
-export type UserRole = "USER" | "ADMIN";
+type UserRole = "USER" | "ADMIN";

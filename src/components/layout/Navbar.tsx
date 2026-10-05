@@ -17,7 +17,7 @@ interface NavbarProps {
   initialUser?: any;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
+const Navbar: React.FC<NavbarProps> = ({
   initialMode = "companion",
   onModeChange,
   initialUser = null,
@@ -190,8 +190,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           ) : (
             <div className="flex items-center gap-1.5 sm:gap-3">
               {currentUser && pathname === "/" ? (
-                <LiquidWaveButton href="/tracking">
-                  Join Free
+                <LiquidWaveButton href="/discover">
+                  Discover
                 </LiquidWaveButton>
               ) : pathname === "/login" ? (
                 <LiquidWaveButton href="/register" size="sm">

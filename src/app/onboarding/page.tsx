@@ -374,7 +374,7 @@ function OnboardingForm() {
 
       setSuccessNotification(true);
       setTimeout(() => {
-        window.location.href = "/tracking?registered=true";
+        window.location.href = "/discover?registered=true";
       }, 1200);
     } catch (err: any) {
       setError(err.message || "An error occurred while saving your details");

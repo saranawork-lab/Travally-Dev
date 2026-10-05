@@ -1,6 +1,6 @@
 import db from "@/lib/db";
 
-export const CHAT_RETENTION_DAYS = 7;
+const CHAT_RETENTION_DAYS = 7;
 const SEVEN_DAYS_MS = CHAT_RETENTION_DAYS * 24 * 60 * 60 * 1000;
 
 export interface ChatRetentionInfo {

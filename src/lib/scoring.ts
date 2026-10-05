@@ -1,6 +1,6 @@
 import { safeJsonParse } from "./utils";
 
-export interface TravelCompatibilityFactor {
+interface TravelCompatibilityFactor {
   name: string;
   weight: number; // e.g. 0.35
   score: number;  // 0 to 100

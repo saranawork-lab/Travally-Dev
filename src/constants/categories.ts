@@ -30,7 +30,7 @@ export interface CategoryConfig {
  * Uniform assigned images per category — every user sees the same image
  * for the same category tag across the entire platform.
  */
-export const CATEGORY_IMAGES: Record<string, string> = {
+const CATEGORY_IMAGES: Record<string, string> = {
   MOVIES: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=900&auto=format&fit=crop&q=80",
   FOOD_CAFES: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=900&auto=format&fit=crop&q=80",
   WALKING: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=900&auto=format&fit=crop&q=80",
@@ -112,7 +112,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
 };
 
 /** All valid category keys */
-export const CATEGORY_KEYS: ActivityCategory[] = [
+const CATEGORY_KEYS: ActivityCategory[] = [
   "MOVIES",
   "FOOD_CAFES",
   "WALKING",
@@ -124,7 +124,7 @@ export const CATEGORY_KEYS: ActivityCategory[] = [
 ];
 
 /** Travel style display labels */
-export const TRAVEL_STYLES: Record<string, string> = {
+const TRAVEL_STYLES: Record<string, string> = {
   BACKPACKING: "Backpacking",
   CULTURAL: "Cultural",
   SLOW_TRAVEL: "Slow Travel",
@@ -135,14 +135,14 @@ export const TRAVEL_STYLES: Record<string, string> = {
 };
 
 /** Gender preference options */
-export const GENDER_PREFERENCES: Record<string, string> = {
+const GENDER_PREFERENCES: Record<string, string> = {
   ANY: "Open to All",
   FEMALE_ONLY: "Women Only",
   MALE_ONLY: "Men Only",
 };
 
 /** App-wide configuration */
-export const APP_CONFIG = {
+const APP_CONFIG = {
   name: "Travally",
   tagline: "Social Travel Companion & Activity Discovery",
   supportEmail: "support@travally.app",

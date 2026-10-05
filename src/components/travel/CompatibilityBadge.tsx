@@ -96,4 +96,3 @@ export const CompatibilityBadge: React.FC<CompatibilityBadgeProps> = ({
   );
 };
 
-export default CompatibilityBadge;

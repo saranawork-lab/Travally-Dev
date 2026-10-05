@@ -25,7 +25,7 @@ interface DesktopSidebarProps {
   initialUser?: any;
 }
 
-export const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
+const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, logout } = useAuth();
