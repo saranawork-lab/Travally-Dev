@@ -26,7 +26,6 @@ import {
   ChevronDown,
   CornerDownRight,
   ExternalLink,
-  Sparkles,
   PanelLeftOpen,
   PanelLeftClose,
   Lock,

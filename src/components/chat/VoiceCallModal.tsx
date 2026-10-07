@@ -14,7 +14,6 @@ import {
   ShieldCheck,
   Radio,
   AlertCircle,
-  Sparkles,
   MapPin,
 } from "lucide-react";
 import { ringtone } from "@/lib/ringtone";

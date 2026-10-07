@@ -106,7 +106,12 @@ export const getActiveCallByConversation = (
   return found;
 };
 
+export const hasAnyActiveCalls = (): boolean => {
+  return activeCalls.size > 0;
+};
+
 export const getActiveCallForUser = (userId: string): ActiveCall | null => {
+  if (activeCalls.size === 0) return null;
   cleanupStaleCalls();
   let found: ActiveCall | null = null;
   activeCalls.forEach((call) => {

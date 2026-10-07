@@ -11,7 +11,8 @@ import {
   Shield,
   ArrowLeft,
   ArrowRight,
-  Sparkles,
+  Layers,
+  Gamepad2,
   Film,
   Coffee,
   Footprints,
@@ -89,7 +90,7 @@ const CATEGORIES: CategoryOption[] = [
     id: "OTHER",
     label: "Other Hangouts",
     tag: "Board Games & Hobbies",
-    icon: <Sparkles className="w-5 h-5 text-orange-500" />,
+    icon: <Gamepad2 className="w-5 h-5 text-orange-500" />,
     hint: "Board game cafes, casual meetups, or any other shared interest",
   },
 ];
@@ -244,7 +245,7 @@ export default function CreateActivityPage() {
           <div className="space-y-6 animate-fade-in">
             <div className="space-y-1">
               <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-emerald-500" />
+                <Layers className="w-4 h-4 text-emerald-500" />
                 <span>Select Activity Tag</span>
               </h2>
               <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">

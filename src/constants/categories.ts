@@ -13,7 +13,7 @@ import {
   Music,
   ShoppingBag,
   Building2,
-  Sparkles,
+  Compass,
 } from "lucide-react";
 import type { ActivityCategory } from "@/types";
 
@@ -103,7 +103,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
   OTHER: {
     label: "Other Hangouts",
-    icon: Sparkles,
+    icon: Compass,
     badgeBg: "bg-emerald-800 text-white",
     tagText: "text-emerald-500 dark:text-emerald-400",
     border: "border-emerald-500/30",

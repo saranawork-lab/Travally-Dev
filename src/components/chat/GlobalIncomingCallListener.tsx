@@ -29,6 +29,7 @@ export const GlobalIncomingCallListener: React.FC = () => {
     let isMounted = true;
 
     const checkIncomingCalls = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
       try {
         const res = await fetch("/api/calls");
         if (!res.ok) return;
@@ -58,7 +59,7 @@ export const GlobalIncomingCallListener: React.FC = () => {
     };
 
     checkIncomingCalls();
-    const interval = setInterval(checkIncomingCalls, 2400);
+    const interval = setInterval(checkIncomingCalls, 3000);
 
     return () => {
       isMounted = false;

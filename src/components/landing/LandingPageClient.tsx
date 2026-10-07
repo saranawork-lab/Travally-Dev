@@ -7,7 +7,8 @@ import {
   Users,
   Compass,
   ShieldCheck,
-  Sparkles,
+  Zap,
+  UserPlus,
   ArrowRight,
   MapPin,
   Calendar,
@@ -592,7 +593,7 @@ function LandingPageClient() {
                       className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-sm flex items-center justify-between px-5 shadow-lg shadow-emerald-600/30 hover:shadow-emerald-600/45 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-emerald-200" />
+                        <UserPlus className="w-4 h-4 text-emerald-200" />
                         <span>Join Activity</span>
                       </div>
                       <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-xs text-white flex items-center justify-center">
@@ -974,7 +975,7 @@ function LandingPageClient() {
                       className="flex-1 h-12 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-orange-600 hover:from-orange-400 hover:to-amber-500 text-white font-extrabold text-sm flex items-center justify-between px-5 shadow-lg shadow-orange-500/30 hover:shadow-orange-500/45 transition-all hover:scale-[1.01] active:scale-[0.99] cursor-pointer"
                     >
                       <div className="flex items-center gap-2">
-                        <Sparkles className="w-4 h-4 text-orange-200" />
+                        <Compass className="w-4 h-4 text-orange-200" />
                         <span>Join Expedition</span>
                       </div>
                       <div className="w-7 h-7 rounded-full bg-white/20 backdrop-blur-xs text-white flex items-center justify-center">
@@ -997,7 +998,7 @@ function LandingPageClient() {
       >
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-gradient-to-r from-emerald-500/20 to-teal-500/20 text-emerald-800 dark:text-emerald-300 text-xs font-bold border border-emerald-400/40">
-            <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+            <Zap className="w-3.5 h-3.5 text-orange-500" />
             <span>HOW IT WORKS</span>
           </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">

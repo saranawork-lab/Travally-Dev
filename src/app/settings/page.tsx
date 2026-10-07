@@ -16,17 +16,23 @@ import {
   Award,
   CheckCircle,
   CreditCard,
+  Moon,
+  Sun,
+  ChevronRight,
+  Shield,
 } from "lucide-react";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/components/theme/ThemeProvider";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { logout, currentUser } = useAuth();
+  const { resolvedTheme, setTheme } = useTheme();
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"privacy" | "security">("privacy");
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Settings states
@@ -98,11 +104,11 @@ export default function SettingsPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Link
-              href="/discover"
+              href="/profile"
               className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 transition"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Discover</span>
+              <span>Back to Profile</span>
             </Link>
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
@@ -113,66 +119,19 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        {/* Link to Profile for Pass & Badges */}
-        <div className="flex items-center gap-2 self-start sm:self-center flex-wrap">
-          <Link
-            href="/profile"
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 dark:bg-emerald-950/60 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 font-bold text-xs border border-emerald-200 dark:border-emerald-800/60 transition shadow-xs"
-          >
-            <CreditCard className="w-3.5 h-3.5 text-emerald-500" />
-            <span>View Profile &amp; 3D Pass &rarr;</span>
-          </Link>
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-2xl text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 border border-rose-200 dark:border-rose-900/60 transition shadow-xs"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Sign Out</span>
-          </button>
+        {/* Action list added at the bottom */}
+      </div>
+
+      {/* ── PRIVACY & DISCOVERY VISIBILITY ── */}
+      <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm animate-fade-in">
+        <div className="space-y-1">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+            Privacy &amp; Discovery Visibility
+          </h2>
+          <p className="text-xs text-slate-500">
+            Customize how other explorers find and interact with you on Travally.
+          </p>
         </div>
-      </div>
-
-      {/* ── TABS NAVIGATION ── */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-emerald-950/70 pb-2 overflow-x-auto scrollbar-none">
-        <button
-          type="button"
-          onClick={() => setActiveTab("privacy")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] ${
-            activeTab === "privacy"
-              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#131c18]"
-          }`}
-        >
-          <Eye className="w-4 h-4" />
-          <span>Privacy &amp; Visibility</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => setActiveTab("security")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] ${
-            activeTab === "security"
-              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#131c18]"
-          }`}
-        >
-          <Lock className="w-4 h-4" />
-          <span>Security &amp; E2EE</span>
-        </button>
-      </div>
-
-      {/* ── TAB 1: PRIVACY & DISCOVERY VISIBILITY ── */}
-      {activeTab === "privacy" && (
-        <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm animate-fade-in">
-          <div className="space-y-1">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              Privacy &amp; Discovery Visibility
-            </h2>
-            <p className="text-xs text-slate-500">
-              Customize how other explorers find and interact with you on Travally.
-            </p>
-          </div>
 
           <div className="space-y-4 pt-2">
             <label className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/60 cursor-pointer">
@@ -220,28 +179,102 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
-      )}
 
-      {/* ── TAB 2: SECURITY & E2EE ── */}
-      {activeTab === "security" && (
-        <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm animate-fade-in">
-          <div className="space-y-1">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-              End-to-End Encryption &amp; Security
-            </h2>
-            <p className="text-xs text-slate-500">
-              Travally ensures your direct communications and meetup coordinates remain private.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
-            <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
-              <span>Session Shield Active</span>
+      {/* ── ACTION LIST (Safety, Dark Mode, Sign Out) ── */}
+      <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-6 shadow-sm mt-6 animate-fade-in space-y-1">
+        <button
+          type="button"
+          onClick={() => setShowSecurityModal(true)}
+          className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-[#18241f] hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100/70 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
+              <Lock className="w-4 h-4" />
             </div>
-            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Your session is cryptographically signed and stored in a secure HttpOnly cookie. Messages in confirmed companion rooms use WebCrypto end-to-end encryption.
-            </p>
+            <span className="text-sm">Security &amp; E2EE</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400 opacity-60" />
+        </button>
+
+        <Link
+          href="/safety"
+          className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-[#18241f] hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100/70 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
+              <Shield className="w-4 h-4" />
+            </div>
+            <span className="text-sm">Safety Center &amp; Rules</span>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400 opacity-60" />
+        </Link>
+
+        <button
+          type="button"
+          onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
+          className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-slate-100/70 dark:bg-slate-800/60 flex items-center justify-center text-slate-600 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/40">
+              {resolvedTheme === "dark" ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </div>
+            <span className="text-sm">Dark Mode</span>
+          </div>
+          <div className={`relative inline-flex h-5 w-10 items-center rounded-full transition-colors duration-300 ${resolvedTheme === 'dark' ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'}`}>
+            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-300 ${resolvedTheme === 'dark' ? 'translate-x-5' : 'translate-x-1'}`} />
+          </div>
+        </button>
+
+        <button
+          type="button"
+          onClick={handleLogout}
+          className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-rose-100/70 dark:bg-rose-950/60 flex items-center justify-center text-rose-600 dark:text-rose-400 border border-rose-200/50 dark:border-rose-900/40">
+              <LogOut className="w-4 h-4" />
+            </div>
+            <span className="text-sm">Sign Out</span>
+          </div>
+        </button>
+      </div>
+
+      {/* Security Modal */}
+      {showSecurityModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-fade-in">
+          <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl max-w-md w-full animate-slide-up relative">
+            <button
+              onClick={() => setShowSecurityModal(false)}
+              className="absolute top-4 right-4 p-2 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <div className="w-4 h-4 text-center leading-none">✕</div>
+            </button>
+            <div className="space-y-1 pr-6">
+              <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Lock className="w-5 h-5 text-emerald-600" />
+                End-to-End Encryption
+              </h2>
+              <p className="text-xs text-slate-500">
+                Travally ensures your direct communications and meetup coordinates remain private.
+              </p>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-emerald-50/50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-900/60 space-y-2">
+              <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-bold text-xs">
+                <ShieldCheck className="w-4 h-4 text-emerald-600" />
+                <span>Session Shield Active</span>
+              </div>
+              <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+                Your session is cryptographically signed and stored in a secure HttpOnly cookie. Messages in confirmed companion rooms use WebCrypto end-to-end encryption.
+              </p>
+            </div>
+            
+            <button
+              onClick={() => setShowSecurityModal(false)}
+              className="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-md transition-colors"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

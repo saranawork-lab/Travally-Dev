@@ -8,7 +8,7 @@ import {
   ChevronDown,
   X,
   Users,
-  Sparkles,
+  Zap,
   Calendar,
   Compass,
   Landmark,
@@ -33,7 +33,7 @@ const TRAVEL_STYLES = [
 const TRIP_SORT_OPTIONS = [
   { id: "UPCOMING", label: "Departure Soonest", shortLabel: "Soonest", icon: Calendar },
   { id: "SPOTS_LEFT", label: "Most Spots Available", shortLabel: "Spots Left", icon: Users },
-  { id: "NEWEST", label: "Recently Posted", shortLabel: "Newest", icon: Sparkles },
+  { id: "NEWEST", label: "Recently Posted", shortLabel: "Newest", icon: Zap },
   { id: "DESTINATION", label: "Destination (A-Z)", shortLabel: "Destination", icon: ArrowUpDown },
 ];
 

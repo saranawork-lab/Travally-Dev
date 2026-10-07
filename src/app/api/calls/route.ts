@@ -5,34 +5,37 @@ import {
   startCall,
   getActiveCallByConversation,
   getActiveCallForUser,
+  hasAnyActiveCalls,
 } from "@/lib/callSignaling";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-
     const { searchParams } = new URL(req.url);
     const conversationId = searchParams.get("conversationId");
 
+    // Fast-path: if looking for conversation call
     if (conversationId) {
       const activeCall = getActiveCallByConversation(conversationId);
       return NextResponse.json({ activeCall });
+    }
+
+    // Fast-path: if no calls exist globally, return null instantly without auth overhead
+    if (!hasAnyActiveCalls()) {
+      return NextResponse.json({ activeCall: null, incomingCall: null });
+    }
+
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     // Global check for user's incoming call on any screen
     const incomingCall = getActiveCallForUser(user.id);
     return NextResponse.json({ activeCall: incomingCall, incomingCall });
   } catch (error) {
-    console.error("GET /api/calls error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch active call" },
-      { status: 500 }
-    );
+    return NextResponse.json({ activeCall: null, incomingCall: null });
   }
 }
 

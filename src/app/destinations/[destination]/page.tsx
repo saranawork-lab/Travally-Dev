@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
 import { TripCard } from "@/components/travel/TripCard";
-import { ArrowLeft, Compass, MapPin, Sparkles, PlusCircle } from "lucide-react";
+import { ArrowLeft, Compass, MapPin, PlusCircle } from "lucide-react";
 import { calculateTravelCompatibility } from "@/lib/scoring";
 import type { Metadata } from "next";
 
@@ -214,8 +214,8 @@ export default async function DestinationSEOPage({
         </div>
 
         {trips.length === 0 ? (
-          <div className="p-12 text-center bg-white dark:bg-slate-850 rounded-3xl border border-slate-200 dark:border-slate-800 text-xs text-slate-400 space-y-3">
-            <Sparkles className="w-8 h-8 text-amber-500 mx-auto" />
+          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 text-xs text-slate-400 space-y-3">
+            <Compass className="w-8 h-8 text-amber-500 mx-auto" />
             <p>No open trips currently posted for this destination. Create your travel plan to connect with other travelers!</p>
             <Link
               href="/travel/create"

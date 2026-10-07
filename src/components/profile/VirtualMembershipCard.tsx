@@ -3,7 +3,7 @@
 import React, { useState, useRef } from "react";
 import {
   ShieldCheck,
-  Sparkles,
+  RotateCcw,
   CheckCircle,
   Copy,
   Award,
@@ -428,7 +428,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
       {/* ── CARD CONTROLS ── */}
       <div className="flex items-center justify-between px-1 text-xs">
         <span className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1.5">
-          <Sparkles className="w-3 h-3 text-orange-500/60" />
+          <RotateCcw className="w-3 h-3 text-orange-500/60" />
           <span className="text-slate-400 dark:text-slate-500">
             Tap card to flip
           </span>

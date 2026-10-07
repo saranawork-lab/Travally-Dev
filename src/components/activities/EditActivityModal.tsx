@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Calendar, Clock, Sparkles, Check, AlertCircle } from "lucide-react";
+import { X, Calendar, Clock, SlidersHorizontal, Check, AlertCircle } from "lucide-react";
 
 interface EditActivityModalProps {
   isOpen: boolean;
@@ -99,7 +99,7 @@ export const EditActivityModal: React.FC<EditActivityModalProps> = ({
         <div className="flex items-center justify-between border-b border-slate-100 dark:border-emerald-950/60 pb-3">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-950/50 flex items-center justify-center text-orange-600">
-              <Sparkles className="w-4 h-4" />
+              <SlidersHorizontal className="w-4 h-4" />
             </div>
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-white">

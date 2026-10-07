@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Flame, X } from "lucide-react";
 import { CompatibilityResult } from "@/lib/scoring";
 
 interface CompatibilityBadgeProps {
@@ -25,7 +25,7 @@ export const CompatibilityBadge: React.FC<CompatibilityBadgeProps> = ({
         title="View transparent compatibility breakdown"
         className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border transition hover:opacity-90 shadow-sm ${compatibility.badgeColor}`}
       >
-        <Sparkles className="w-3.5 h-3.5 text-orange-500" />
+        <Flame className="w-3.5 h-3.5 text-orange-500" />
         <span>{compatibility.overallScore}% Match</span>
         <span className="text-[10px] opacity-80 font-normal">({compatibility.matchLevel})</span>
       </button>
@@ -43,7 +43,7 @@ export const CompatibilityBadge: React.FC<CompatibilityBadgeProps> = ({
 
             <div className="flex items-center gap-2 mb-3">
               <span className={`p-2 rounded-2xl ${compatibility.badgeColor}`}>
-                <Sparkles className="w-5 h-5 text-orange-500" />
+                <Flame className="w-5 h-5 text-orange-500" />
               </span>
               <div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">

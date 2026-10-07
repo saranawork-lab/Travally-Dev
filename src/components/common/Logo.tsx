@@ -52,10 +52,10 @@ export const LogoMark: React.FC<{
           width={size}
           height={size}
           className={`w-full h-full object-contain block transition-transform duration-300 ${themeVariant === "auto"
-              ? "dark:hidden"
-              : themeVariant === "dark"
-                ? "hidden"
-                : "block"
+            ? "dark:hidden"
+            : themeVariant === "dark"
+              ? "hidden"
+              : "block"
             } ${animate ? "group-hover:scale-105" : ""} ${animClass}`}
           style={{
             transformOrigin: "center center",
@@ -69,10 +69,10 @@ export const LogoMark: React.FC<{
           width={size}
           height={size}
           className={`w-full h-full object-contain block transition-transform duration-300 ${themeVariant === "auto"
-              ? "hidden dark:block"
-              : themeVariant === "light"
-                ? "hidden"
-                : "block"
+            ? "hidden dark:block"
+            : themeVariant === "light"
+              ? "hidden"
+              : "block"
             } ${animate ? "group-hover:scale-105" : ""} ${animClass}`}
           style={{
             transformOrigin: "center center",

@@ -8,7 +8,7 @@ import {
   User,
   Phone,
   MessageSquare,
-  Sparkles,
+  Zap,
   Loader2,
 } from "lucide-react";
 import { NotificationPopup } from "./NotificationPopup";
@@ -129,7 +129,7 @@ export const ConnectSection: React.FC = () => {
         {/* Header INSIDE the big box */}
         <div className="text-center max-w-2xl mx-auto space-y-3">
           <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 text-xs font-black border border-emerald-200 dark:border-emerald-800/60 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+            <Zap className="w-3.5 h-3.5 text-emerald-500" />
             <span>DIRECT CONNECT • REACH OUR TEAM</span>
           </div>
           <h2 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white tracking-tight">
@@ -175,7 +175,7 @@ export const ConnectSection: React.FC = () => {
                         setFormData({ ...formData, name: e.target.value })
                       }
                       placeholder="Enter your name"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
                     />
                   </div>
                 </div>
@@ -194,7 +194,7 @@ export const ConnectSection: React.FC = () => {
                         setFormData({ ...formData, email: e.target.value })
                       }
                       placeholder="Enter your email"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
                     />
                   </div>
                 </div>
@@ -219,7 +219,7 @@ export const ConnectSection: React.FC = () => {
                         })
                       }
                       placeholder="10-digit mobile number"
-                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
                     />
                   </div>
                 </div>
@@ -233,13 +233,13 @@ export const ConnectSection: React.FC = () => {
                     onChange={(e) =>
                       setFormData({ ...formData, subject: e.target.value })
                     }
-                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition"
                   >
-                    <option value="General Inquiry">General Inquiry</option>
-                    <option value="Partnership & Sponsorship">Partnership &amp; Sponsorship</option>
-                    <option value="Travel Companion Feedback">Travel Companion Feedback</option>
-                    <option value="Safety & Verification Support">Safety &amp; Verification Support</option>
-                    <option value="Feature Request">Feature Request</option>
+                    <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="General Inquiry">General Inquiry</option>
+                    <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="Partnership & Sponsorship">Partnership &amp; Sponsorship</option>
+                    <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="Travel Companion Feedback">Travel Companion Feedback</option>
+                    <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="Safety & Verification Support">Safety &amp; Verification Support</option>
+                    <option className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white" value="Feature Request">Feature Request</option>
                   </select>
                 </div>
               </div>
@@ -258,7 +258,7 @@ export const ConnectSection: React.FC = () => {
                       setFormData({ ...formData, message: e.target.value })
                     }
                     placeholder="How can we help? Share your trip ideas, questions, or collaboration details..."
-                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition resize-none"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 text-xs sm:text-sm focus:outline-hidden focus:ring-2 focus:ring-emerald-500 transition resize-none"
                   />
                 </div>
               </div>

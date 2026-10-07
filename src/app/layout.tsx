@@ -10,6 +10,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import BrandIntroLoader from "@/components/common/BrandIntroLoader";
 import DesktopSidebar from "@/components/layout/DesktopSidebar";
 import { GlobalIncomingCallListener } from "@/components/chat/GlobalIncomingCallListener";
+import PrimaryNavigation from "@/components/layout/PrimaryNavigation";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -127,6 +128,7 @@ export default async function RootLayout({
             <BrandIntroLoader />
             <GlobalIncomingCallListener />
             <Navbar initialUser={currentUser} />
+            <PrimaryNavigation initialUser={currentUser} />
             <div className="flex-1 flex min-w-0">
               <DesktopSidebar initialUser={currentUser} />
               <main className="flex-1 min-w-0">{children}</main>

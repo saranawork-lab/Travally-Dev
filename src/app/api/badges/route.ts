@@ -4,11 +4,27 @@ import { getCurrentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
+interface CachedBadge {
+  data: { unreadChatsCount: number; pendingRequestsCount: number; totalUnreadMessages: number };
+  expiresAt: number;
+}
+
+const badgeCache = new Map<string, CachedBadge>();
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ unreadChatsCount: 0, pendingRequestsCount: 0, totalUnreadMessages: 0 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const viewedAtStr = searchParams.get("viewedAt") || "";
+    const cacheKey = `${user.id}_${viewedAtStr}`;
+
+    const cached = badgeCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return NextResponse.json(cached.data);
     }
 
     // Count unread messages in conversations where user is participant
@@ -67,8 +83,6 @@ export async function GET(req: NextRequest) {
     }
 
     // 3. Count pending requests received by current user (as host/organizer)
-    const { searchParams } = new URL(req.url);
-    const viewedAtStr = searchParams.get("viewedAt");
     const viewedAt = viewedAtStr ? new Date(viewedAtStr) : null;
 
     const pendingRequestsCount = await db.joinRequest.count({
@@ -86,15 +100,21 @@ export async function GET(req: NextRequest) {
       },
     });
 
-    const response = NextResponse.json({
+    const badgeData = {
       unreadChatsCount,
       totalUnreadMessages,
       pendingRequestsCount,
+    };
+
+    badgeCache.set(cacheKey, {
+      data: badgeData,
+      expiresAt: Date.now() + 15000,
     });
-    response.headers.set("Cache-Control", "private, s-maxage=5, stale-while-revalidate=15");
+
+    const response = NextResponse.json(badgeData);
+    response.headers.set("Cache-Control", "private, max-age=15, stale-while-revalidate=30");
     return response;
   } catch (error) {
-    console.error("GET /api/badges error:", error);
     return NextResponse.json({ unreadChatsCount: 0, pendingRequestsCount: 0, totalUnreadMessages: 0 });
   }
 }

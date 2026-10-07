@@ -10,7 +10,6 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   MessageSquare,
-  Sparkles,
   ChevronRight,
   X
 } from "lucide-react";

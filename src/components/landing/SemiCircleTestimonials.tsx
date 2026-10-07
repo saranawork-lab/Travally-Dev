@@ -7,7 +7,6 @@ import {
   MapPin,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
 } from "lucide-react";
 
 interface TestimonialItem {

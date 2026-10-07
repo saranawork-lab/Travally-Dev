@@ -8,7 +8,8 @@ import {
   ChevronDown,
   X,
   Users,
-  Sparkles,
+  Layers,
+  Zap,
   Calendar,
   Film,
   Coffee,
@@ -21,7 +22,7 @@ import {
 } from "lucide-react";
 
 const CATEGORIES = [
-  { id: "ALL", label: "All Activities", icon: Sparkles },
+  { id: "ALL", label: "All Activities", icon: Layers },
   { id: "MOVIES", label: "Movies & Cinema", icon: Film },
   { id: "FOOD_CAFES", label: "Street Food & Cafes", icon: Coffee },
   { id: "WALKING", label: "Turf Sports & Fitness", icon: Footprints },
@@ -34,7 +35,7 @@ const CATEGORIES = [
 const SORT_OPTIONS = [
   { id: "UPCOMING", label: "Upcoming Soonest", shortLabel: "Soonest", icon: Calendar },
   { id: "SPOTS_LEFT", label: "Most Spots Available", shortLabel: "Spots Left", icon: Users },
-  { id: "NEWEST", label: "Recently Added", shortLabel: "Newest", icon: Sparkles },
+  { id: "NEWEST", label: "Recently Added", shortLabel: "Newest", icon: Zap },
   { id: "TITLE", label: "Activity Name (A-Z)", shortLabel: "Name", icon: ArrowUpDown },
 ];
 

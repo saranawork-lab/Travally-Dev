@@ -19,6 +19,8 @@ import {
   UserX,
   EyeOff,
   Slash,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { formatDate, formatTimeAgo, safeJsonParse } from "@/lib/utils";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
@@ -29,6 +31,11 @@ export default function RequestsPage() {
   const [sentRequests, setSentRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (id: string) => {
+    setExpandedGroups(prev => ({ ...prev, [id]: !prev[id] }));
+  };
 
   // Applicant Profile Modal
   const [selectedApplicant, setSelectedApplicant] = useState<any>(null);
@@ -144,42 +151,68 @@ export default function RequestsPage() {
     }
   };
 
-  return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6 pb-28 md:pb-12">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-          Request Management
-        </h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-          Review companion applications for your activities and trips, or track your sent requests.
-        </p>
-      </div>
+  const groupedReceivedArray = Object.values(receivedRequests.reduce((acc, req) => {
+    const targetId = req.activity?.id || req.travelPlan?.id;
+    if (!targetId) return acc;
+    if (!acc[targetId]) {
+      const isActivity = req.type === "ACTIVITY";
+      acc[targetId] = {
+        id: targetId,
+        title: isActivity ? req.activity?.title : req.travelPlan?.destination,
+        type: isActivity ? "ACTIVITY" : "TRAVEL",
+        capacity: isActivity
+          ? `${req.activity?.currentAcceptedCount}/${req.activity?.maxParticipants}`
+          : `${req.travelPlan?.currentAcceptedCount}/${req.travelPlan?.groupSizeMax}`,
+        requests: []
+      };
+    }
+    acc[targetId].requests.push(req);
+    return acc;
+  }, {} as Record<string, any>));
 
+  const groupedSentArray = Object.values(sentRequests.reduce((acc, req) => {
+    const targetId = req.activity?.id || req.travelPlan?.id;
+    if (!targetId) return acc;
+    if (!acc[targetId]) {
+      const isActivity = req.type === "ACTIVITY";
+      acc[targetId] = {
+        id: targetId,
+        title: isActivity ? req.activity?.title : req.travelPlan?.destination,
+        type: isActivity ? "ACTIVITY" : "TRAVEL",
+        organizer: isActivity ? req.activity?.organizer : req.travelPlan?.organizer,
+        requests: []
+      };
+    }
+    acc[targetId].requests.push(req);
+    return acc;
+  }, {} as Record<string, any>));
+
+  return (
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 space-y-6 md:pb-12">
       {/* Tabs */}
-      <div className="flex items-center gap-3 border-b border-slate-200/80 dark:border-emerald-950/60 pb-3">
+      <div className="flex items-center justify-center gap-2 sm:gap-3 border-b border-slate-200/80 dark:border-emerald-950/60 pb-3 overflow-x-auto no-scrollbar">
         <button
           onClick={() => setTab("received")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition ${
+          className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-2xl text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${
             tab === "received"
               ? "bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-900 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs"
               : "bg-slate-100/80 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
-          <Inbox className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
-          <span>Received Requests ({receivedRequests.filter((r) => r.status === "PENDING").length} pending)</span>
+          <Inbox className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-700 dark:text-emerald-400" />
+          <span>Received requests</span>
         </button>
 
         <button
           onClick={() => setTab("sent")}
-          className={`flex items-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition ${
+          className={`flex-shrink-0 flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-2xl text-[11px] sm:text-xs font-bold transition whitespace-nowrap ${
             tab === "sent"
               ? "bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-900/60 text-orange-900 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60 shadow-xs"
               : "bg-slate-100/80 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
           }`}
         >
-          <Send className="w-4 h-4 text-orange-600 dark:text-orange-400" />
-          <span>My Sent Requests ({sentRequests.length})</span>
+          <Send className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-orange-600 dark:text-orange-400" />
+          <span>Sent requests</span>
         </button>
       </div>
 
@@ -188,7 +221,7 @@ export default function RequestsPage() {
       ) : tab === "received" ? (
         /* TAB 1: RECEIVED REQUESTS (ORGANIZER MANAGEMENT) */
         <div className="space-y-4">
-          {receivedRequests.length === 0 ? (
+          {groupedReceivedArray.length === 0 ? (
             <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70">
               <Inbox className="w-10 h-10 text-slate-400 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -199,162 +232,171 @@ export default function RequestsPage() {
               </p>
             </div>
           ) : (
-            receivedRequests.map((req) => {
-              const isActivity = req.type === "ACTIVITY";
-              const targetTitle = isActivity ? req.activity?.title : req.travelPlan?.destination;
-              const targetCapacity = isActivity
-                ? `${req.activity?.currentAcceptedCount}/${req.activity?.maxParticipants}`
-                : `${req.travelPlan?.currentAcceptedCount}/${req.travelPlan?.groupSizeMax}`;
-              const isPending = req.status === "PENDING";
-              const interests = safeJsonParse<string[]>(req.applicant?.profile?.interests, []);
-
+            groupedReceivedArray.map((group: any) => {
+              const isExpanded = expandedGroups[group.id];
+              const pendingCount = group.requests.filter((r: any) => r.status === "PENDING").length;
               return (
-                <div
-                  key={req.id}
-                  className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-5 shadow-sm space-y-4"
-                >
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                    {/* Applicant Profile */}
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 border border-emerald-300/80 dark:border-emerald-700/60 flex items-center justify-center font-black text-sm text-emerald-800 dark:text-emerald-300 shadow-xs shrink-0">
-                        {req.applicant?.profile?.displayName?.charAt(0).toUpperCase() || "U"}
+                <div key={group.id} className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 shadow-sm overflow-hidden">
+                  <button 
+                    onClick={() => toggleGroup(group.id)}
+                    className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50 dark:hover:bg-[#16201b] transition text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${group.type === "ACTIVITY" ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400" : "bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400"}`}>
+                        {group.type === "ACTIVITY" ? <Users className="w-5 h-5" /> : <Compass className="w-5 h-5" />}
                       </div>
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <button
-                            onClick={() => setSelectedApplicant(req.applicant)}
-                            className="font-bold text-sm text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition text-left"
-                          >
-                            {req.applicant?.profile?.displayName || "Applicant"}
-                          </button>
-                          <VerificationBadge
-                            status={req.applicant?.profile?.verificationStatus || "UNVERIFIED"}
-                            isVerified={req.applicant?.profile?.isVerified}
-                            hasLinkedin={!!req.applicant?.profile?.linkedinUrl}
-                            size="sm"
-                          />
-                        </div>
-                        <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                          {req.applicant?.profile?.city || "San Francisco"} • {req.applicant?.profile?.age ? `${req.applicant?.profile?.age} yrs` : ""} • Sent {formatTimeAgo(req.createdAt)}
+                      <div>
+                        <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white line-clamp-1">{group.title}</h4>
+                        <p className="text-[11px] sm:text-xs text-slate-500">
+                          {group.type === "ACTIVITY" ? "Activity" : "Travel Plan"} • Spots filled: {group.capacity} • <span className={pendingCount > 0 ? "text-orange-600 dark:text-orange-400 font-semibold" : ""}>{pendingCount} pending request(s)</span>
                         </p>
                       </div>
                     </div>
+                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                  </button>
 
-                    {/* Target Activity / Trip Badge */}
-                    <div className="text-left sm:text-right">
-                      <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${
-                        isActivity
-                          ? "bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 text-emerald-800 dark:from-emerald-950/50 dark:to-teal-950/40 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/50"
-                          : "bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 text-orange-800 dark:from-orange-950/50 dark:to-amber-950/40 dark:text-orange-300 border-orange-200/80 dark:border-orange-800/50"
-                      }`}>
-                        {isActivity ? <Users className="w-3 h-3 text-emerald-600" /> : <Compass className="w-3 h-3 text-orange-500" />}
-                        <span>{isActivity ? "Companion Activity" : "Travel Plan"}</span>
-                      </span>
-                      <p className="font-semibold text-xs text-slate-900 dark:text-white mt-1 max-w-xs truncate">
-                        {targetTitle}
-                      </p>
-                      <p className="text-[10px] text-slate-400">Spots filled: {targetCapacity}</p>
-                    </div>
-                  </div>
+                  {isExpanded && (
+                    <div className="border-t border-slate-100 dark:border-emerald-950/60 p-4 sm:p-5 space-y-4 bg-slate-50/50 dark:bg-[#0c120f]">
+                      {group.requests.map((req: any) => {
+                        const isPending = req.status === "PENDING";
+                        const interests = safeJsonParse<string[]>(req.applicant?.profile?.interests, []);
 
-                  {/* Introductory Message */}
-                  {req.introMessage && (
-                    <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/60 dark:border-emerald-950/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
-                      <p className="italic">&ldquo;{req.introMessage}&rdquo;</p>
-                    </div>
-                  )}
-
-                  {/* Applicant Tags */}
-                  {interests.length > 0 && (
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <span className="text-[10px] text-slate-400">Shared passions:</span>
-                      {interests.slice(0, 4).map((i, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-medium"
-                        >
-                          {i}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Actions & Status */}
-                  <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-emerald-950/60">
-                    <button
-                      onClick={() => setSelectedApplicant(req.applicant)}
-                      className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
-                    >
-                      <User className="w-3.5 h-3.5" />
-                      <span>Inspect Full Profile</span>
-                    </button>
-
-                    <div className="flex items-center gap-2 flex-wrap justify-end">
-                      {isPending ? (
-                        <>
-                          <button
-                            onClick={() => handleAction(req.id, "NOT_INTERESTED")}
-                            disabled={processingId === req.id}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#16201b] transition border border-slate-200 dark:border-emerald-950 flex items-center gap-1"
-                            title="Politely decline this request as not interested"
+                        return (
+                          <div
+                            key={req.id}
+                            className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-5 shadow-sm space-y-4"
                           >
-                            <EyeOff className="w-3.5 h-3.5" />
-                            <span>Not Interested</span>
-                          </button>
+                            <div className="flex items-center justify-between gap-3">
+                              {/* Applicant Profile */}
+                              <div className="flex items-center gap-3 min-w-0">
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 border border-emerald-300/80 dark:border-emerald-700/60 flex items-center justify-center font-black text-sm text-emerald-800 dark:text-emerald-300 shadow-xs shrink-0">
+                                  {req.applicant?.profile?.displayName?.charAt(0).toUpperCase() || "U"}
+                                </div>
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <button
+                                      onClick={() => setSelectedApplicant(req.applicant)}
+                                      className="font-bold text-sm text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition text-left"
+                                    >
+                                      {req.applicant?.profile?.displayName || "Applicant"}
+                                    </button>
+                                    <VerificationBadge
+                                      status={req.applicant?.profile?.verificationStatus || "UNVERIFIED"}
+                                      isVerified={req.applicant?.profile?.isVerified}
+                                      hasLinkedin={!!req.applicant?.profile?.linkedinUrl}
+                                      size="sm"
+                                    />
+                                  </div>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                    {req.applicant?.profile?.city || "San Francisco"} • {req.applicant?.profile?.age ? `${req.applicant?.profile?.age} yrs` : ""} • Sent {formatTimeAgo(req.createdAt)}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
 
-                          <button
-                            onClick={() => handleRestrictUser(req.applicantId, req.applicant?.profile?.displayName || "Applicant", req.id)}
-                            disabled={processingId === req.id}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-orange-800 dark:text-orange-300 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 hover:from-orange-100 hover:to-amber-100 transition border border-orange-200/80 dark:border-orange-800/60 flex items-center gap-1"
-                            title="Restrict applicant from future interactions"
-                          >
-                            <Slash className="w-3.5 h-3.5" />
-                            <span>Restrict</span>
-                          </button>
+                            {/* Introductory Message */}
+                            {req.introMessage && (
+                              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/60 dark:border-emerald-950/60 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                                <p className="italic">&ldquo;{req.introMessage}&rdquo;</p>
+                              </div>
+                            )}
 
-                          <button
-                            onClick={() => handleBlockUser(req.applicantId, req.applicant?.profile?.displayName || "Applicant", req.id)}
-                            disabled={processingId === req.id}
-                            className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-800 dark:text-rose-300 bg-gradient-to-r from-rose-50 via-pink-50 to-rose-50 hover:from-rose-100 hover:to-pink-100 transition border border-rose-200/80 dark:border-rose-800/60 flex items-center gap-1"
-                            title="Block applicant completely"
-                          >
-                            <UserX className="w-3.5 h-3.5" />
-                            <span>Block</span>
-                          </button>
+                            {/* Applicant Tags */}
+                            {interests.length > 0 && (
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] text-slate-400">Shared passions:</span>
+                                {interests.slice(0, 4).map((i, idx) => (
+                                  <span
+                                    key={idx}
+                                    className="px-2 py-0.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[10px] font-medium"
+                                  >
+                                    {i}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
 
-                          <button
-                            onClick={() => handleAction(req.id, "ACCEPT")}
-                            disabled={processingId === req.id}
-                            className="px-4 py-1.5 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-300 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/90 dark:border-emerald-700/60 shadow-xs transition"
-                          >
-                            {processingId === req.id ? "Processing..." : "Accept Companion"}
-                          </button>
-                        </>
-                      ) : req.status === "ACCEPTED" ? (
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
-                            <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Accepted
-                          </span>
-                          {(() => {
-                            const chatId = req.activity?.conversations?.[0]?.id || req.travelPlan?.conversations?.[0]?.id || "";
-                            return (
-                              <Link
-                                href={chatId ? `/chats/${chatId}` : "/chats"}
-                                className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-300 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 px-3.5 py-1.5 rounded-xl border border-emerald-300/90 dark:border-emerald-700/60 shadow-xs transition hover:scale-105 active:scale-95"
+                            {/* Actions & Status */}
+                            <div className="flex items-center justify-between gap-3 pt-2 border-t border-slate-100 dark:border-emerald-950/60">
+                              <button
+                                onClick={() => setSelectedApplicant(req.applicant)}
+                                className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
                               >
-                                <MessageSquare className="w-3.5 h-3.5" />
-                                <span>Message {req.applicant?.profile?.displayName?.split(" ")[0] || "Companion"}</span>
-                              </Link>
-                            );
-                          })()}
-                        </div>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-xs text-slate-500 bg-slate-100 dark:bg-[#16201b] px-3 py-1.5 rounded-xl">
-                          <XCircle className="w-3.5 h-3.5" /> {req.status === "DECLINED" ? "Declined / Not Interested" : req.status}
-                        </span>
-                      )}
+                                <User className="w-3.5 h-3.5" />
+                                <span>Inspect Full Profile</span>
+                              </button>
+
+                              <div className="flex items-center gap-2 flex-wrap justify-end">
+                                {isPending ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleAction(req.id, "NOT_INTERESTED")}
+                                      disabled={processingId === req.id}
+                                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#16201b] transition border border-slate-200 dark:border-emerald-950 flex items-center gap-1"
+                                      title="Politely decline this request as not interested"
+                                    >
+                                      <EyeOff className="w-3.5 h-3.5" />
+                                      <span>Not Interested</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleRestrictUser(req.applicantId, req.applicant?.profile?.displayName || "Applicant", req.id)}
+                                      disabled={processingId === req.id}
+                                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-orange-800 dark:text-orange-300 bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 hover:from-orange-100 hover:to-amber-100 transition border border-orange-200/80 dark:border-orange-800/60 flex items-center gap-1"
+                                      title="Restrict applicant from future interactions"
+                                    >
+                                      <Slash className="w-3.5 h-3.5" />
+                                      <span>Restrict</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleBlockUser(req.applicantId, req.applicant?.profile?.displayName || "Applicant", req.id)}
+                                      disabled={processingId === req.id}
+                                      className="px-3 py-1.5 rounded-xl text-xs font-semibold text-rose-800 dark:text-rose-300 bg-gradient-to-r from-rose-50 via-pink-50 to-rose-50 hover:from-rose-100 hover:to-pink-100 transition border border-rose-200/80 dark:border-rose-800/60 flex items-center gap-1"
+                                      title="Block applicant completely"
+                                    >
+                                      <UserX className="w-3.5 h-3.5" />
+                                      <span>Block</span>
+                                    </button>
+
+                                    <button
+                                      onClick={() => handleAction(req.id, "ACCEPT")}
+                                      disabled={processingId === req.id}
+                                      className="px-4 py-1.5 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-300 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/90 dark:border-emerald-700/60 shadow-xs transition"
+                                    >
+                                      {processingId === req.id ? "Processing..." : "Accept Companion"}
+                                    </button>
+                                  </>
+                                ) : req.status === "ACCEPTED" ? (
+                                  <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-gradient-to-r from-emerald-50 via-teal-50 to-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs">
+                                      <CheckCircle className="w-3.5 h-3.5 text-emerald-600" /> Accepted
+                                    </span>
+                                    {(() => {
+                                      const chatId = req.activity?.conversations?.[0]?.id || req.travelPlan?.conversations?.[0]?.id || "";
+                                      return (
+                                        <Link
+                                          href={chatId ? `/chats/${chatId}` : "/chats"}
+                                          className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-900 dark:text-emerald-300 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 px-3.5 py-1.5 rounded-xl border border-emerald-300/90 dark:border-emerald-700/60 shadow-xs transition hover:scale-105 active:scale-95"
+                                        >
+                                          <MessageSquare className="w-3.5 h-3.5" />
+                                          <span>Message {req.applicant?.profile?.displayName?.split(" ")[0] || "Companion"}</span>
+                                        </Link>
+                                      );
+                                    })()}
+                                  </div>
+                                ) : (
+                                  <span className="inline-flex items-center gap-1 text-xs text-slate-500 bg-slate-100 dark:bg-[#16201b] px-3 py-1.5 rounded-xl">
+                                    <XCircle className="w-3.5 h-3.5" /> {req.status === "DECLINED" ? "Declined / Not Interested" : req.status}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  </div>
+                  )}
                 </div>
               );
             })
@@ -363,7 +405,7 @@ export default function RequestsPage() {
       ) : (
         /* TAB 2: SENT REQUESTS */
         <div className="space-y-4">
-          {sentRequests.length === 0 ? (
+          {groupedSentArray.length === 0 ? (
             <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70">
               <Send className="w-10 h-10 text-slate-400 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -382,80 +424,104 @@ export default function RequestsPage() {
               </div>
             </div>
           ) : (
-            sentRequests.map((req) => {
-              const isActivity = req.type === "ACTIVITY";
-              const target = isActivity ? req.activity : req.travelPlan;
-              const organizer = target?.organizer;
-
+            groupedSentArray.map((group: any) => {
+              const isExpanded = expandedGroups[group.id];
               return (
-                <div
-                  key={req.id}
-                  className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                        {isActivity ? "Activity Request" : "Travel Request"}
-                      </span>
-                      <span className="text-slate-300">•</span>
-                      <span className="text-[10px] text-slate-400">
-                        Sent {formatTimeAgo(req.createdAt)}
-                      </span>
+                <div key={group.id} className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 shadow-sm overflow-hidden">
+                  <button 
+                    onClick={() => toggleGroup(group.id)}
+                    className="w-full flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50 dark:hover:bg-[#16201b] transition text-left"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center ${group.type === "ACTIVITY" ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-600 dark:text-emerald-400" : "bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400"}`}>
+                        {group.type === "ACTIVITY" ? <Users className="w-5 h-5" /> : <Compass className="w-5 h-5" />}
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white line-clamp-1">{group.title}</h4>
+                        <p className="text-[11px] sm:text-xs text-slate-500">
+                          Organized by: {group.organizer?.profile?.displayName || "Host"} • {group.requests.length} sent request(s)
+                        </p>
+                      </div>
                     </div>
+                    {isExpanded ? <ChevronUp className="w-5 h-5 text-slate-400" /> : <ChevronDown className="w-5 h-5 text-slate-400" />}
+                  </button>
 
-                    <Link
-                      href={isActivity ? `/activities/${target?.id}` : `/travel/${target?.id}`}
-                      className="font-bold text-sm text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition block"
-                    >
-                      {isActivity ? target?.title : target?.destination}
-                    </Link>
+                  {isExpanded && (
+                    <div className="border-t border-slate-100 dark:border-emerald-950/60 p-4 sm:p-5 space-y-4 bg-slate-50/50 dark:bg-[#0c120f]">
+                      {group.requests.map((req: any) => {
+                        const isActivity = req.type === "ACTIVITY";
+                        const target = isActivity ? req.activity : req.travelPlan;
 
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                      Organized by: <strong>{organizer?.profile?.displayName || "Host"}</strong>
-                    </p>
-                  </div>
+                        return (
+                          <div
+                            key={req.id}
+                            className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
+                          >
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                                  {isActivity ? "Activity Request" : "Travel Request"}
+                                </span>
+                                <span className="text-slate-300">•</span>
+                                <span className="text-[10px] text-slate-400">
+                                  Sent {formatTimeAgo(req.createdAt)}
+                                </span>
+                              </div>
 
-                  <div className="flex items-center gap-3">
-                    {req.status === "PENDING" && (
-                      <>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 text-orange-800 dark:from-orange-950/60 dark:to-amber-950/50 dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60 flex items-center gap-1">
-                          <Clock3 className="w-3 h-3 text-orange-600" /> Pending Review
-                        </span>
-                        <button
-                          onClick={() => handleCancelRequest(req.id)}
-                          disabled={processingId === req.id}
-                          className="text-xs text-rose-600 hover:underline"
-                        >
-                          Cancel Request
-                        </button>
-                      </>
-                    )}
+                              <Link
+                                href={isActivity ? `/activities/${target?.id}` : `/travel/${target?.id}`}
+                                className="font-bold text-sm text-slate-900 dark:text-white hover:text-emerald-600 dark:hover:text-emerald-400 transition block"
+                              >
+                                {isActivity ? target?.title : target?.destination}
+                              </Link>
+                            </div>
 
-                    {req.status === "ACCEPTED" && (() => {
-                      const chatId = req.activity?.conversations?.[0]?.id || req.travelPlan?.conversations?.[0]?.id || "";
-                      return (
-                        <Link
-                          href={chatId ? `/chats/${chatId}` : "/chats"}
-                          className="px-4 py-2 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-300 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/90 dark:border-emerald-700/60 shadow-xs flex items-center gap-1.5 transition hover:scale-105 active:scale-95"
-                        >
-                          <MessageSquare className="w-3.5 h-3.5" />
-                          <span>Message Host</span>
-                        </Link>
-                      );
-                    })()}
+                            <div className="flex items-center gap-3">
+                              {req.status === "PENDING" && (
+                                <>
+                                  <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 text-orange-800 dark:from-orange-950/60 dark:to-amber-950/50 dark:text-orange-300 border border-orange-200/80 dark:border-orange-800/60 flex items-center gap-1">
+                                    <Clock3 className="w-3 h-3 text-orange-600" /> Pending Review
+                                  </span>
+                                  <button
+                                    onClick={() => handleCancelRequest(req.id)}
+                                    disabled={processingId === req.id}
+                                    className="text-xs text-rose-600 hover:underline"
+                                  >
+                                    Cancel Request
+                                  </button>
+                                </>
+                              )}
 
-                    {req.status === "DECLINED" && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-[#16201b] text-slate-500">
-                        Declined
-                      </span>
-                    )}
+                              {req.status === "ACCEPTED" && (() => {
+                                const chatId = req.activity?.conversations?.[0]?.id || req.travelPlan?.conversations?.[0]?.id || "";
+                                return (
+                                  <Link
+                                    href={chatId ? `/chats/${chatId}` : "/chats"}
+                                    className="px-4 py-2 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-300 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/90 dark:border-emerald-700/60 shadow-xs flex items-center gap-1.5 transition hover:scale-105 active:scale-95"
+                                  >
+                                    <MessageSquare className="w-3.5 h-3.5" />
+                                    <span>Message Host</span>
+                                  </Link>
+                                );
+                              })()}
 
-                    {req.status === "CANCELLED" && (
-                      <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-[#16201b] text-slate-500">
-                        Cancelled
-                      </span>
-                    )}
-                  </div>
+                              {req.status === "DECLINED" && (
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-[#16201b] text-slate-500">
+                                  Declined
+                                </span>
+                              )}
+
+                              {req.status === "CANCELLED" && (
+                                <span className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-[#16201b] text-slate-500">
+                                  Cancelled
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               );
             })

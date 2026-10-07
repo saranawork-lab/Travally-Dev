@@ -10,7 +10,7 @@ import { NotificationPopup } from "@/components/common/NotificationPopup";
 import {
   MapPin,
   User,
-  Sparkles,
+  Zap,
   ArrowRight,
   Loader2,
   Calendar,
@@ -422,7 +422,7 @@ function OnboardingForm() {
       <main className="flex-1 w-full max-w-3xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="text-center space-y-2 mb-8">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100/70 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <Zap className="w-3.5 h-3.5 text-amber-500" />
             <span>Almost Done • Complete Your Profile</span>
           </div>
           <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight">

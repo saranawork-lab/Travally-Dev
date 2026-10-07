@@ -8,7 +8,7 @@ import {
   Compass,
   ArrowRight,
   Search,
-  Sparkles,
+  ShieldCheck,
   ChevronRight
 } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
@@ -33,7 +33,6 @@ const parseLastMessageSnippet = (content?: string): string => {
 
 export default function ChatsInboxPage() {
   const [conversations, setConversations] = useState<any[]>([]);
-  const [filterType, setFilterType] = useState<"ALL" | "ACTIVITY" | "TRAVEL">("ALL");
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -61,7 +60,6 @@ export default function ChatsInboxPage() {
   }, []);
 
   const filtered = conversations.filter((c) => {
-    if (filterType !== "ALL" && c.type !== filterType) return false;
     if (search.trim()) {
       const q = search.toLowerCase();
       const title = (c.title || "").toLowerCase();
@@ -79,18 +77,11 @@ export default function ChatsInboxPage() {
 
       <div className="max-w-4xl mx-auto px-3 sm:px-6 lg:px-8 py-6 sm:py-8 relative z-10">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 sm:gap-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6 mb-6">
           <div>
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 mb-2 border border-emerald-200 dark:border-emerald-800/40 text-[11px] font-medium shadow-sm">
-              <Sparkles className="w-3.5 h-3.5 text-orange-500" />
-              <span>Verified Indian Community</span>
-            </div>
             <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
               Chats
             </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-md">
-              Encrypted messaging for confirmed companion outings and travel expeditions across India.
-            </p>
           </div>
 
           {/* Search Bar */}
@@ -104,45 +95,6 @@ export default function ChatsInboxPage() {
               className="w-full pl-9 pr-3.5 py-2 rounded-xl bg-white dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/70 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/25 focus:border-emerald-500 shadow-sm transition"
             />
           </div>
-        </div>
-
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-2 mb-4 sm:mb-6 overflow-x-auto pb-1 scrollbar-none">
-          <button
-            type="button"
-            onClick={() => setFilterType("ALL")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-              filterType === "ALL"
-                ? "bg-gradient-to-r from-emerald-100 via-teal-50 to-orange-100 dark:from-emerald-950/70 dark:to-orange-950/70 text-slate-800 dark:text-slate-100 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs font-bold"
-                : "bg-white dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-emerald-950/60 hover:text-slate-900 dark:hover:text-white"
-            }`}
-          >
-            All Messages ({conversations.length})
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterType("ACTIVITY")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
-              filterType === "ACTIVITY"
-                ? "bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 text-emerald-950 dark:text-emerald-200 border border-emerald-300/90 dark:border-emerald-700 shadow-xs font-bold"
-                : "bg-white dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-emerald-950/60 hover:text-emerald-600"
-            }`}
-          >
-            <Users className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-300" />
-            <span>Companion Outings</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setFilterType("TRAVEL")}
-            className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all flex items-center gap-1.5 ${
-              filterType === "TRAVEL"
-                ? "bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-950/70 text-orange-950 dark:text-orange-200 border border-orange-300/90 dark:border-orange-700 shadow-xs font-bold"
-                : "bg-white dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-emerald-950/60 hover:text-orange-500"
-            }`}
-          >
-            <Compass className="w-3.5 h-3.5 text-orange-700 dark:text-orange-300" />
-            <span>Travel Expeditions</span>
-          </button>
         </div>
 
         {/* Conversations List - Refined Single Line Items */}
@@ -198,10 +150,10 @@ export default function ChatsInboxPage() {
                   {/* Single Line: Icon + Title + Snippet */}
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white ${
                         isActivity
-                          ? "bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300"
-                          : "bg-orange-100 dark:bg-orange-950/70 text-orange-700 dark:text-orange-300"
+                          ? "bg-emerald-500"
+                          : "bg-orange-500"
                       }`}
                     >
                       {isActivity ? <Users className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
@@ -215,10 +167,10 @@ export default function ChatsInboxPage() {
 
                       {/* Pill Badge */}
                       <span
-                        className={`text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 ${
+                        className={`text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 text-white ${
                           isActivity
-                            ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300"
-                            : "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300"
+                            ? "bg-emerald-500"
+                            : "bg-orange-500"
                         }`}
                       >
                         {isActivity ? "Companion" : "Trip"}

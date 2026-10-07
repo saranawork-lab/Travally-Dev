@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Sparkles, Compass, Coffee, Heart, Smile, PartyPopper } from "lucide-react";
+import { Search, Zap, Compass, Coffee, Heart, Smile, PartyPopper } from "lucide-react";
 import { RealisticEmoji } from "./RealisticEmoji";
 
 interface EmojiPickerPopoverProps {
@@ -11,7 +11,7 @@ interface EmojiPickerPopoverProps {
 }
 
 const CATEGORIES = [
-  { id: "popular", name: "Quick", icon: Sparkles, emojis: ["❤️", "🔥", "😂", "👏", "🎉", "👍", "😮", "😢", "✨", "🚀", "💯", "🙏"] },
+  { id: "popular", name: "Quick", icon: Zap, emojis: ["❤️", "🔥", "😂", "👏", "🎉", "👍", "😮", "😢", "✨", "🚀", "💯", "🙏"] },
   { id: "smileys", name: "Smileys", icon: Smile, emojis: ["😀", "😃", "😄", "😁", "😆", "😅", "🤣", "😂", "🙂", "😉", "😊", "😇", "🥰", "😍", "🤩", "😘", "😎", "🥳", "🥺", "🤗"] },
   { id: "travel", name: "Travel", icon: Compass, emojis: ["🏔️", "🏕️", "🚂", "🏖️", "🛺", "🥾", "🎒", "📸", "✈️", "🗺️", "🌅", "🌲", "🛶", "🛵", "🧗", "🚗", "🌊", "🏯", "🕌", "🧳"] },
   { id: "food", name: "Chai & Food", icon: Coffee, emojis: ["☕", "🍵", "🥘", "🍛", "🍿", "🎬", "🍻", "🧋", "🍕", "🥪", "🍲", "🧁", "🍩", "🥭", "🥥", "🥤", "🥂", "🍫"] },

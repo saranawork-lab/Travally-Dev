@@ -21,10 +21,22 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // 1. Force light mode
-    setThemeState("light");
-    setResolvedTheme("light");
-    document.documentElement.classList.remove("dark");
+    // 1. Read stored theme or system preference
+    const stored = (localStorage.getItem(THEME_STORAGE_KEY) as Theme | null);
+    const initialTheme: Theme = stored || "light";
+    setThemeState(initialTheme);
+
+    const systemIsDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const effective: "light" | "dark" =
+      initialTheme === "system" ? (systemIsDark ? "dark" : "light") : initialTheme;
+    setResolvedTheme(effective);
+
+    if (effective === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+
     setMounted(true);
   }, []);
 
@@ -51,8 +63,21 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Listen to system preference changes when in "system" mode
   useEffect(() => {
-    // Disabled listener, force light mode
-    document.documentElement.classList.remove("dark");
+    if (!mounted) return;
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      if (theme === "system") {
+        const effective = e.matches ? "dark" : "light";
+        setResolvedTheme(effective);
+        if (effective === "dark") {
+          document.documentElement.classList.add("dark");
+        } else {
+          document.documentElement.classList.remove("dark");
+        }
+      }
+    };
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme, mounted]);
 
   return (

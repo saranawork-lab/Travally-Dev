@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { User, Crown, Sparkles, Shield, Zap } from "lucide-react";
+import { User, Crown, Shield, Zap } from "lucide-react";
 import { getBadgeForRank, UserBadge } from "@/lib/badges";
 
 export interface AvatarBadgeProps {

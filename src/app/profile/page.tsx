@@ -12,12 +12,12 @@ import {
   X,
   LogOut,
   CreditCard,
-  Sparkles,
   Award,
   Shield,
   Copy,
   Check,
   Edit3,
+  Settings,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { safeJsonParse } from "@/lib/utils";
@@ -34,6 +34,7 @@ export default function MyProfilePage() {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "pass_badges">("profile");
+  const [isEditing, setIsEditing] = useState(false);
 
   // Form states
   const [displayName, setDisplayName] = useState("");
@@ -185,78 +186,110 @@ export default function MyProfilePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
 
+      {/* Global Profile Header (Always visible) */}
+      <div className="bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <AvatarBadge
+            src={avatarUrl || currentUser?.avatarUrl}
+            name={displayName || currentUser?.displayName}
+            rank={userRank}
+            badge={userBadge}
+            size="lg"
+            showCrown={true}
+            showRibbon={true}
+          />
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <h2 className="font-bold text-lg text-slate-900 dark:text-white">
+                {displayName || "Your Name"}
+              </h2>
+              <VerificationBadge
+                status={profile?.verificationStatus || "UNVERIFIED"}
+                isVerified={profile?.isVerified}
+                hasLinkedin={!!linkedinUrl}
+                showLabel
+              />
+            </div>
+            <p className="text-xs text-slate-500">{city || "City not set"}</p>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            type="button"
+            onClick={() => setIsEditing(!isEditing)}
+            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-colors ${
+              isEditing 
+                ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
+                : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+            }`}
+          >
+            {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+            <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
+          </button>
+          <Link
+            href="/settings"
+            className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#111c16] dark:hover:bg-[#19261f] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+            title="Account Settings & Sign Out"
+          >
+            <Settings className="w-5 h-5" />
+          </Link>
+        </div>
+      </div>
+      {/* Profile & Pass Navigation Tabs (Centered Rounded-Full Capsule) */}
+      <div className="flex items-center justify-between w-full pb-2 relative">
+        <div className="w-10 sm:w-12 hidden sm:block"></div> {/* Spacer for perfect centering */}
+        
+        <div className="inline-flex p-1.5 rounded-full bg-slate-100/90 dark:bg-[#111c16]/90 border border-slate-200/80 dark:border-emerald-900/50 backdrop-blur-xl shadow-inner gap-2 max-w-md w-full sm:w-auto mx-auto">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 select-none min-h-[44px] whitespace-nowrap overflow-hidden ${
+              activeTab === "profile"
+                ? "bg-white dark:bg-[#19261f] text-emerald-950 dark:text-emerald-300 shadow-[0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4)] border border-slate-200/80 dark:border-emerald-700/60 scale-[1.02]"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/5 border border-transparent"
+            }`}
+          >
+            <div
+              className={`p-1.5 rounded-full transition-colors ${
+                activeTab === "profile"
+                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              <User className="w-4 h-4" />
+            </div>
+            <span>Profile Details</span>
+          </button>
 
-      {/* Profile & Pass Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-slate-200 dark:border-emerald-950/70 pb-2 overflow-x-auto scrollbar-none">
-        <button
-          type="button"
-          onClick={() => setActiveTab("profile")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] ${
-            activeTab === "profile"
-              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#131c18]"
-          }`}
-        >
-          <User className="w-4 h-4" />
-          <span>Profile Details</span>
-        </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("pass_badges")}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 select-none min-h-[44px] whitespace-nowrap overflow-hidden ${
+              activeTab === "pass_badges"
+                ? "bg-white dark:bg-[#19261f] text-amber-950 dark:text-amber-300 shadow-[0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4)] border border-slate-200/80 dark:border-amber-700/60 scale-[1.02]"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/5 border border-transparent"
+            }`}
+          >
+            <div
+              className={`p-1.5 rounded-full transition-colors ${
+                activeTab === "pass_badges"
+                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+                  : "text-slate-500 dark:text-slate-400"
+              }`}
+            >
+              <CreditCard className="w-4 h-4" />
+            </div>
+            <span>Travally Card</span>
+          </button>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => setActiveTab("pass_badges")}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] ${
-            activeTab === "pass_badges"
-              ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/30"
-              : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#131c18]"
-          }`}
-        >
-          <CreditCard className="w-4 h-4 text-amber-300" />
-          <span>3D Pass &amp; Badges</span>
-        </button>
       </div>
 
       {/* ── TAB 1: PROFILE DETAILS FORM ── */}
       {activeTab === "profile" && (
         <form onSubmit={handleSave} className="space-y-6 animate-fade-in">
-          {/* Profile Header Summary */}
-          <div className="bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm space-y-6">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-dark-border">
-              <div className="flex items-center gap-4">
-                <AvatarBadge
-                  src={avatarUrl || currentUser?.avatarUrl}
-                  name={displayName || currentUser?.displayName}
-                  rank={userRank}
-                  badge={userBadge}
-                  size="lg"
-                  showCrown={true}
-                  showRibbon={true}
-                />
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-bold text-lg text-slate-900 dark:text-white">
-                      {displayName || "Your Name"}
-                    </h2>
-                    {userBadge && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-emerald-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 inline-flex items-center gap-1 shadow-2xs">
-                        <span>{userBadge.badgeIcon}</span>
-                        <span>#{userRank}</span>
-                      </span>
-                    )}
-                    <VerificationBadge
-                      status={profile?.verificationStatus || "UNVERIFIED"}
-                      isVerified={profile?.isVerified}
-                      hasLinkedin={!!linkedinUrl}
-                      showLabel
-                    />
-                  </div>
-                  <p className="text-xs text-slate-500">{city || "City not set"}</p>
-                </div>
-              </div>
-
-
-            </div>
-
-            {/* Form Fields: Display Name, City, Gender */}
+          <div className={`bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm space-y-6 ${!isEditing ? "opacity-90" : ""}`}>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
@@ -264,10 +297,11 @@ export default function MyProfilePage() {
                 </label>
                 <input
                   required
+                  disabled={!isEditing}
                   type="text"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
                 />
               </div>
 
@@ -277,10 +311,11 @@ export default function MyProfilePage() {
                 </label>
                 <input
                   type="text"
+                  disabled={!isEditing}
                   placeholder="e.g. San Francisco, CA"
                   value={city}
                   onChange={(e) => setCity(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
                 />
               </div>
 
@@ -290,8 +325,9 @@ export default function MyProfilePage() {
                 </label>
                 <select
                   value={gender}
+                  disabled={!isEditing}
                   onChange={(e) => setGender(e.target.value)}
-                  className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 appearance-none'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
                 >
                   <option value="MALE">Male</option>
                   <option value="FEMALE">Female</option>
@@ -307,10 +343,11 @@ export default function MyProfilePage() {
               </label>
               <textarea
                 rows={3}
+                disabled={!isEditing}
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
                 placeholder="Tell others about what you enjoy doing on weekends, what inspires you, and your favorite travel spots..."
-                className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated p-3.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed"
+                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 resize-none'} p-3.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed transition-colors`}
               />
             </div>
 
@@ -322,10 +359,11 @@ export default function MyProfilePage() {
               </label>
               <input
                 type="url"
+                disabled={!isEditing}
                 placeholder="https://linkedin.com/in/username"
                 value={linkedinUrl}
                 onChange={(e) => setLinkedinUrl(e.target.value)}
-                className="w-full rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
               />
             </div>
 
@@ -334,28 +372,30 @@ export default function MyProfilePage() {
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
                 Personal Interests &amp; Passions
               </label>
-              <div className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  placeholder="Add interest (e.g. Cinema, Architecture, Pour-Over, Hiking)..."
-                  value={interestInput}
-                  onChange={(e) => setInterestInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      e.preventDefault();
-                      addInterest();
-                    }
-                  }}
-                  className="flex-1 rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                />
-                <button
-                  type="button"
-                  onClick={addInterest}
-                  className="px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-100 dark:bg-dark-elevated hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                >
-                  Add
-                </button>
-              </div>
+              {isEditing && (
+                <div className="flex gap-2 mb-2">
+                  <input
+                    type="text"
+                    placeholder="Add interest (e.g. Cinema, Architecture, Pour-Over, Hiking)..."
+                    value={interestInput}
+                    onChange={(e) => setInterestInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        e.preventDefault();
+                        addInterest();
+                      }
+                    }}
+                    className="flex-1 rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={addInterest}
+                    className="px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-100 dark:bg-dark-elevated hover:bg-slate-200 dark:hover:bg-slate-700 transition"
+                  >
+                    Add
+                  </button>
+                </div>
+              )}
               <div className="flex flex-wrap gap-1.5">
                 {interests.map((t, idx) => (
                   <span
@@ -363,9 +403,11 @@ export default function MyProfilePage() {
                     className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs border border-emerald-200 dark:border-emerald-800"
                   >
                     <span>{t}</span>
-                    <button type="button" onClick={() => removeInterest(t)} className="hover:text-rose-500">
-                      <X className="w-3 h-3" />
-                    </button>
+                    {isEditing && (
+                      <button type="button" onClick={() => removeInterest(t)} className="hover:text-rose-500">
+                        <X className="w-3 h-3" />
+                      </button>
+                    )}
                   </span>
                 ))}
               </div>
@@ -382,13 +424,14 @@ export default function MyProfilePage() {
                   return (
                     <button
                       key={act}
+                      disabled={!isEditing}
                       type="button"
                       onClick={() => toggleActivityPref(act)}
                       className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
                         isSelected
                           ? "bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 text-emerald-950 dark:text-emerald-200 border border-emerald-300/80 dark:border-emerald-700 font-bold shadow-xs"
                           : "bg-slate-100 dark:bg-dark-elevated text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                      }`}
+                      } ${!isEditing ? "opacity-90 cursor-default" : ""}`}
                     >
                       {act}
                     </button>
@@ -410,9 +453,10 @@ export default function MyProfilePage() {
                 <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={!isEditing}
                     checked={connPrefs.friendship}
                     onChange={(e) => setConnPrefs({ ...connPrefs, friendship: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
                   />
                   <span>Friendship</span>
                 </label>
@@ -420,9 +464,10 @@ export default function MyProfilePage() {
                 <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={!isEditing}
                     checked={connPrefs.activityPartner}
                     onChange={(e) => setConnPrefs({ ...connPrefs, activityPartner: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
                   />
                   <span>Activity Partner</span>
                 </label>
@@ -430,9 +475,10 @@ export default function MyProfilePage() {
                 <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={!isEditing}
                     checked={connPrefs.travel}
                     onChange={(e) => setConnPrefs({ ...connPrefs, travel: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
                   />
                   <span>Travel Partner</span>
                 </label>
@@ -440,9 +486,10 @@ export default function MyProfilePage() {
                 <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={!isEditing}
                     checked={connPrefs.dating}
                     onChange={(e) => setConnPrefs({ ...connPrefs, dating: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
                   />
                   <span>Open to Dating</span>
                 </label>
@@ -459,9 +506,10 @@ export default function MyProfilePage() {
                 <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={!isEditing}
                     checked={hideContactDetails}
                     onChange={(e) => setHideContactDetails(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
                   />
                   <span>Hide exact contact details (email and exact address) from public cards</span>
                 </label>
@@ -469,9 +517,10 @@ export default function MyProfilePage() {
                 <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
                   <input
                     type="checkbox"
+                    disabled={!isEditing}
                     checked={discoveryVisible}
                     onChange={(e) => setDiscoveryVisible(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
                   />
                   <span>Make profile discoverable in member directory</span>
                 </label>
@@ -479,24 +528,26 @@ export default function MyProfilePage() {
             </div>
 
             {/* Save Button */}
-            <div className="flex items-center justify-between pt-2">
-              {savedSuccess ? (
-                <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                  <CheckCircle className="w-4 h-4" /> Changes saved successfully!
-                </span>
-              ) : (
-                <span />
-              )}
+            {isEditing && (
+              <div className="flex items-center justify-between pt-2">
+                {savedSuccess ? (
+                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
+                    <CheckCircle className="w-4 h-4" /> Changes saved successfully!
+                  </span>
+                ) : (
+                  <span />
+                )}
 
-              <button
-                type="submit"
-                disabled={saving}
-                className="px-6 py-2.5 rounded-full text-xs font-bold text-emerald-950 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 disabled:opacity-60 transition shadow-xs flex items-center gap-1.5"
-              >
-                <Save className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
-                <span>{saving ? "Saving..." : "Save Profile Changes"}</span>
-              </button>
-            </div>
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="px-6 py-2.5 rounded-full text-xs font-bold text-emerald-950 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 disabled:opacity-60 transition shadow-xs flex items-center gap-1.5"
+                >
+                  <Save className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
+                  <span>{saving ? "Saving..." : "Save Profile Changes"}</span>
+                </button>
+              </div>
+            )}
           </div>
         </form>
       )}
@@ -508,14 +559,14 @@ export default function MyProfilePage() {
           <div className="bg-gradient-to-b from-slate-50 to-white dark:from-[#111815] dark:to-[#0d1411] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-8 md:p-10 shadow-sm space-y-6">
             <div className="text-center max-w-lg mx-auto space-y-1">
               <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
-                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <Award className="w-3.5 h-3.5 text-amber-500" />
                 <span>FOUNDING MEMBER CERTIFICATE</span>
               </span>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
                 Official 3D Virtual Membership Pass
               </h2>
               <p className="text-xs text-slate-500 leading-relaxed">
-                Your permanent founding pass rank is <span className="font-bold text-amber-600 dark:text-amber-400">#{userRank}</span> in the Travally global network. Click or hover the card to inspect details and flip it over.
+                Click or hover the card to inspect details and flip it over.
               </p>
             </div>
 

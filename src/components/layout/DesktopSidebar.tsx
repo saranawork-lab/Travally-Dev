@@ -19,6 +19,7 @@ import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/context/AuthContext";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
+import { ModeToggle, AppMode } from "@/components/common/ModeToggle";
 
 
 interface DesktopSidebarProps {
@@ -35,11 +36,6 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const [isHovered, setIsHovered] = useState(false);
   // State: when an option is clicked, force sidebar to shrink immediately
   const [forceCollapsed, setForceCollapsed] = useState(false);
-
-  // Profile popup state
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const profileButtonRef = useRef<HTMLButtonElement>(null);
-  const profileDropdownRef = useRef<HTMLDivElement>(null);
 
   // Sync mode (companion vs travel) from URL or user preference
   const [mode, setMode] = useState<"companion" | "travel">("companion");
@@ -70,38 +66,12 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
     }
   };
 
-  // When route changes, shrink sidebar to collapsed state and close profile menu
+  // When route changes, shrink sidebar to collapsed state
   useEffect(() => {
     setForceCollapsed(true);
     setIsHovered(false);
-    setIsProfileOpen(false);
     dispatchSidebarState(false);
-  }, [pathname]);
-
-  // Click outside to close profile dropdown
-  useEffect(() => {
-    if (!isProfileOpen) return;
-    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
-      if (
-        profileButtonRef.current &&
-        !profileButtonRef.current.contains(e.target as Node) &&
-        profileDropdownRef.current &&
-        !profileDropdownRef.current.contains(e.target as Node)
-      ) {
-        setIsProfileOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-    };
-  }, [isProfileOpen]);
-
-
-
-  // Mouse hover handlers
+  }, [pathname]);  // Mouse hover handlers
   const handleMouseEnter = () => {
     setForceCollapsed(false);
     setIsHovered(true);
@@ -118,12 +88,17 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const handleItemClick = () => {
     setForceCollapsed(true);
     setIsHovered(false);
-    setIsProfileOpen(false);
     dispatchSidebarState(false);
   };
 
+  const handleModeSwitch = (newMode: AppMode) => {
+    setMode(newMode);
+    const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("search") : null;
+    const query = search ? `?mode=${newMode}&search=${encodeURIComponent(search)}` : `?mode=${newMode}`;
+    router.push(`/discover${query}`);
+  };
+
   const handleLogout = async () => {
-    setIsProfileOpen(false);
     setForceCollapsed(true);
     setIsHovered(false);
     dispatchSidebarState(false);
@@ -300,12 +275,11 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
         {/* Down below at the bottom of the sidebar: Profile Button & Dropdown */}
         <div className="px-2 pb-3 pt-2 border-t border-slate-200/80 dark:border-emerald-950/80 mt-auto">
           <div className="relative">
-            <button
-              ref={profileButtonRef}
-              type="button"
-              onClick={() => setIsProfileOpen((prev) => !prev)}
+            <Link
+              href="/profile"
+              onClick={handleItemClick}
               title={!isExpanded ? (currentUser.displayName || "My Profile") : undefined}
-              className={`group relative flex items-center h-12 w-full rounded-2xl overflow-hidden transition-colors duration-200 ${isProfileActive || isProfileOpen
+              className={`group relative flex items-center h-12 w-full rounded-2xl overflow-hidden transition-colors duration-200 ${isProfileActive
                   ? "bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/5 dark:from-emerald-950/80 dark:to-teal-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-400/40 dark:border-emerald-600/50 shadow-xs"
                   : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/90 dark:hover:bg-[#16221c] border border-transparent"
                 }`}
@@ -335,123 +309,15 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
                     <p className="text-xs font-bold text-slate-900 dark:text-white truncate">
                       {currentUser.displayName || "My Profile"}
                     </p>
-                    {userBadge && (
-                      <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-amber-400/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 shrink-0">
-                        #{userRank}
-                      </span>
-                    )}
                   </div>
                   <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate">
                     {userBadge ? userBadge.title : "Profile & Settings"}
                   </p>
                 </div>
-                <ChevronRight
-                  className={`w-3.5 h-3.5 text-slate-400 shrink-0 transition-transform duration-200 ${isProfileOpen ? "rotate-90 text-emerald-600 dark:text-emerald-400" : ""
-                    }`}
-                />
               </div>
-            </button>
+            </Link>
 
-            {/* Profile Dropdown Popup Card - positioned right above/beside bottom profile button */}
-            {isProfileOpen && (
-              <div
-                ref={profileDropdownRef}
-                className={`fixed bottom-3 z-50 w-64 rounded-2xl bg-white/95 dark:bg-[#131c18]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-900/60 shadow-[0_20px_50px_rgba(0,0,0,0.25)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.7)] py-2 animate-slide-up select-none ${isExpanded ? "left-[248px]" : "left-[76px]"
-                  }`}
-              >
-                {/* Header with avatar, name & email */}
-                <div className="px-4 py-2.5 border-b border-slate-100 dark:border-emerald-950/60 flex items-center gap-2.5">
-                  <AvatarBadge
-                    src={currentUser.avatarUrl}
-                    name={currentUser.displayName}
-                    rank={userRank}
-                    badge={userBadge}
-                    size="sm"
-                    showCrown={true}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="font-bold text-xs text-slate-900 dark:text-white truncate">
-                        {currentUser.displayName || "Travally Traveler"}
-                      </p>
-                      {userBadge && (
-                        <span className="text-[9px] font-black px-1.5 py-0.2 rounded-md bg-gradient-to-r from-amber-500/20 to-emerald-500/20 text-amber-700 dark:text-amber-300 border border-amber-400/40 shrink-0">
-                          #{userRank}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-[10px] font-medium text-emerald-600 dark:text-emerald-400 truncate">
-                      {userBadge ? `🎖️ ${userBadge.title}` : currentUser.email}
-                    </p>
-                  </div>
-                </div>
 
-                {/* Actions */}
-                <div className="py-1">
-
-                  <Link
-                    href="/profile"
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      handleItemClick();
-                    }}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-[#18241f] transition-colors"
-                  >
-                    <User className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>My Profile &amp; Preferences</span>
-                  </Link>
-
-                  <Link
-                    href="/settings"
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      handleItemClick();
-                    }}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-[#18241f] transition-colors"
-                  >
-                    <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Account Settings &amp; Pass</span>
-                  </Link>
-
-                  {currentUser.role === "ADMIN" && (
-                    <Link
-                      href="/admin"
-                      onClick={() => {
-                        setIsProfileOpen(false);
-                        handleItemClick();
-                      }}
-                      className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors"
-                    >
-                      <LayoutDashboard className="w-4 h-4 text-orange-500" />
-                      <span>Admin Moderation</span>
-                    </Link>
-                  )}
-
-                  <Link
-                    href="/safety"
-                    onClick={() => {
-                      setIsProfileOpen(false);
-                      handleItemClick();
-                    }}
-                    className="flex items-center gap-2.5 px-4 py-2 text-xs text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-[#18241f] transition-colors"
-                  >
-                    <Shield className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                    <span>Safety Center &amp; Rules</span>
-                  </Link>
-                </div>
-
-                <div className="border-t border-slate-100 dark:border-emerald-950/60 mt-1 pt-1">
-                  <button
-                    type="button"
-                    onClick={handleLogout}
-                    className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors"
-                  >
-                    <LogOut className="w-4 h-4" />
-                    <span>Sign Out</span>
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </aside>

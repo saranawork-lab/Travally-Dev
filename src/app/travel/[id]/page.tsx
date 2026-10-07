@@ -12,7 +12,6 @@ import {
   CheckCircle,
   Clock3,
   ArrowLeft,
-  Sparkles,
   Plane,
   Home,
   Flag,

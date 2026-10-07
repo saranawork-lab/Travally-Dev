@@ -22,6 +22,7 @@ import { formatDate, isPastCutoff } from "@/lib/utils";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { ReportModal } from "@/components/common/ReportModal";
+import { ProfileModal } from "@/components/profile/ProfileModal";
 import { getActivityImage } from "@/lib/images";
 import { CATEGORIES } from "@/constants/categories";
 import type { Activity } from "@/types";
@@ -42,6 +43,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
   const [isCancelling, setIsCancelling] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const categoryKey = (activity.category || "").toUpperCase();
   const categoryCfg = CATEGORIES[categoryKey] || CATEGORIES.OTHER;
@@ -110,20 +112,20 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
   return (
     <>
-      <div className="group relative w-full rounded-3xl overflow-hidden bg-gradient-to-br from-[#f2faf8] to-[#e4f3f0] shadow-lg hover:shadow-xl transition-all duration-500 border border-white/60">
+      <div className="group relative w-full rounded-3xl overflow-hidden bg-gradient-to-br from-[#f2faf8] to-[#e4f3f0] dark:from-[#0e1612] dark:to-[#131e19] shadow-lg hover:shadow-xl transition-all duration-500 border border-white/60 dark:border-emerald-950/70">
         
         {/* Background Image with Fades */}
         <div className="absolute top-0 right-0 w-full h-[55%] z-0" style={{ backgroundImage: `url(${coverImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
           {/* Fades to make the left text readable and bottom blend into the card bg */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#f2faf8] via-[#f2faf8]/80 to-transparent w-[80%]" />
-          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#e4f3f0]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#f2faf8] via-[#f2faf8]/80 to-transparent dark:from-[#0e1612] dark:via-[#0e1612]/80 dark:to-transparent w-[80%]" />
+          <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#e4f3f0] dark:to-[#131e19]" />
         </div>
 
         {/* Top Floating Actions */}
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e0f5f0]/90 backdrop-blur-md border border-[#c4eee4]">
-            <CategoryIcon className="w-3.5 h-3.5 text-[#0a524a]" />
-            <span className="text-xs font-bold tracking-wide text-[#0a524a]">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#e0f5f0]/90 dark:bg-emerald-950/80 backdrop-blur-md border border-[#c4eee4] dark:border-emerald-800/60">
+            <CategoryIcon className="w-3.5 h-3.5 text-[#0a524a] dark:text-emerald-400" />
+            <span className="text-xs font-bold tracking-wide text-[#0a524a] dark:text-emerald-300">
               {categoryCfg.label}
             </span>
           </div>
@@ -143,16 +145,16 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             <div className="relative">
               <button 
                 onClick={(e) => { e.preventDefault(); setMenuOpen(!menuOpen); }}
-                className="w-8 h-8 rounded-full bg-white/90 backdrop-blur-md border border-white shadow-sm flex items-center justify-center hover:bg-white transition-colors text-slate-700"
+                className="w-8 h-8 rounded-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border border-white dark:border-slate-800 shadow-sm flex items-center justify-center hover:bg-white dark:hover:bg-slate-800 transition-colors text-slate-700 dark:text-slate-200"
               >
                 <MoreHorizontal className="w-4 h-4" />
               </button>
               
               {menuOpen && (
-                <div className="absolute right-0 mt-2 w-40 rounded-2xl bg-white border border-slate-200 shadow-xl py-1 z-30 text-xs animate-in fade-in zoom-in-95">
+                <div className="absolute right-0 mt-2 w-40 rounded-2xl bg-white dark:bg-[#15201a] border border-slate-200 dark:border-emerald-950/80 shadow-xl py-1 z-30 text-xs animate-in fade-in zoom-in-95">
                   <button
                     onClick={() => { setMenuOpen(false); handleNotInterested(); }}
-                    className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-emerald-950/50 flex items-center gap-2"
                   >
                     <EyeOff className="w-3.5 h-3.5 text-slate-400" />
                     <span>Not Interested</span>
@@ -160,7 +162,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                   {!isOrganizer && (
                     <button
                       onClick={() => { setMenuOpen(false); handleBlockOrganizer(); }}
-                      className="w-full px-3 py-2 text-left text-rose-600 hover:bg-rose-50 flex items-center gap-2"
+                      className="w-full px-3 py-2 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2"
                     >
                       <UserX className="w-3.5 h-3.5" />
                       <span>Block Host</span>
@@ -168,7 +170,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                   )}
                   <button
                     onClick={() => { setMenuOpen(false); setIsReportOpen(true); }}
-                    className="w-full px-3 py-2 text-left text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                    className="w-full px-3 py-2 text-left text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-emerald-950/50 flex items-center gap-2"
                   >
                     <Flag className="w-3.5 h-3.5 text-rose-500" />
                     <span>Report Activity</span>
@@ -185,20 +187,26 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
           {/* Header Info */}
           <div className="mb-3">
             <Link href={`/activities/${activity.id}`}>
-              <h2 className="text-xl font-extrabold leading-tight text-slate-900 mb-3 max-w-[85%] hover:text-[#0eb9a2] transition-colors line-clamp-2">
+              <h2 className="text-xl font-extrabold leading-tight text-slate-900 dark:text-white mb-3 max-w-[85%] hover:text-[#0eb9a2] dark:hover:text-emerald-400 transition-colors line-clamp-2">
                 {activity.title}
               </h2>
             </Link>
             
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 HOST
               </span>
-              <div className="flex items-center gap-1.5 ml-1">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsProfileModalOpen(true);
+                }}
+                className="flex items-center gap-1.5 ml-1 text-left transition hover:opacity-80"
+              >
                 <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-white dark:border-emerald-800 shadow-sm flex items-center justify-center text-[9px] font-bold shrink-0">
                   {hostName.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-xs font-bold text-slate-900">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
                   {hostName}
                 </span>
                 <VerificationBadge
@@ -207,53 +215,53 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                   hasLinkedin={!!activity.organizer?.profile?.linkedinUrl}
                   size="sm"
                 />
-              </div>
+              </button>
             </div>
             
             {activity.description && (
-              <p className="text-xs text-slate-500 italic leading-relaxed max-w-[90%] line-clamp-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400 italic leading-relaxed max-w-[90%] line-clamp-2">
                 &ldquo;{activity.description}&rdquo;
               </p>
             )}
           </div>
 
           {/* Stats Glass Panel */}
-          <div className="w-full bg-white/70 backdrop-blur-xl border border-white rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.05)] p-4 mb-4 grid grid-cols-3 divide-x divide-slate-200/60">
+          <div className="w-full bg-white/70 dark:bg-[#16221c]/85 backdrop-blur-xl border border-white dark:border-emerald-900/40 rounded-[1.5rem] shadow-[0_4px_20px_rgb(0,0,0,0.05)] p-4 mb-4 grid grid-cols-3 divide-x divide-slate-200/60 dark:divide-emerald-950/80">
             
             {/* Col 1: Date & Time */}
             <div className="flex flex-col px-1">
-              <div className="w-8 h-8 rounded-full bg-[#eefaf7] border border-[#d5f0e9] text-[#0eb9a2] flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-full bg-[#eefaf7] dark:bg-emerald-950/70 border border-[#d5f0e9] dark:border-emerald-800/60 text-[#0eb9a2] dark:text-emerald-400 flex items-center justify-center mb-2">
                 <Calendar className="w-3.5 h-3.5" />
               </div>
-              <p className="text-[10px] text-slate-500 mb-0.5">Date & Time</p>
-              <p className="text-xs font-bold text-slate-900 leading-tight mb-0.5">{formatDate(activity.date)}</p>
-              <p className="text-[10px] text-slate-500">{activity.startTime} ({activity.approxDurationHours}h)</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Date & Time</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight mb-0.5">{formatDate(activity.date)}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">{activity.startTime} ({activity.approxDurationHours}h)</p>
             </div>
 
             {/* Col 2: Location */}
             <div className="flex flex-col px-3">
-              <div className="w-8 h-8 rounded-full bg-[#eefaf7] border border-[#d5f0e9] text-[#0eb9a2] flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-full bg-[#eefaf7] dark:bg-emerald-950/70 border border-[#d5f0e9] dark:border-emerald-800/60 text-[#0eb9a2] dark:text-emerald-400 flex items-center justify-center mb-2">
                 <MapPin className="w-3.5 h-3.5" />
               </div>
-              <p className="text-[10px] text-slate-500 mb-0.5">Location</p>
-              <p className="text-xs font-bold text-slate-900 leading-tight line-clamp-2">{activity.locationName}</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Location</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight line-clamp-2">{activity.locationName}</p>
             </div>
 
             {/* Col 3: Joined */}
             <div className="flex flex-col pl-3 pr-1">
-              <div className="w-8 h-8 rounded-full bg-[#eefaf7] border border-[#d5f0e9] text-[#0eb9a2] flex items-center justify-center mb-2">
+              <div className="w-8 h-8 rounded-full bg-[#eefaf7] dark:bg-emerald-950/70 border border-[#d5f0e9] dark:border-emerald-800/60 text-[#0eb9a2] dark:text-emerald-400 flex items-center justify-center mb-2">
                 <Users className="w-3.5 h-3.5" />
               </div>
-              <p className="text-[10px] text-slate-500 mb-0.5">Joined</p>
-              <p className="text-xs font-bold text-slate-900 leading-tight mb-1.5">{currentCount} of {maxParts} joined</p>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">Joined</p>
+              <p className="text-xs font-bold text-slate-900 dark:text-white leading-tight mb-1.5">{currentCount} of {maxParts} joined</p>
               
-              <div className="w-full h-1.5 bg-slate-200/80 rounded-full overflow-hidden flex items-center relative mb-1">
+              <div className="w-full h-1.5 bg-slate-200/80 dark:bg-slate-700/80 rounded-full overflow-hidden flex items-center relative mb-1">
                 <div 
-                  className="h-full bg-[#cbd5e1] rounded-full absolute left-0" 
+                  className="h-full bg-slate-400 dark:bg-slate-500 rounded-full absolute left-0" 
                   style={{ width: `${percentFilled}%` }}
                 />
                 {spotsLeft > 0 && (
-                  <span className="absolute right-0 -top-3.5 text-[9px] font-bold text-[#0eb9a2]">
+                  <span className="absolute right-0 -top-3.5 text-[9px] font-bold text-[#0eb9a2] dark:text-emerald-400">
                     {spotsLeft} left
                   </span>
                 )}
@@ -262,40 +270,39 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
             
           </div>
 
-
           {/* Actions */}
           <div className="flex items-center gap-2.5">
             <Link 
               href={`/activities/${activity.id}`}
-              className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-[0_2px_8px_rgb(0,0,0,0.04)] hover:bg-slate-50 transition-colors"
+              className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-[#1a2620] border border-slate-100 dark:border-emerald-900/50 shadow-[0_2px_8px_rgb(0,0,0,0.04)] hover:bg-slate-50 dark:hover:bg-[#203028] transition-colors"
             >
-              <MenuSquare className="w-4 h-4 mb-0.5 text-slate-700" />
-              <span className="text-[9px] font-semibold text-slate-600">Details</span>
+              <MenuSquare className="w-4 h-4 mb-0.5 text-slate-700 dark:text-slate-200" />
+              <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">Details</span>
             </Link>
 
             <button 
-              className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-white border border-slate-100 shadow-[0_2px_8px_rgb(0,0,0,0.04)] hover:bg-slate-50 transition-colors"
+              className="flex flex-col items-center justify-center w-12 h-12 rounded-xl bg-white dark:bg-[#1a2620] border border-slate-100 dark:border-emerald-900/50 shadow-[0_2px_8px_rgb(0,0,0,0.04)] hover:bg-slate-50 dark:hover:bg-[#203028] transition-colors"
             >
-              <Bookmark className="w-4 h-4 mb-0.5 text-slate-700" />
-              <span className="text-[9px] font-semibold text-slate-600">Save</span>
+              <Bookmark className="w-4 h-4 mb-0.5 text-slate-700 dark:text-slate-200" />
+              <span className="text-[9px] font-semibold text-slate-600 dark:text-slate-300">Save</span>
             </button>
 
             {isOrganizer ? (
-              <button disabled className="flex-1 h-12 rounded-[1.25rem] bg-slate-200 border border-slate-300 text-slate-500 font-bold text-sm flex items-center justify-center">
+              <button disabled className="flex-1 h-12 rounded-[1.25rem] bg-slate-200 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 font-bold text-sm flex items-center justify-center">
                 Host / You
               </button>
             ) : userRequest ? (
               <Link
                 href="/chats"
-                className="flex-1 h-12 rounded-[1.25rem] bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 text-emerald-950 border border-emerald-300/90 font-bold text-sm flex items-center justify-between px-4 transition-all shadow-xs"
+                className="flex-1 h-12 rounded-[1.25rem] bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 dark:from-emerald-900/80 dark:via-teal-900/70 dark:to-emerald-900/80 text-emerald-950 dark:text-emerald-100 border border-emerald-300/90 dark:border-emerald-600/70 font-bold text-sm flex items-center justify-between px-4 transition-all shadow-xs"
               >
                 <span>Chat with Group</span>
-                <div className="w-6 h-6 rounded-full bg-emerald-200/80 text-emerald-800 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-emerald-200/80 dark:bg-emerald-700/80 text-emerald-800 dark:text-emerald-100 flex items-center justify-center">
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>
               </Link>
             ) : isCancelled || isFull || isPast ? (
-              <button disabled className="flex-1 h-12 rounded-[1.25rem] bg-slate-100 border border-slate-200 text-slate-400 font-bold text-sm flex items-center justify-center">
+              <button disabled className="flex-1 h-12 rounded-[1.25rem] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-400 dark:text-slate-500 font-bold text-sm flex items-center justify-center">
                 {isCancelled ? 'Cancelled' : isFull ? 'Full' : 'Closed'}
               </button>
             ) : (
@@ -307,10 +314,10 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                   }
                   setIsModalOpen(true);
                 }}
-                className="flex-1 h-12 rounded-[1.25rem] bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 text-emerald-950 border border-emerald-300/90 font-bold text-sm flex items-center justify-between px-4 transition-all shadow-xs"
+                className="flex-1 h-12 rounded-[1.25rem] bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 dark:from-emerald-900/80 dark:via-teal-900/70 dark:to-emerald-900/80 text-emerald-950 dark:text-emerald-100 border border-emerald-300/90 dark:border-emerald-600/70 font-bold text-sm flex items-center justify-between px-4 transition-all shadow-xs"
               >
                 <span>Join Activity</span>
-                <div className="w-6 h-6 rounded-full bg-emerald-200/80 text-emerald-800 flex items-center justify-center">
+                <div className="w-6 h-6 rounded-full bg-emerald-200/80 dark:bg-emerald-700/80 text-emerald-800 dark:text-emerald-100 flex items-center justify-center">
                   <ChevronRight className="w-3.5 h-3.5" />
                 </div>
               </button>
@@ -338,6 +345,12 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
         targetType="ACTIVITY"
         targetId={activity.id}
         targetName={activity.title}
+      />
+      
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={activity.organizer}
       />
     </>
   );

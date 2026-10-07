@@ -18,7 +18,7 @@ import {
   Backpack,
   Mountain,
   Car,
-  Sparkles,
+  Gem,
   Heart,
 } from "lucide-react";
 
@@ -66,7 +66,7 @@ const STYLES: TravelStyleOption[] = [
   {
     id: "LUXURY",
     label: "Boutique & Luxury",
-    icon: <Sparkles className="w-5 h-5 text-emerald-500" />,
+    icon: <Gem className="w-5 h-5 text-emerald-500" />,
     desc: "Curated boutique stays, fine dining, private tours",
   },
   {

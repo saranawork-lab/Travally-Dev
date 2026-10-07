@@ -9,7 +9,6 @@ import {
   ShieldCheck,
   Compass,
   ArrowUpRight,
-  Sparkles,
   Flame,
   Mail,
   CheckCircle2,

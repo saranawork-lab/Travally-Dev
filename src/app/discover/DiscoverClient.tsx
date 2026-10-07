@@ -8,7 +8,7 @@ import { ActivityFilters } from "@/components/activities/ActivityFilters";
 import { TripCard } from "@/components/travel/TripCard";
 import { TripFilters } from "@/components/travel/TripFilters";
 import { DatabaseHealthGuard } from "@/components/common/DatabaseHealthGuard";
-import { PlusCircle, Sparkles } from "lucide-react";
+import { PlusCircle, SearchX, Compass, Search, MapPin, Users, Calendar, Luggage } from "lucide-react";
 import Link from "next/link";
 
 interface DiscoverClientProps {
@@ -22,6 +22,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
   const initialMode = (searchParams.get("mode") as AppMode) || "companion";
   const [mode, setMode] = useState<AppMode>(initialMode);
   const [currentUser, setCurrentUser] = useState<any>(initialUser);
+  const [heroSearchY, setHeroSearchY] = useState(0);
 
   // Companion state
   const [activities, setActivities] = useState<any[]>([]);
@@ -84,6 +85,22 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
     window.addEventListener("travally-search", handleTravallySearch);
     return () => window.removeEventListener("travally-search", handleTravallySearch);
   }, [mode]);
+
+  // Track scroll for Hero Search fading
+  useEffect(() => {
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          setHeroSearchY(window.scrollY);
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Fetch activities
   const fetchActivities = async () => {
@@ -204,39 +221,55 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
 
   return (
     <DatabaseHealthGuard>
-      <div className="max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6 pb-32 sm:pb-16">
-        {/* Top Banner & Mode Toggle */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-4 pb-3 sm:pb-4 border-b border-slate-200/80 dark:border-emerald-950/60">
-          <div>
-            <h1 className="text-xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              {mode === "companion" ? "Discover Companions" : "Discover Expeditions"}
-            </h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 max-w-xl">
-              {mode === "companion"
-                ? "Find verified partners for movies, cafes, sports, and shared activities"
-                : "Find compatible travel partners for upcoming multi-day trips and adventures"}
-            </p>
+      <div className="w-full flex flex-col min-h-screen">
+        
+        {/* ── HERO SECTION ── */}
+        <div className="w-full relative h-[25vh] sm:h-[30vh] min-h-[200px] max-h-[280px] bg-slate-100 mb-10 sm:mb-8">
+          <div className="absolute inset-0 overflow-hidden">
+            <img
+              src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&auto=format&fit=crop&q=80"
+              alt="Discover Travally"
+              className="absolute inset-0 w-full h-full object-cover object-center animate-fade-in-up"
+            />
+            {/* White gradient at top to ensure logo legibility, dark at bottom for contrast */}
+            <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-transparent to-black/20" />
           </div>
-
-          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-end">
-            {/* Show ModeToggle on mobile with compact size */}
-            <div className="sm:hidden">
-              <ModeToggle currentMode={mode} onModeChange={handleModeChange} size="sm" />
+          
+          {/* Overlapping Mode Toggle Tabs */}
+          <div className="absolute bottom-0 left-0 right-0 translate-y-1/2 px-4 sm:px-6 md:px-8 flex justify-center z-20">
+            <div className="bg-white dark:bg-[#111815] rounded-2xl sm:rounded-full shadow-lg border border-slate-100 dark:border-emerald-950/60 flex items-stretch h-14 sm:h-16 w-full max-w-sm px-2">
+              <button 
+                onClick={() => handleModeChange("companion")} 
+                className={`flex-1 flex flex-col items-center justify-center relative transition-colors ${mode === 'companion' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
+              >
+                <div className="flex items-center justify-center gap-2 font-bold text-[15px] sm:text-base">
+                  <Users className="w-5 h-5" />
+                  Companion
+                </div>
+                {mode === "companion" && <div className="absolute bottom-0 left-6 right-6 h-1 bg-emerald-600 dark:bg-emerald-500 rounded-t-full" />}
+              </button>
+              <div className="w-px bg-slate-100 dark:bg-emerald-900/40 my-3" />
+              <button 
+                onClick={() => handleModeChange("travel")} 
+                className={`flex-1 flex flex-col items-center justify-center relative transition-colors ${mode === 'travel' ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'}`}
+              >
+                <div className="flex items-center justify-center gap-2 font-bold text-[15px] sm:text-base">
+                  <Luggage className="w-5 h-5" />
+                  Travel
+                </div>
+                {mode === "travel" && <div className="absolute bottom-0 left-6 right-6 h-1 bg-orange-600 dark:bg-orange-500 rounded-t-full" />}
+              </button>
             </div>
-
-            <Link
-              href={mode === "companion" ? "/activities/create" : "/travel/create"}
-              className={`hidden sm:inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition shadow-xs ${
-                mode === "companion"
-                  ? "bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 text-emerald-950 dark:text-emerald-200 border border-emerald-300/80 dark:border-emerald-800/60"
-                  : "bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-950/70 hover:from-orange-200 hover:to-amber-100 text-orange-950 dark:text-orange-200 border border-orange-300/80 dark:border-orange-800/60"
-              }`}
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>{mode === "companion" ? "Post Activity" : "Create Trip"}</span>
-            </Link>
           </div>
         </div>
+
+        {/* Existing Feed Content */}
+        <div className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 pt-2 sm:pt-4 pb-32 sm:pb-16 space-y-4 sm:space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+              {mode === "companion" ? "Discover Companions" : "Discover Travel"}
+            </h2>
+          </div>
 
         {/* Mode 1: COMPANION FEED */}
         {mode === "companion" && (
@@ -264,7 +297,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
               </div>
             ) : displayActivities.length === 0 ? (
               <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 max-w-lg mx-auto">
-                <Sparkles className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto mb-3" />
+                <SearchX className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   No activities match your filter
                 </h3>
@@ -324,7 +357,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
               </div>
             ) : displayTravelPlans.length === 0 ? (
               <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 max-w-lg mx-auto">
-                <Sparkles className="w-10 h-10 text-orange-500 mx-auto mb-3" />
+                <Compass className="w-10 h-10 text-orange-500 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
                   No expeditions found for this destination or style
                 </h3>
@@ -355,7 +388,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
             )}
           </section>
         )}
-
+      </div>
       </div>
     </DatabaseHealthGuard>
   );

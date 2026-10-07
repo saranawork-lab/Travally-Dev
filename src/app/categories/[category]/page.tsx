@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import db from "@/lib/db";
 import { ActivityCard } from "@/components/activities/ActivityCard";
-import { ArrowLeft, Film, Coffee, Footprints, BookOpen, Music, ShoppingBag, MapPin, Sparkles } from "lucide-react";
+import { ArrowLeft, Film, Coffee, Footprints, BookOpen, Music, ShoppingBag, MapPin, Compass } from "lucide-react";
 import type { Metadata } from "next";
 
 const CATEGORY_META: Record<string, { title: string; desc: string; icon: string; dbEnum?: string }> = {
@@ -58,7 +58,7 @@ const CATEGORY_META: Record<string, { title: string; desc: string; icon: string;
   other: {
     title: "Local Activity Companions",
     desc: "Discover partners for unique everyday activities, hobbies, and local meetups.",
-    icon: "Sparkles",
+    icon: "Compass",
     dbEnum: "OTHER",
   },
 };
@@ -75,7 +75,7 @@ function getCategoryInfo(slug: string) {
   return {
     title: `${formattedTitle} Companions`,
     desc: `Discover local companions and partners for ${formattedTitle.toLowerCase()} in your city.`,
-    icon: "Sparkles",
+    icon: "Compass",
     dbEnum: catKey.toUpperCase().replace(/-/g, "_"),
   };
 }
@@ -175,7 +175,7 @@ export default async function CategorySEOPage({
 
         {activities.length === 0 ? (
           <div className="p-12 text-center bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border text-xs text-slate-400 space-y-3">
-            <Sparkles className="w-8 h-8 text-brand-500 mx-auto" />
+            <Compass className="w-8 h-8 text-brand-500 mx-auto" />
             <p>No open activities currently in this category. Be the first to start one!</p>
             <Link
               href="/activities/create"

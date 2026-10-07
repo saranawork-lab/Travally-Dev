@@ -13,7 +13,6 @@ import {
   Flag,
   MoreHorizontal,
   ChevronRight,
-  Sparkles,
   Plane,
   Train,
   Car,
@@ -25,6 +24,7 @@ import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { CompatibilityBadge } from "@/components/travel/CompatibilityBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { ReportModal } from "@/components/common/ReportModal";
+import { ProfileModal } from "@/components/profile/ProfileModal";
 import { CompatibilityResult } from "@/lib/scoring";
 import { getTripImage } from "@/lib/images";
 
@@ -76,6 +76,7 @@ export const TripCard: React.FC<TripCardProps> = ({
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   const isOrganizer =
     currentUser?.id && trip.organizer?.id ? currentUser.id === trip.organizer.id : false;
@@ -198,7 +199,13 @@ export const TripCard: React.FC<TripCardProps> = ({
               </div>
 
               {/* Host row */}
-              <div className="flex items-center gap-2 mt-2">
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsProfileModalOpen(true);
+                }}
+                className="flex items-center gap-2 mt-2 text-left transition hover:opacity-80"
+              >
                 <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/40 flex items-center justify-center text-[10px] font-bold shrink-0">
                   {hostName.charAt(0).toUpperCase()}
                 </div>
@@ -211,7 +218,7 @@ export const TripCard: React.FC<TripCardProps> = ({
                   hasLinkedin={!!trip.organizer?.profile?.linkedinUrl}
                   size="sm"
                 />
-              </div>
+              </button>
             </div>
 
             {/* Description (Readable typography) */}
@@ -365,6 +372,12 @@ export const TripCard: React.FC<TripCardProps> = ({
         targetType="TRAVEL"
         targetId={trip.id}
         targetName={trip.destination}
+      />
+
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={trip.organizer}
       />
     </>
   );
