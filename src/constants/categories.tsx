@@ -14,8 +14,19 @@ import {
   ShoppingBag,
   Building2,
   Compass,
+  Beer,
 } from "lucide-react";
 import type { ActivityCategory } from "@/types";
+import { CustomCategoryIcon } from "@/components/common/CustomCategoryIcon";
+
+export const IconMovies = (props: any) => <CustomCategoryIcon src="/category-icons/movies.png" alt="Movies & Cinema" {...props} />;
+export const IconFood = (props: any) => <CustomCategoryIcon src="/category-icons/food.png" alt="Street Food & Cafes" {...props} />;
+export const IconSports = (props: any) => <CustomCategoryIcon src="/category-icons/sports.png" alt="Turf Sports & Fitness" {...props} />;
+export const IconTech = (props: any) => <CustomCategoryIcon src="/category-icons/tech.png" alt="Tech & Networking" {...props} />;
+export const IconPubs = (props: any) => <CustomCategoryIcon src="/category-icons/pubs.png" alt="Nightlife & Pubs" {...props} />;
+export const IconShopping = (props: any) => <CustomCategoryIcon src="/category-icons/shopping.png" alt="Shopping & Bazaars" {...props} />;
+export const IconDrives = (props: any) => <CustomCategoryIcon src="/category-icons/drives.png" alt="Long Drives & Getaways" {...props} />;
+export const IconHangouts = (props: any) => <CustomCategoryIcon src="/category-icons/hangouts.png" alt="Other Hangouts" {...props} />;
 
 export interface CategoryConfig {
   label: string;
@@ -47,7 +58,7 @@ const CATEGORY_IMAGES: Record<string, string> = {
 export const CATEGORIES: Record<string, CategoryConfig> = {
   MOVIES: {
     label: "Movies & Cinema",
-    icon: Film,
+    icon: IconMovies,
     badgeBg: "bg-emerald-600 text-white",
     tagText: "text-emerald-500 dark:text-emerald-400",
     border: "border-emerald-500/30",
@@ -55,7 +66,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
   FOOD_CAFES: {
     label: "Street Food & Cafes",
-    icon: Coffee,
+    icon: IconFood,
     badgeBg: "bg-orange-500 text-white",
     tagText: "text-orange-500 dark:text-orange-400",
     border: "border-orange-500/30",
@@ -63,7 +74,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
   WALKING: {
     label: "Turf Sports & Fitness",
-    icon: Footprints,
+    icon: IconSports,
     badgeBg: "bg-emerald-600 text-white",
     tagText: "text-emerald-500 dark:text-emerald-400",
     border: "border-emerald-500/30",
@@ -71,15 +82,15 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
   STUDYING: {
     label: "Tech & Networking",
-    icon: BookOpen,
+    icon: IconTech,
     badgeBg: "bg-emerald-700 text-white",
     tagText: "text-emerald-600 dark:text-emerald-400",
     border: "border-emerald-600/30",
     defaultImage: CATEGORY_IMAGES.STUDYING,
   },
   EVENTS: {
-    label: "Standup & Concerts",
-    icon: Music,
+    label: "Nightlife & Pubs",
+    icon: IconPubs,
     badgeBg: "bg-orange-600 text-white",
     tagText: "text-orange-500 dark:text-orange-400",
     border: "border-orange-500/30",
@@ -87,7 +98,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
   SHOPPING: {
     label: "Shopping & Bazaars",
-    icon: ShoppingBag,
+    icon: IconShopping,
     badgeBg: "bg-orange-500 text-white",
     tagText: "text-orange-500 dark:text-orange-400",
     border: "border-orange-500/30",
@@ -95,7 +106,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
   CITY_EXPLORATION: {
     label: "Long Drives & Getaways",
-    icon: Building2,
+    icon: IconDrives,
     badgeBg: "bg-emerald-600 text-white",
     tagText: "text-emerald-500 dark:text-emerald-400",
     border: "border-emerald-500/30",
@@ -103,7 +114,7 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
   OTHER: {
     label: "Other Hangouts",
-    icon: Compass,
+    icon: IconHangouts,
     badgeBg: "bg-emerald-800 text-white",
     tagText: "text-emerald-500 dark:text-emerald-400",
     border: "border-emerald-500/30",
@@ -123,8 +134,84 @@ const CATEGORY_KEYS: ActivityCategory[] = [
   "OTHER",
 ];
 
+export const IconCultural = (props: any) => <CustomCategoryIcon src="/travel-icons/cultural.png" alt="Cultural & Heritage" {...props} />;
+export const IconSlowTravel = (props: any) => <CustomCategoryIcon src="/travel-icons/slow_travel.png" alt="Slow Travel" {...props} />;
+export const IconBackpacking = (props: any) => <CustomCategoryIcon src="/travel-icons/backpacking.png" alt="Backpacking & Hostels" {...props} />;
+export const IconAdventure = (props: any) => <CustomCategoryIcon src="/travel-icons/adventure.png" alt="Adventure & Hiking" {...props} />;
+export const IconRoadTrip = (props: any) => <CustomCategoryIcon src="/travel-icons/road_trip.png" alt="Scenic Road Trip" {...props} />;
+export const IconLuxury = (props: any) => <CustomCategoryIcon src="/travel-icons/luxury.png" alt="Boutique & Luxury" {...props} />;
+export const IconRelaxation = (props: any) => <CustomCategoryIcon src="/travel-icons/relaxation.png" alt="Relaxation & Wellness" {...props} />;
+
+export interface TravelStyleConfig {
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badgeBg: string;
+  tagText: string;
+  border: string;
+  desc: string;
+}
+
+export const TRAVEL_STYLE_CONFIG: Record<string, TravelStyleConfig> = {
+  CULTURAL: {
+    label: "Cultural & Heritage",
+    icon: IconCultural,
+    badgeBg: "bg-orange-600 text-white",
+    tagText: "text-orange-600 dark:text-orange-400",
+    border: "border-orange-500/30",
+    desc: "Historic districts, architecture, museums, culinary heritage",
+  },
+  SLOW_TRAVEL: {
+    label: "Slow Travel",
+    icon: IconSlowTravel,
+    badgeBg: "bg-emerald-600 text-white",
+    tagText: "text-emerald-500 dark:text-emerald-400",
+    border: "border-emerald-500/30",
+    desc: "Neighborhood living, unhurried exploration, local immersion",
+  },
+  BACKPACKING: {
+    label: "Backpacking & Hostels",
+    icon: IconBackpacking,
+    badgeBg: "bg-orange-500 text-white",
+    tagText: "text-orange-500 dark:text-orange-400",
+    border: "border-orange-500/30",
+    desc: "Hostels, flexible transit, budget-conscious exploration",
+  },
+  ADVENTURE: {
+    label: "Adventure & Hiking",
+    icon: IconAdventure,
+    badgeBg: "bg-emerald-600 text-white",
+    tagText: "text-emerald-500 dark:text-emerald-400",
+    border: "border-emerald-500/30",
+    desc: "Mountain trails, outdoor trekking, coastal walks",
+  },
+  ROAD_TRIP: {
+    label: "Scenic Road Trip",
+    icon: IconRoadTrip,
+    badgeBg: "bg-orange-500 text-white",
+    tagText: "text-orange-500 dark:text-orange-400",
+    border: "border-orange-500/30",
+    desc: "Coastal drives, countryside exploration, road journeys",
+  },
+  LUXURY: {
+    label: "Boutique & Luxury",
+    icon: IconLuxury,
+    badgeBg: "bg-emerald-600 text-white",
+    tagText: "text-emerald-500 dark:text-emerald-400",
+    border: "border-emerald-500/30",
+    desc: "Curated boutique stays, fine dining, private tours",
+  },
+  RELAXATION: {
+    label: "Relaxation & Wellness",
+    icon: IconRelaxation,
+    badgeBg: "bg-orange-500 text-white",
+    tagText: "text-orange-500 dark:text-orange-400",
+    border: "border-orange-500/30",
+    desc: "Hot springs, coastal retreats, peaceful escapes",
+  },
+};
+
 /** Travel style display labels */
-const TRAVEL_STYLES: Record<string, string> = {
+export const TRAVEL_STYLES: Record<string, string> = {
   BACKPACKING: "Backpacking",
   CULTURAL: "Cultural",
   SLOW_TRAVEL: "Slow Travel",

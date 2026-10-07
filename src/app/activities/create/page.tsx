@@ -17,13 +17,23 @@ import {
   Coffee,
   Footprints,
   BookOpen,
-  Music,
+  Beer,
   ShoppingBag,
   Compass,
   CheckCircle2,
   UploadCloud,
   X,
 } from "lucide-react";
+import {
+  IconMovies,
+  IconFood,
+  IconSports,
+  IconTech,
+  IconPubs,
+  IconShopping,
+  IconDrives,
+  IconHangouts,
+} from "@/constants/categories";
 
 interface CategoryOption {
   id: string;
@@ -39,7 +49,7 @@ const CATEGORIES: CategoryOption[] = [
     id: "FOOD_CAFES",
     label: "Street Food & Cafes",
     tag: "Food Walks & Breweries",
-    icon: <Coffee className="w-5 h-5 text-orange-500" />,
+    icon: <IconFood className="w-10 h-10" />,
     hint: "Midnight biryani runs, Irani chai, brewery hopping, street food tasting",
     popular: true,
   },
@@ -47,7 +57,7 @@ const CATEGORIES: CategoryOption[] = [
     id: "MOVIES",
     label: "Movies & Cinema",
     tag: "Screenings & FDFS",
-    icon: <Film className="w-5 h-5 text-emerald-500" />,
+    icon: <IconMovies className="w-10 h-10" />,
     hint: "First day first show (FDFS), IMAX screenings, regional cinema, indie film discussions",
     popular: true,
   },
@@ -55,42 +65,42 @@ const CATEGORIES: CategoryOption[] = [
     id: "WALKING",
     label: "Turf Sports & Fitness",
     tag: "Cricket & Badminton",
-    icon: <Footprints className="w-5 h-5 text-green-600" />,
+    icon: <IconSports className="w-10 h-10" />,
     hint: "Box cricket, weekend badminton, morning runs at KBR park, turf football",
   },
   {
     id: "STUDYING",
     label: "Tech & Networking",
     tag: "Startups & Meetups",
-    icon: <BookOpen className="w-5 h-5 text-emerald-600" />,
+    icon: <IconTech className="w-10 h-10" />,
     hint: "Startup mixers, coding meetups, co-working sessions, founder discussions",
   },
   {
     id: "EVENTS",
-    label: "Standup & Concerts",
-    tag: "Comedy & Live Shows",
-    icon: <Music className="w-5 h-5 text-orange-500" />,
-    hint: "Local standup comedy, live bands, open mics, weekend gigs",
+    label: "Nightlife & Pubs",
+    tag: "Bars & Clubbing",
+    icon: <IconPubs className="w-10 h-10" />,
+    hint: "Pubs, bars, clubbing, night markets, evening entertainment",
   },
   {
     id: "SHOPPING",
     label: "Shopping & Bazaars",
     tag: "Street Shopping & Malls",
-    icon: <ShoppingBag className="w-5 h-5 text-amber-500" />,
+    icon: <IconShopping className="w-10 h-10" />,
     hint: "Night markets, Laad Bazaar, weekend mall hopping, flea markets",
   },
   {
     id: "CITY_EXPLORATION",
     label: "Long Drives & Getaways",
     tag: "Dhabas & Outskirts",
-    icon: <Compass className="w-5 h-5 text-emerald-500" />,
+    icon: <IconDrives className="w-10 h-10" />,
     hint: "Late night drives to outskirts, dhaba dinners, weekend morning rides",
   },
   {
     id: "OTHER",
     label: "Other Hangouts",
     tag: "Board Games & Hobbies",
-    icon: <Gamepad2 className="w-5 h-5 text-orange-500" />,
+    icon: <IconHangouts className="w-10 h-10" />,
     hint: "Board game cafes, casual meetups, or any other shared interest",
   },
 ];
@@ -208,8 +218,8 @@ export default function CreateActivityPage() {
 
         {/* Responsive Step Progress Header */}
         <div className="mb-6 pb-4 border-b border-slate-100 dark:border-dark-border flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-3 flex-wrap">
+          <div className="space-y-1.5 w-full text-center flex flex-col items-center">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <ModeToggle
                 currentMode="companion"
                 onModeChange={(mode) => {
@@ -217,9 +227,6 @@ export default function CreateActivityPage() {
                 }}
                 size="sm"
               />
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-xs font-bold text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-2xs">
-                Step {step} of 2
-              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Post an Activity

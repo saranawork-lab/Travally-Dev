@@ -22,6 +22,16 @@ import {
   Heart,
 } from "lucide-react";
 
+import {
+  IconCultural,
+  IconSlowTravel,
+  IconBackpacking,
+  IconAdventure,
+  IconRoadTrip,
+  IconLuxury,
+  IconRelaxation,
+} from "@/constants/categories";
+
 interface TravelStyleOption {
   id: string;
   label: string;
@@ -34,45 +44,45 @@ const STYLES: TravelStyleOption[] = [
   {
     id: "CULTURAL",
     label: "Cultural & Heritage",
-    icon: <Landmark className="w-5 h-5 text-orange-500" />,
+    icon: <IconCultural className="w-10 h-10" />,
     desc: "Historic districts, architecture, museums, culinary heritage",
     popular: true,
   },
   {
     id: "SLOW_TRAVEL",
     label: "Slow Travel",
-    icon: <Trees className="w-5 h-5 text-emerald-500" />,
+    icon: <IconSlowTravel className="w-10 h-10" />,
     desc: "Neighborhood living, unhurried exploration, local immersion",
     popular: true,
   },
   {
     id: "BACKPACKING",
     label: "Backpacking & Hostels",
-    icon: <Backpack className="w-5 h-5 text-orange-600" />,
+    icon: <IconBackpacking className="w-10 h-10" />,
     desc: "Hostels, flexible transit, budget-conscious exploration",
   },
   {
     id: "ADVENTURE",
     label: "Adventure & Hiking",
-    icon: <Mountain className="w-5 h-5 text-emerald-600" />,
+    icon: <IconAdventure className="w-10 h-10" />,
     desc: "Mountain trails, outdoor trekking, coastal walks",
   },
   {
     id: "ROAD_TRIP",
     label: "Scenic Road Trip",
-    icon: <Car className="w-5 h-5 text-orange-500" />,
+    icon: <IconRoadTrip className="w-10 h-10" />,
     desc: "Coastal drives, countryside exploration, road journeys",
   },
   {
     id: "LUXURY",
     label: "Boutique & Luxury",
-    icon: <Gem className="w-5 h-5 text-emerald-500" />,
+    icon: <IconLuxury className="w-10 h-10" />,
     desc: "Curated boutique stays, fine dining, private tours",
   },
   {
     id: "RELAXATION",
     label: "Relaxation & Wellness",
-    icon: <Heart className="w-5 h-5 text-orange-500" />,
+    icon: <IconRelaxation className="w-10 h-10" />,
     desc: "Hot springs, coastal retreats, peaceful escapes",
   },
 ];
@@ -200,8 +210,8 @@ export default function CreateTravelPlanPage() {
 
         {/* Step Progress Header */}
         <div className="mb-6 pb-4 border-b border-slate-100 dark:border-emerald-950/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-3 flex-wrap">
+          <div className="space-y-1.5 w-full text-center flex flex-col items-center">
+            <div className="flex items-center justify-center gap-3 flex-wrap">
               <ModeToggle
                 currentMode="travel"
                 onModeChange={(mode) => {
@@ -209,9 +219,6 @@ export default function CreateTravelPlanPage() {
                 }}
                 size="sm"
               />
-              <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-orange-50 dark:bg-orange-950/60 text-xs font-bold text-orange-700 dark:text-orange-300 border border-orange-200 dark:border-orange-800/60 shadow-2xs">
-                Step {step} of 2
-              </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               Publish a Travel Plan

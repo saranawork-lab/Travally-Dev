@@ -20,14 +20,25 @@ import {
   RotateCcw,
 } from "lucide-react";
 
+import {
+  IconCultural,
+  IconSlowTravel,
+  IconBackpacking,
+  IconAdventure,
+  IconRoadTrip,
+  IconLuxury,
+  IconRelaxation,
+} from "@/constants/categories";
+
 const TRAVEL_STYLES = [
   { id: "ALL", label: "All Styles", icon: Compass },
-  { id: "CULTURAL", label: "Cultural & Heritage", icon: Landmark },
-  { id: "SLOW_TRAVEL", label: "Slow Travel", icon: Footprints },
-  { id: "BACKPACKING", label: "Backpacking", icon: Luggage },
-  { id: "ADVENTURE", label: "Adventure & Hiking", icon: Mountain },
-  { id: "ROAD_TRIP", label: "Road Trip", icon: Car },
-  { id: "LUXURY", label: "Boutique & Luxury", icon: Gem },
+  { id: "CULTURAL", label: "Cultural & Heritage", icon: IconCultural },
+  { id: "SLOW_TRAVEL", label: "Slow Travel", icon: IconSlowTravel },
+  { id: "BACKPACKING", label: "Backpacking & Hostels", icon: IconBackpacking },
+  { id: "ADVENTURE", label: "Adventure & Hiking", icon: IconAdventure },
+  { id: "ROAD_TRIP", label: "Scenic Road Trip", icon: IconRoadTrip },
+  { id: "LUXURY", label: "Boutique & Luxury", icon: IconLuxury },
+  { id: "RELAXATION", label: "Relaxation & Wellness", icon: IconRelaxation },
 ];
 
 const TRIP_SORT_OPTIONS = [

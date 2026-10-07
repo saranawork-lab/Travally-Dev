@@ -15,21 +15,32 @@ import {
   Coffee,
   Footprints,
   BookOpen,
-  Ticket,
+  Beer,
   Compass,
   ShoppingBag,
   RotateCcw,
 } from "lucide-react";
+import {
+  IconMovies,
+  IconFood,
+  IconSports,
+  IconTech,
+  IconPubs,
+  IconShopping,
+  IconDrives,
+  IconHangouts,
+} from "@/constants/categories";
 
 const CATEGORIES = [
   { id: "ALL", label: "All Activities", icon: Layers },
-  { id: "MOVIES", label: "Movies & Cinema", icon: Film },
-  { id: "FOOD_CAFES", label: "Street Food & Cafes", icon: Coffee },
-  { id: "WALKING", label: "Turf Sports & Fitness", icon: Footprints },
-  { id: "STUDYING", label: "Tech & Networking", icon: BookOpen },
-  { id: "EVENTS", label: "Standup & Concerts", icon: Ticket },
-  { id: "CITY_EXPLORATION", label: "Long Drives & Getaways", icon: Compass },
-  { id: "SHOPPING", label: "Shopping & Bazaars", icon: ShoppingBag },
+  { id: "MOVIES", label: "Movies & Cinema", icon: IconMovies },
+  { id: "FOOD_CAFES", label: "Street Food & Cafes", icon: IconFood },
+  { id: "WALKING", label: "Turf Sports & Fitness", icon: IconSports },
+  { id: "STUDYING", label: "Tech & Networking", icon: IconTech },
+  { id: "EVENTS", label: "Nightlife & Pubs", icon: IconPubs },
+  { id: "CITY_EXPLORATION", label: "Long Drives & Getaways", icon: IconDrives },
+  { id: "SHOPPING", label: "Shopping & Bazaars", icon: IconShopping },
+  { id: "OTHER", label: "Other Hangouts", icon: IconHangouts },
 ];
 
 const SORT_OPTIONS = [

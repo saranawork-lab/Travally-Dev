@@ -186,56 +186,126 @@ export default function MyProfilePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
 
-      {/* Global Profile Header (Always visible) */}
-      <div className="bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <AvatarBadge
-            src={avatarUrl || currentUser?.avatarUrl}
-            name={displayName || currentUser?.displayName}
-            rank={userRank}
-            badge={userBadge}
-            size="lg"
-            showCrown={true}
-            showRibbon={true}
-          />
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <h2 className="font-bold text-lg text-slate-900 dark:text-white">
-                {displayName || "Your Name"}
-              </h2>
-              <VerificationBadge
-                status={profile?.verificationStatus || "UNVERIFIED"}
-                isVerified={profile?.isVerified}
-                hasLinkedin={!!linkedinUrl}
-                showLabel
+      <form onSubmit={handleSave} className="space-y-6 animate-fade-in">
+        <div className={`bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm flex flex-col gap-8 relative ${!isEditing ? "opacity-90" : ""}`}>
+          {/* Global Profile Header (Always visible) */}
+          <div className="flex flex-col items-center justify-center gap-4">
+            <div className="flex flex-col items-center gap-3 text-center">
+              <AvatarBadge
+                src={avatarUrl || currentUser?.avatarUrl}
+                name={displayName || currentUser?.displayName}
+                rank={userRank}
+                badge={userBadge}
+                size="lg"
+                showCrown={true}
+                showRibbon={true}
+              />
+              <div className="flex flex-col items-center gap-1.5">
+                <div className="flex items-center justify-center gap-2 flex-wrap">
+                  <h2 className="font-bold text-lg text-slate-900 dark:text-white">
+                    {displayName || "Your Name"}
+                  </h2>
+                  <VerificationBadge
+                    status={profile?.verificationStatus || "UNVERIFIED"}
+                    isVerified={profile?.isVerified}
+                    hasLinkedin={!!linkedinUrl}
+                    showLabel
+                  />
+                </div>
+                <p className="text-xs text-slate-500">{city || "City not set"}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-center gap-2 w-full sm:w-auto mt-2">
+              <button
+                type="button"
+                onClick={() => setIsEditing(!isEditing)}
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-colors ${
+                  isEditing 
+                    ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
+                    : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
+                }`}
+              >
+                {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
+                <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
+              </button>
+              <Link
+                href="/settings"
+                className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#111c16] dark:hover:bg-[#19261f] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
+                title="Account Settings & Sign Out"
+              >
+                <Settings className="w-5 h-5" />
+              </Link>
+            </div>
+          </div>
+
+          <hr className="border-slate-100 dark:border-dark-border w-full" />
+
+          {/* Core Details (Always visible above tabs) */}
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                Display Name *
+              </label>
+              <input
+                required
+                disabled={!isEditing}
+                type="text"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
               />
             </div>
-            <p className="text-xs text-slate-500">{city || "City not set"}</p>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                City / Location
+              </label>
+              <input
+                type="text"
+                disabled={!isEditing}
+                placeholder="e.g. San Francisco, CA"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                Gender
+              </label>
+              <select
+                value={gender}
+                disabled={!isEditing}
+                onChange={(e) => setGender(e.target.value)}
+                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 appearance-none'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
+              >
+                <option value="MALE">Male</option>
+                <option value="FEMALE">Female</option>
+                <option value="OTHER">Others</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Bio */}
+          <div>
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+              Short Bio
+            </label>
+            <textarea
+              rows={3}
+              disabled={!isEditing}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder="Tell others about what you enjoy doing on weekends, what inspires you, and your favorite travel spots..."
+              className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 resize-none'} p-3.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed transition-colors`}
+            />
           </div>
         </div>
-        
-        <div className="flex items-center gap-2 w-full sm:w-auto">
-          <button
-            type="button"
-            onClick={() => setIsEditing(!isEditing)}
-            className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-colors ${
-              isEditing 
-                ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
-                : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
-            }`}
-          >
-            {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-            <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
-          </button>
-          <Link
-            href="/settings"
-            className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#111c16] dark:hover:bg-[#19261f] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
-            title="Account Settings & Sign Out"
-          >
-            <Settings className="w-5 h-5" />
-          </Link>
         </div>
-      </div>
+
       {/* Profile & Pass Navigation Tabs (Centered Rounded-Full Capsule) */}
       <div className="flex items-center justify-between w-full pb-2 relative">
         <div className="w-10 sm:w-12 hidden sm:block"></div> {/* Spacer for perfect centering */}
@@ -288,68 +358,7 @@ export default function MyProfilePage() {
 
       {/* ── TAB 1: PROFILE DETAILS FORM ── */}
       {activeTab === "profile" && (
-        <form onSubmit={handleSave} className="space-y-6 animate-fade-in">
           <div className={`bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm space-y-6 ${!isEditing ? "opacity-90" : ""}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                  Display Name *
-                </label>
-                <input
-                  required
-                  disabled={!isEditing}
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                  City / Location
-                </label>
-                <input
-                  type="text"
-                  disabled={!isEditing}
-                  placeholder="e.g. San Francisco, CA"
-                  value={city}
-                  onChange={(e) => setCity(e.target.value)}
-                  className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                  Gender
-                </label>
-                <select
-                  value={gender}
-                  disabled={!isEditing}
-                  onChange={(e) => setGender(e.target.value)}
-                  className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 appearance-none'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
-                >
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                  <option value="OTHER">Others</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Bio */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                Short Bio
-              </label>
-              <textarea
-                rows={3}
-                disabled={!isEditing}
-                value={bio}
-                onChange={(e) => setBio(e.target.value)}
-                placeholder="Tell others about what you enjoy doing on weekends, what inspires you, and your favorite travel spots..."
-                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 resize-none'} p-3.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed transition-colors`}
-              />
-            </div>
 
             {/* LinkedIn Verification Link */}
             <div>
@@ -549,7 +558,6 @@ export default function MyProfilePage() {
               </div>
             )}
           </div>
-        </form>
       )}
 
       {/* ── TAB 2: VIRTUAL MEMBERSHIP PASS & BADGES ── */}
@@ -598,12 +606,12 @@ export default function MyProfilePage() {
             </div>
           </div>
 
-          {/* 2. Verified Badges & Trust Tier */}
+          {/* 2. Verified Badges */}
           <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
             <div className="space-y-1">
               <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <Award className="w-5 h-5 text-emerald-500" />
-                <span>Verified Badges &amp; Trust Tier</span>
+                <span>Verified Badges</span>
               </h2>
               <p className="text-xs text-slate-500">
                 Your badges build trust across activity groups and companion listings.
@@ -645,6 +653,8 @@ export default function MyProfilePage() {
           </div>
         </div>
       )}
+      
+      </form>
     </div>
   );
 }

@@ -62,32 +62,6 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   const userRank = currentUser?.joinRank || parseRankFromMembership(currentUser?.membershipNumber);
   const userBadge = getBadgeForRank(userRank);
 
-
-
-  // Handle logout
-  const handleLogout = async () => {
-    await logout();
-    router.push("/");
-  };
-
-  // 1. NEVER render bottom dock when not logged in
-  if (!currentUser) return null;
-
-  // 2. NEVER render on public landing page or auth/onboarding pages
-  if (
-    pathname === "/" ||
-    pathname === "/login" ||
-    pathname === "/register" ||
-    pathname?.startsWith("/onboarding")
-  ) {
-    return null;
-  }
-
-  // 3. Never render floating dock inside an active private chat room (needs full space for keyboard & input)
-  if (pathname?.startsWith("/chats/") && pathname !== "/chats") {
-    return null;
-  }
-
   // Determine active item
   const isCreate = pathname.startsWith("/activities/create") || pathname.startsWith("/travel/create");
   const isRequests = pathname.startsWith("/requests");
@@ -144,6 +118,32 @@ const BottomNav: React.FC<BottomNavProps> = () => {
       cancelAnimationFrame(animationFrameId);
     };
   }, [activeId, pathname]);
+
+  // Handle logout
+  const handleLogout = async () => {
+    await logout();
+    router.push("/");
+  };
+
+  // 1. NEVER render bottom dock when not logged in
+  if (!currentUser) return null;
+
+  // 2. NEVER render on public landing page or auth/onboarding pages
+  if (
+    pathname === "/" ||
+    pathname === "/login" ||
+    pathname === "/register" ||
+    pathname?.startsWith("/onboarding")
+  ) {
+    return null;
+  }
+
+  // 3. Never render floating dock inside an active private chat room (needs full space for keyboard & input)
+  if (pathname?.startsWith("/chats/") && pathname !== "/chats") {
+    return null;
+  }
+
+
 
   const navItems = [
     {

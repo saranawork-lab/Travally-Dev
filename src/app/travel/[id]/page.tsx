@@ -21,6 +21,7 @@ import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { CompatibilityBadge } from "@/components/travel/CompatibilityBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { ReportModal } from "@/components/common/ReportModal";
+import { TRAVEL_STYLE_CONFIG } from "@/constants/categories";
 
 export default function TravelPlanDetailPage() {
   const params = useParams();
@@ -162,10 +163,16 @@ export default function TravelPlanDetailPage() {
       <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-6 sm:p-8 shadow-xl space-y-6">
         {/* Style & Compatibility */}
         <div className="flex items-center justify-between gap-2 flex-wrap">
-          <span className="px-3 py-1 rounded-full text-xs font-bold bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60 flex items-center gap-1.5">
-            <Compass className="w-3.5 h-3.5" />
-            <span>{trip.travelStyle.replace("_", " ")} Expedition</span>
-          </span>
+          {(() => {
+            const styleCfg = TRAVEL_STYLE_CONFIG[trip.travelStyle];
+            const StyleIcon = styleCfg?.icon || Compass;
+            return (
+              <span className="px-3.5 py-1.5 rounded-full text-xs font-bold bg-orange-50 dark:bg-orange-950/60 text-orange-700 dark:text-orange-400 border border-orange-200 dark:border-orange-800/60 flex items-center gap-2 shadow-2xs">
+                <StyleIcon className="w-4 h-4 shrink-0" />
+                <span>{styleCfg?.label || trip.travelStyle.replace("_", " ")} Expedition</span>
+              </span>
+            );
+          })()}
 
           <div className="flex items-center gap-2">
             {trip.compatibility && (

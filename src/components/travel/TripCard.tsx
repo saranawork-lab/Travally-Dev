@@ -27,6 +27,7 @@ import { ReportModal } from "@/components/common/ReportModal";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { CompatibilityResult } from "@/lib/scoring";
 import { getTripImage } from "@/lib/images";
+import { TRAVEL_STYLE_CONFIG } from "@/constants/categories";
 
 export interface TripCardProps {
   trip: {
@@ -102,7 +103,9 @@ export const TripCard: React.FC<TripCardProps> = ({
   const hostName =
     trip.organizer?.profile?.displayName || trip.organizer?.email?.split("@")[0] || "Host";
 
-  const travelStyleLabel = (trip.travelStyle || "EXPEDITION").replace(/_/g, " ");
+  const styleCfg = TRAVEL_STYLE_CONFIG[trip.travelStyle];
+  const StyleIcon = styleCfg?.icon || Compass;
+  const travelStyleLabel = styleCfg?.label || (trip.travelStyle || "EXPEDITION").replace(/_/g, " ");
   const attractions: string[] = safeJsonParse(trip.plannedAttractions || "[]", []);
 
   return (
@@ -121,8 +124,8 @@ export const TripCard: React.FC<TripCardProps> = ({
           {/* Floating Badges on Top */}
           <div className="absolute top-3.5 left-3.5 right-3.5 flex items-center justify-between z-10">
             {/* Travel Style Badge */}
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 text-orange-950 border border-orange-300/80 shadow-xs tracking-wide uppercase">
-              <Compass className="w-3.5 h-3.5 text-orange-700" />
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-white/95 dark:bg-[#121c17]/95 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-emerald-950/80 shadow-xs tracking-wide">
+              <StyleIcon className="w-3.5 h-3.5 shrink-0" />
               <span>{travelStyleLabel}</span>
             </span>
 
