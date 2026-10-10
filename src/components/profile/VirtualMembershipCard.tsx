@@ -2,19 +2,12 @@
 
 import React, { useState, useRef } from "react";
 import {
-  ShieldCheck,
   RotateCcw,
   CheckCircle,
   Copy,
-  Award,
   Lock,
   MapPin,
   Wifi,
-  Zap,
-  Globe,
-  Users,
-  Compass,
-  Star,
   Fingerprint,
 } from "lucide-react";
 import { LogoMark } from "@/components/common/Logo";

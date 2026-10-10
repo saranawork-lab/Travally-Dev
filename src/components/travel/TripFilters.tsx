@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import {
-  SlidersHorizontal,
   ArrowUpDown,
   Check,
   ChevronDown,
@@ -11,12 +10,6 @@ import {
   Zap,
   Calendar,
   Compass,
-  Landmark,
-  Footprints,
-  Luggage,
-  Mountain,
-  Car,
-  Gem,
   RotateCcw,
 } from "lucide-react";
 
@@ -65,9 +58,6 @@ export const TripFilters: React.FC<TripFiltersProps> = ({
   onSelectStyle,
   sortBy = "UPCOMING",
   onSortChange,
-  openSpotsOnly = false,
-  onOpenSpotsToggle,
-  totalCount,
 }) => {
   const [styleOpen, setStyleOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);

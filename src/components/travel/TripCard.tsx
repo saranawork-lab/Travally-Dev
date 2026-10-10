@@ -8,18 +8,12 @@ import {
   MapPin,
   Users,
   Wallet,
-  Clock3,
   ArrowRight,
   Flag,
   MoreHorizontal,
   ChevronRight,
-  Plane,
-  Train,
-  Car,
-  Home,
-  ShieldCheck,
 } from "lucide-react";
-import { formatDate, formatShortDate, safeJsonParse } from "@/lib/utils";
+import { formatShortDate, safeJsonParse } from "@/lib/utils";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { CompatibilityBadge } from "@/components/travel/CompatibilityBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
@@ -75,7 +69,7 @@ export const TripCard: React.FC<TripCardProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 

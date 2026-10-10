@@ -9,20 +9,9 @@ import {
   Inbox,
   MessageSquare,
   User,
-  Settings,
-  Shield,
-  LogOut,
-  LayoutDashboard,
-  ChevronRight,
-  X,
-  Award,
-  Sun,
-  Moon,
 } from "lucide-react";
-import { useTheme } from "@/components/theme/ThemeProvider";
 import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/context/AuthContext";
-import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 
 interface BottomNavProps {
@@ -53,8 +42,7 @@ const renderGradientLabel = (label: string) => {
 const BottomNav: React.FC<BottomNavProps> = () => {
   const pathname = usePathname();
   const router = useRouter();
-  const { currentUser, logout } = useAuth();
-  const { resolvedTheme, toggleTheme } = useTheme();
+  const { currentUser } = useAuth();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const navRef = React.useRef<HTMLDivElement>(null);
@@ -71,7 +59,6 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     pathname.startsWith("/settings") ||
     pathname.startsWith("/safety") ||
     pathname.startsWith("/admin");
-  const isDiscover = !isCreate && !isRequests && !isChats && !isProfile;
 
   const activeId = isProfile
     ? "profile"
@@ -119,11 +106,6 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     };
   }, [activeId, pathname]);
 
-  // Handle logout
-  const handleLogout = async () => {
-    await logout();
-    router.push("/");
-  };
 
   // 1. NEVER render bottom dock when not logged in
   if (!currentUser) return null;

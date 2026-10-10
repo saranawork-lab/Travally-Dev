@@ -9,17 +9,11 @@ import {
   Inbox,
   MessageSquare,
   Shield,
-  ChevronRight,
-  User,
-  Settings,
-  LogOut,
-  LayoutDashboard,
 } from "lucide-react";
 import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/context/AuthContext";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
-import { ModeToggle, AppMode } from "@/components/common/ModeToggle";
 
 
 interface DesktopSidebarProps {
@@ -91,20 +85,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
     dispatchSidebarState(false);
   };
 
-  const handleModeSwitch = (newMode: AppMode) => {
-    setMode(newMode);
-    const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("search") : null;
-    const query = search ? `?mode=${newMode}&search=${encodeURIComponent(search)}` : `?mode=${newMode}`;
-    router.push(`/discover${query}`);
-  };
 
-  const handleLogout = async () => {
-    setForceCollapsed(true);
-    setIsHovered(false);
-    dispatchSidebarState(false);
-    await logout();
-    router.push("/");
-  };
 
   const isExpanded = isHovered && !forceCollapsed;
 

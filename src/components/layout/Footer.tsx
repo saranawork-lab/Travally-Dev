@@ -3,17 +3,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Logo } from "@/components/common/Logo";
-import { useAuth } from "@/context/AuthContext";
 import {
-  ShieldCheck,
-  Compass,
-  ArrowUpRight,
   Flame,
-  Mail,
-  CheckCircle2,
-  Loader2,
-  ArrowRight,
 } from "lucide-react";
 
 interface FooterProps {
@@ -22,7 +13,6 @@ interface FooterProps {
 
 const Footer: React.FC<FooterProps> = () => {
   const pathname = usePathname();
-  const { currentUser } = useAuth();
 
 
 

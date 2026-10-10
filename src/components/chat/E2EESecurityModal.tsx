@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ShieldCheck, Lock, Key, Copy, CheckCircle, X, ShieldAlert } from "lucide-react";
+import { Lock, Copy, CheckCircle, X } from "lucide-react";
 import { getConversationFingerprint } from "@/lib/crypto";
 
 interface E2EESecurityModalProps {

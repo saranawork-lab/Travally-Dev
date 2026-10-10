@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Calendar, Clock, SlidersHorizontal, Check, AlertCircle } from "lucide-react";
+import { X, SlidersHorizontal, Check, AlertCircle } from "lucide-react";
 
 interface EditActivityModalProps {
   isOpen: boolean;

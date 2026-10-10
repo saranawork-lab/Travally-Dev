@@ -52,6 +52,7 @@ export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = ({ initialUse
   if (pathname?.includes("/create")) return null;
   if (pathname?.startsWith("/requests")) return null;
   if (pathname?.startsWith("/settings")) return null;
+  if (pathname?.startsWith("/safety")) return null;
 
   // Determine active tab
   const mode = searchParams.get("mode");

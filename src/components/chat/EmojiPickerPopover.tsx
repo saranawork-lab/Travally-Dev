@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Search, Zap, Compass, Coffee, Heart, Smile, PartyPopper } from "lucide-react";
+import { Search, Zap, Compass, Coffee, Smile, PartyPopper } from "lucide-react";
 import { RealisticEmoji } from "./RealisticEmoji";
 
 interface EmojiPickerPopoverProps {

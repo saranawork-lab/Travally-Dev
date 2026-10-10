@@ -6,17 +6,8 @@
  */
 
 import {
-  Film,
-  Coffee,
-  Footprints,
-  BookOpen,
-  Music,
-  ShoppingBag,
-  Building2,
-  Compass,
-  Beer,
 } from "lucide-react";
-import type { ActivityCategory } from "@/types";
+
 import { CustomCategoryIcon } from "@/components/common/CustomCategoryIcon";
 
 export const IconMovies = (props: any) => <CustomCategoryIcon src="/category-icons/movies.png" alt="Movies & Cinema" {...props} />;
@@ -122,18 +113,6 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
 };
 
-/** All valid category keys */
-const CATEGORY_KEYS: ActivityCategory[] = [
-  "MOVIES",
-  "FOOD_CAFES",
-  "WALKING",
-  "STUDYING",
-  "EVENTS",
-  "SHOPPING",
-  "CITY_EXPLORATION",
-  "OTHER",
-];
-
 export const IconCultural = (props: any) => <CustomCategoryIcon src="/travel-icons/cultural.png" alt="Cultural & Heritage" {...props} />;
 export const IconSlowTravel = (props: any) => <CustomCategoryIcon src="/travel-icons/slow_travel.png" alt="Slow Travel" {...props} />;
 export const IconBackpacking = (props: any) => <CustomCategoryIcon src="/travel-icons/backpacking.png" alt="Backpacking & Hostels" {...props} />;
@@ -210,7 +189,6 @@ export const TRAVEL_STYLE_CONFIG: Record<string, TravelStyleConfig> = {
   },
 };
 
-/** Travel style display labels */
 export const TRAVEL_STYLES: Record<string, string> = {
   BACKPACKING: "Backpacking",
   CULTURAL: "Cultural",
@@ -220,20 +198,3 @@ export const TRAVEL_STYLES: Record<string, string> = {
   ROAD_TRIP: "Road Trip",
   RELAXATION: "Relaxation",
 };
-
-/** Gender preference options */
-const GENDER_PREFERENCES: Record<string, string> = {
-  ANY: "Open to All",
-  FEMALE_ONLY: "Women Only",
-  MALE_ONLY: "Men Only",
-};
-
-/** App-wide configuration */
-const APP_CONFIG = {
-  name: "Travally",
-  tagline: "Social Travel Companion & Activity Discovery",
-  supportEmail: "support@travally.app",
-  maxFileSize: 5 * 1024 * 1024, // 5MB
-  defaultAvatar: "https://avatar.vercel.sh/user",
-  paginationLimit: 20,
-} as const;

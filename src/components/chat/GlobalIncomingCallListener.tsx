@@ -1,17 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { usePathname, useRouter } from "next/navigation";
-import { Phone, PhoneOff, Radio, Volume2 } from "lucide-react";
+import { usePathname } from "next/navigation";
+import { Phone, PhoneOff, Radio } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { ringtone } from "@/lib/ringtone";
-import { VoiceCallModal, CallParticipant } from "@/components/chat/VoiceCallModal";
+import { VoiceCallModal } from "@/components/chat/VoiceCallModal";
 
 export const GlobalIncomingCallListener: React.FC = () => {
   const { currentUser } = useAuth();
   const pathname = usePathname();
-  const router = useRouter();
-
   const [incomingCall, setIncomingCall] = useState<any>(null);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [activeCallId, setActiveCallId] = useState<string | null>(null);

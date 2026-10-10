@@ -3,12 +3,12 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Logo, LogoMark } from "@/components/common/Logo";
-import { ModeToggle, AppMode } from "@/components/common/ModeToggle";
+import { Logo } from "@/components/common/Logo";
+import { AppMode } from "@/components/common/ModeToggle";
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 
 import { useAuth } from "@/context/AuthContext";
-import { Search, X, SlidersHorizontal } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { LiquidWaveButton } from "@/components/ui/LiquidWaveButton";
 
 interface NavbarProps {
@@ -102,16 +102,7 @@ const Navbar: React.FC<NavbarProps> = ({
     }
   };
 
-  const handleModeSwitch = (newMode: AppMode) => {
-    setMode(newMode);
-    if (onModeChange) {
-      onModeChange(newMode);
-    } else {
-      const search = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("search") : null;
-      const query = search ? `?mode=${newMode}&search=${encodeURIComponent(search)}` : `?mode=${newMode}`;
-      router.push(`/discover${query}`);
-    }
-  };
+
 
   // Hide global navbar inside active single chat rooms and full-screen onboarding
   if (

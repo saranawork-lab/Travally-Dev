@@ -4,14 +4,11 @@ import React, { useState } from "react";
 import Link from "next/link";
 import {
   Calendar,
-  Clock,
   MapPin,
   Users,
-  Clock3,
   XCircle,
   Flag,
   MoreHorizontal,
-  MessageSquare,
   MenuSquare,
   Bookmark,
   ChevronRight,
@@ -40,7 +37,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isReportOpen, setIsReportOpen] = useState(false);
-  const [isCancelling, setIsCancelling] = useState(false);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -65,26 +62,6 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
 
   const hostName = activity.organizer?.profile?.displayName || activity.organizer?.email?.split("@")[0] || "Host";
 
-  const handleCancelRequest = async () => {
-    if (!userRequest) return;
-    if (!confirm("Are you sure you want to cancel your join request?")) return;
-
-    setIsCancelling(true);
-    try {
-      const res = await fetch(`/api/requests/${userRequest.id}`, {
-        method: "DELETE",
-      });
-      if (res.ok) {
-        if (onRefresh) onRefresh();
-      } else {
-        alert("Failed to cancel request");
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setIsCancelling(false);
-    }
-  };
 
   const handleNotInterested = () => {
     setIsDismissed(true);

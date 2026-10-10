@@ -15,10 +15,9 @@ import {
   Lock,
   Clock,
   MoreVertical,
-  CheckCircle2,
   AlertTriangle
 } from "lucide-react";
-import { formatTimeAgo } from "@/lib/utils";
+
 
 interface GroupMembersDrawerProps {
   isOpen: boolean;

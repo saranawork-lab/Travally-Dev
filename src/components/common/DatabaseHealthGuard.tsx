@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Database, AlertTriangle, RefreshCw, CheckCircle2 } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface DatabaseHealthGuardProps {
   children: React.ReactNode;

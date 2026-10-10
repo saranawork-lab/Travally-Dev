@@ -33,7 +33,7 @@ export default function MyProfilePage() {
   const [saving, setSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [copiedPass, setCopiedPass] = useState(false);
-  const [activeTab, setActiveTab] = useState<"profile" | "pass_badges">("profile");
+  const [isCardModalOpen, setIsCardModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
   // Form states
@@ -43,8 +43,6 @@ export default function MyProfilePage() {
   const [gender, setGender] = useState("PREFER_NOT_TO_SAY");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-  const [hideContactDetails, setHideContactDetails] = useState(true);
-  const [discoveryVisible, setDiscoveryVisible] = useState(true);
 
   // Interests
   const [interestInput, setInterestInput] = useState("");
@@ -52,14 +50,6 @@ export default function MyProfilePage() {
 
   // Preferred Activities
   const [preferredActivities, setPreferredActivities] = useState<string[]>([]);
-
-  // Connection Preferences
-  const [connPrefs, setConnPrefs] = useState({
-    friendship: true,
-    activityPartner: true,
-    travel: true,
-    dating: false,
-  });
 
   const fetchProfile = async () => {
     try {
@@ -75,18 +65,8 @@ export default function MyProfilePage() {
           setGender(p.gender || "PREFER_NOT_TO_SAY");
           setLinkedinUrl(p.linkedinUrl || "");
           setAvatarUrl(p.avatarUrl || "");
-          setHideContactDetails(p.hideContactDetails ?? true);
-          setDiscoveryVisible(p.discoveryVisible ?? true);
           setInterests(safeJsonParse<string[]>(p.interests, []));
           setPreferredActivities(safeJsonParse<string[]>(p.preferredActivities, []));
-          setConnPrefs(
-            safeJsonParse(p.connectionPreferences, {
-              friendship: true,
-              activityPartner: true,
-              travel: true,
-              dating: false,
-            })
-          );
         }
       }
     } catch (e) {
@@ -135,11 +115,8 @@ export default function MyProfilePage() {
           gender,
           linkedinUrl,
           avatarUrl,
-          hideContactDetails,
-          discoveryVisible,
           interests,
           preferredActivities,
-          connectionPreferences: connPrefs,
         }),
       });
 
@@ -219,8 +196,17 @@ export default function MyProfilePage() {
             <div className="flex items-center justify-center gap-2 w-full sm:w-auto mt-2">
               <button
                 type="button"
+                onClick={() => setIsCardModalOpen(true)}
+                className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
+                title="View Travally Card"
+              >
+                <CreditCard className="w-4 h-4" />
+                <span className="hidden sm:inline">Travally Card</span>
+              </button>
+              <button
+                type="button"
                 onClick={() => setIsEditing(!isEditing)}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-2xl text-xs font-bold transition-colors ${
+                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
                   isEditing 
                     ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
                     : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
@@ -238,8 +224,6 @@ export default function MyProfilePage() {
               </Link>
             </div>
           </div>
-
-          <hr className="border-slate-100 dark:border-dark-border w-full" />
 
           {/* Core Details (Always visible above tabs) */}
           <div className="space-y-6">
@@ -304,61 +288,9 @@ export default function MyProfilePage() {
             />
           </div>
         </div>
-        </div>
-
-      {/* Profile & Pass Navigation Tabs (Centered Rounded-Full Capsule) */}
-      <div className="flex items-center justify-between w-full pb-2 relative">
-        <div className="w-10 sm:w-12 hidden sm:block"></div> {/* Spacer for perfect centering */}
         
-        <div className="inline-flex p-1.5 rounded-full bg-slate-100/90 dark:bg-[#111c16]/90 border border-slate-200/80 dark:border-emerald-900/50 backdrop-blur-xl shadow-inner gap-2 max-w-md w-full sm:w-auto mx-auto">
-          <button
-            type="button"
-            onClick={() => setActiveTab("profile")}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 select-none min-h-[44px] whitespace-nowrap overflow-hidden ${
-              activeTab === "profile"
-                ? "bg-white dark:bg-[#19261f] text-emerald-950 dark:text-emerald-300 shadow-[0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4)] border border-slate-200/80 dark:border-emerald-700/60 scale-[1.02]"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/5 border border-transparent"
-            }`}
-          >
-            <div
-              className={`p-1.5 rounded-full transition-colors ${
-                activeTab === "profile"
-                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              <User className="w-4 h-4" />
-            </div>
-            <span>Profile Details</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("pass_badges")}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 sm:gap-2.5 px-3 sm:px-6 py-2.5 rounded-full text-xs font-bold transition-all duration-300 select-none min-h-[44px] whitespace-nowrap overflow-hidden ${
-              activeTab === "pass_badges"
-                ? "bg-white dark:bg-[#19261f] text-amber-950 dark:text-amber-300 shadow-[0_4px_16px_rgba(0,0,0,0.1)] dark:shadow-[0_4px_16px_rgba(0,0,0,0.4)] border border-slate-200/80 dark:border-amber-700/60 scale-[1.02]"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white/40 dark:hover:bg-white/5 border border-transparent"
-            }`}
-          >
-            <div
-              className={`p-1.5 rounded-full transition-colors ${
-                activeTab === "pass_badges"
-                  ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-                  : "text-slate-500 dark:text-slate-400"
-              }`}
-            >
-              <CreditCard className="w-4 h-4" />
-            </div>
-            <span>Travally Card</span>
-          </button>
-        </div>
-
-      </div>
-
-      {/* ── TAB 1: PROFILE DETAILS FORM ── */}
-      {activeTab === "profile" && (
-          <div className={`bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm space-y-6 ${!isEditing ? "opacity-90" : ""}`}>
+        {/* ── PROFILE DETAILS FORM ── */}
+        <div className="space-y-6">
 
             {/* LinkedIn Verification Link */}
             <div>
@@ -449,92 +381,6 @@ export default function MyProfilePage() {
               </div>
             </div>
 
-            {/* Connection Preferences */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-elevated border border-slate-200/80 dark:border-dark-border space-y-3">
-              <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">
-                Connection Intent &amp; Preferences
-              </span>
-              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                Travally is activity-first. We do not force every connection to be romantic, but you can declare what connections you are open to.
-              </p>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    disabled={!isEditing}
-                    checked={connPrefs.friendship}
-                    onChange={(e) => setConnPrefs({ ...connPrefs, friendship: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                  />
-                  <span>Friendship</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    disabled={!isEditing}
-                    checked={connPrefs.activityPartner}
-                    onChange={(e) => setConnPrefs({ ...connPrefs, activityPartner: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                  />
-                  <span>Activity Partner</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    disabled={!isEditing}
-                    checked={connPrefs.travel}
-                    onChange={(e) => setConnPrefs({ ...connPrefs, travel: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                  />
-                  <span>Travel Partner</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    disabled={!isEditing}
-                    checked={connPrefs.dating}
-                    onChange={(e) => setConnPrefs({ ...connPrefs, dating: e.target.checked })}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                  />
-                  <span>Open to Dating</span>
-                </label>
-              </div>
-            </div>
-
-            {/* Privacy & Safety Controls */}
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-elevated border border-slate-200/80 dark:border-dark-border space-y-3">
-              <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">
-                Privacy Settings
-              </span>
-
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    disabled={!isEditing}
-                    checked={hideContactDetails}
-                    onChange={(e) => setHideContactDetails(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                  />
-                  <span>Hide exact contact details (email and exact address) from public cards</span>
-                </label>
-
-                <label className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    disabled={!isEditing}
-                    checked={discoveryVisible}
-                    onChange={(e) => setDiscoveryVisible(e.target.checked)}
-                    className="rounded text-emerald-600 focus:ring-emerald-500 disabled:opacity-50"
-                  />
-                  <span>Make profile discoverable in member directory</span>
-                </label>
-              </div>
-            </div>
 
             {/* Save Button */}
             {isEditing && (
@@ -558,94 +404,106 @@ export default function MyProfilePage() {
               </div>
             )}
           </div>
-      )}
+        </div>
+      {/* ── TRAVALLY CARD MODAL ── */}
+      {isCardModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          {/* Backdrop */}
+          <div 
+            className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm" 
+            onClick={() => setIsCardModalOpen(false)}
+          />
+          
+          {/* Modal Content */}
+          <div className="relative w-full max-w-2xl bg-transparent max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl animate-in fade-in zoom-in-95 duration-200">
+            
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setIsCardModalOpen(false)}
+              className="absolute top-4 right-4 z-50 p-2.5 rounded-full bg-white/20 hover:bg-white/40 dark:bg-black/40 dark:hover:bg-black/60 text-slate-800 dark:text-white transition backdrop-blur-md shadow-lg"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-      {/* ── TAB 2: VIRTUAL MEMBERSHIP PASS & BADGES ── */}
-      {activeTab === "pass_badges" && (
-        <div className="space-y-6 animate-fade-in">
-          {/* 1. 3D Pass Card */}
-          <div className="bg-gradient-to-b from-slate-50 to-white dark:from-[#111815] dark:to-[#0d1411] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-8 md:p-10 shadow-sm space-y-6">
-            <div className="text-center max-w-lg mx-auto space-y-1">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 flex items-center justify-center gap-1">
-                <Award className="w-3.5 h-3.5 text-amber-500" />
-                <span>FOUNDING MEMBER CERTIFICATE</span>
-              </span>
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                Official 3D Virtual Membership Pass
-              </h2>
-              <p className="text-xs text-slate-500 leading-relaxed">
-                Click or hover the card to inspect details and flip it over.
-              </p>
-            </div>
-
-            {/* The 3D Foil Holographic Card */}
-            <VirtualMembershipCard
-              displayName={displayName || currentUser?.displayName || currentUser?.email?.split("@")[0] || "Travally Explorer"}
-              avatarUrl={avatarUrl || currentUser?.avatarUrl}
-              membershipNumber={membershipNum}
-              membershipTier={userBadge.tier}
-              membershipStatus={profile?.membershipStatus || "ACTIVE"}
-              memberSince={profile?.memberSince || profile?.createdAt}
-              isVerified={profile?.isVerified}
-              city={city || profile?.city}
-              interests={interests}
-              totalActivities={0}
-              totalTrips={0}
-            />
-
-            {/* Quick Actions for Pass */}
-            <div className="flex items-center justify-center gap-3 pt-2">
-              <button
-                type="button"
-                onClick={handleCopyPass}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-emerald-800 text-xs font-bold text-slate-700 dark:text-emerald-300 shadow-2xs hover:border-emerald-500 transition"
-              >
-                {copiedPass ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-amber-500" />}
-                <span>{copiedPass ? "Pass Number Copied!" : `Copy Pass: ${membershipNum}`}</span>
-              </button>
-            </div>
-          </div>
-
-          {/* 2. Verified Badges */}
-          <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm">
-            <div className="space-y-1">
-              <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                <Award className="w-5 h-5 text-emerald-500" />
-                <span>Verified Badges</span>
-              </h2>
-              <p className="text-xs text-slate-500">
-                Your badges build trust across activity groups and companion listings.
-              </p>
-            </div>
-
-            <div className="pt-2">
-
-              {/* Identity Verification Status */}
-              <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/70 space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                    Identity Verification
-                  </span>
-                  <VerificationBadge
-                    status={profile?.verificationStatus || "UNVERIFIED"}
-                    isVerified={profile?.isVerified}
-                    hasLinkedin={!!linkedinUrl}
-                    showLabel
-                  />
+            <div className="space-y-6 pt-12 sm:pt-0">
+              {/* 1. 3D Pass Card */}
+              <div className="bg-gradient-to-b from-slate-50 to-white dark:from-[#111815] dark:to-[#0d1411] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-8 md:p-10 shadow-2xl space-y-6">
+                <div className="text-center max-w-lg mx-auto mb-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
+                    Travally Pass
+                  </h2>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                    <ShieldCheck className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      {profile?.isVerified ? "Verified Member" : "Unverified Member"}
-                    </h3>
-                    <p className="text-[11px] text-slate-500">
-                      {profile?.isVerified
-                        ? "Identity verified by Travally."
-                        : "Connect LinkedIn profile to display verified badge on activities."}
-                    </p>
+
+                {/* The 3D Foil Holographic Card */}
+                <VirtualMembershipCard
+                  displayName={displayName || currentUser?.displayName || currentUser?.email?.split("@")[0] || "Travally Explorer"}
+                  avatarUrl={avatarUrl || currentUser?.avatarUrl}
+                  membershipNumber={membershipNum}
+                  membershipTier={userBadge.tier}
+                  membershipStatus={profile?.membershipStatus || "ACTIVE"}
+                  memberSince={profile?.memberSince || profile?.createdAt}
+                  isVerified={profile?.isVerified}
+                  city={city || profile?.city}
+                  interests={interests}
+                  totalActivities={0}
+                  totalTrips={0}
+                />
+
+                {/* Quick Actions for Pass */}
+                <div className="flex items-center justify-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={handleCopyPass}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-emerald-800 text-xs font-bold text-slate-700 dark:text-emerald-300 shadow-2xs hover:border-emerald-500 transition"
+                  >
+                    {copiedPass ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-amber-500" />}
+                    <span>{copiedPass ? "Pass Number Copied!" : `Copy Pass: ${membershipNum}`}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* 2. Verified Badges */}
+              <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+                <div className="space-y-1">
+                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+                    <Award className="w-5 h-5 text-emerald-500" />
+                    <span>Verified Badges</span>
+                  </h2>
+                  <p className="text-xs text-slate-500">
+                    Your badges build trust across activity groups and companion listings.
+                  </p>
+                </div>
+
+                <div className="pt-2">
+                  {/* Identity Verification Status */}
+                  <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/70 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                        Identity Verification
+                      </span>
+                      <VerificationBadge
+                        status={profile?.verificationStatus || "UNVERIFIED"}
+                        isVerified={profile?.isVerified}
+                        hasLinkedin={!!linkedinUrl}
+                        showLabel
+                      />
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+                        <ShieldCheck className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
+                          {profile?.isVerified ? "Verified Member" : "Unverified Member"}
+                        </h3>
+                        <p className="text-[11px] text-slate-500">
+                          {profile?.isVerified
+                            ? "Identity verified by Travally."
+                            : "Connect LinkedIn profile to display verified badge on activities."}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

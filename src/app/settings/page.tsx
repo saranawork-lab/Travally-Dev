@@ -19,6 +19,7 @@ import {
   Moon,
   Sun,
   ChevronRight,
+  ChevronDown,
   Shield,
 } from "lucide-react";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
@@ -34,10 +35,17 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [isPrivacyExpanded, setIsPrivacyExpanded] = useState(false);
 
   // Settings states
   const [hideContactDetails, setHideContactDetails] = useState(true);
   const [discoveryVisible, setDiscoveryVisible] = useState(true);
+  const [connPrefs, setConnPrefs] = useState({
+    friendship: true,
+    activityPartner: true,
+    travel: false,
+    dating: false,
+  });
 
   useEffect(() => {
     fetch("/api/profile")
@@ -54,6 +62,14 @@ export default function SettingsPage() {
           if (data.user.profile) {
             setHideContactDetails(data.user.profile.hideContactDetails ?? true);
             setDiscoveryVisible(data.user.profile.discoveryVisible ?? true);
+            
+            const prefs = data.user.profile.connectionPreferences || ["friendship", "activityPartner"];
+            setConnPrefs({
+              friendship: prefs.includes("friendship"),
+              activityPartner: prefs.includes("activityPartner"),
+              travel: prefs.includes("travel"),
+              dating: prefs.includes("dating"),
+            });
           }
         }
       })
@@ -69,6 +85,7 @@ export default function SettingsPage() {
         body: JSON.stringify({
           hideContactDetails,
           discoveryVisible,
+          connectionPreferences: Object.keys(connPrefs).filter((k) => connPrefs[k as keyof typeof connPrefs]),
         }),
       });
       if (res.ok) {
@@ -99,89 +116,129 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-28">
-      {/* ── TOP BREADCRUMB / TITLE ── */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link
-              href="/profile"
-              className="text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 transition"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Back to Profile</span>
-            </Link>
+      {/* ── ACTION LIST (Privacy, Security, Safety, Dark Mode, Sign Out) ── */}
+      <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-6 shadow-sm animate-fade-in space-y-1">
+        
+        {/* Privacy Dropdown Item */}
+        <button
+          type="button"
+          onClick={() => setIsPrivacyExpanded(!isPrivacyExpanded)}
+          className="w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-emerald-50 dark:hover:bg-[#18241f] hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-emerald-100/70 dark:bg-emerald-950/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/40">
+              <Eye className="w-4 h-4" />
+            </div>
+            <span className="text-sm">Privacy &amp; Discovery</span>
           </div>
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-            Account &amp; Privacy Settings
-          </h1>
-          <p className="text-xs text-slate-500 mt-1">
-            Manage your account privacy, visibility preferences, and security settings.
-          </p>
-        </div>
+          {isPrivacyExpanded ? (
+            <ChevronDown className="w-4 h-4 text-slate-400 opacity-60" />
+          ) : (
+            <ChevronRight className="w-4 h-4 text-slate-400 opacity-60" />
+          )}
+        </button>
 
-        {/* Action list added at the bottom */}
-      </div>
+        {isPrivacyExpanded && (
+          <div className="px-3 pb-4 pt-2 space-y-6 animate-slide-down">
+            {/* Connection Intent & Preferences */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-elevated border border-slate-200/80 dark:border-dark-border space-y-3">
+              <span className="font-bold text-xs text-slate-800 dark:text-slate-200 block">
+                Connection Intent &amp; Preferences
+              </span>
+              <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
+                Travally is activity-first. We do not force every connection to be romantic, but you can declare what connections you are open to.
+              </p>
 
-      {/* ── PRIVACY & DISCOVERY VISIBILITY ── */}
-      <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-sm animate-fade-in">
-        <div className="space-y-1">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-            Privacy &amp; Discovery Visibility
-          </h2>
-          <p className="text-xs text-slate-500">
-            Customize how other explorers find and interact with you on Travally.
-          </p>
-        </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={connPrefs.friendship}
+                    onChange={(e) => setConnPrefs({ ...connPrefs, friendship: e.target.checked })}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>Friendship</span>
+                </label>
 
-          <div className="space-y-4 pt-2">
-            <label className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/60 cursor-pointer">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  Show in Public Discovery Feed
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-relaxed">
-                  Allow other verified travelers in your city to view your interests and invite you to activities.
-                </span>
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={connPrefs.activityPartner}
+                    onChange={(e) => setConnPrefs({ ...connPrefs, activityPartner: e.target.checked })}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>Activity Partner</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={connPrefs.travel}
+                    onChange={(e) => setConnPrefs({ ...connPrefs, travel: e.target.checked })}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>Travel Partner</span>
+                </label>
+
+                <label className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={connPrefs.dating}
+                    onChange={(e) => setConnPrefs({ ...connPrefs, dating: e.target.checked })}
+                    className="rounded text-emerald-600 focus:ring-emerald-500"
+                  />
+                  <span>Open to Dating</span>
+                </label>
               </div>
-              <input
-                type="checkbox"
-                checked={discoveryVisible}
-                onChange={(e) => setDiscoveryVisible(e.target.checked)}
-                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 mt-1 cursor-pointer"
-              />
-            </label>
+            </div>
 
-            <label className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/60 cursor-pointer">
-              <div className="space-y-1">
-                <span className="text-xs font-bold text-slate-900 dark:text-white block">
-                  Hide Exact Contact Details
-                </span>
-                <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-relaxed">
-                  Only show contact handles after you mutually accept a companion request or activity invite.
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={hideContactDetails}
-                onChange={(e) => setHideContactDetails(e.target.checked)}
-                className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 mt-1 cursor-pointer"
-              />
-            </label>
+            <div className="space-y-4 pt-2">
+              <label className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/60 cursor-pointer">
+                <div className="space-y-1">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                    Show in Public Discovery Feed
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-relaxed">
+                    Allow other verified travelers in your city to view your interests and invite you to activities.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={discoveryVisible}
+                  onChange={(e) => setDiscoveryVisible(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 mt-1 cursor-pointer"
+                />
+              </label>
+
+              <label className="flex items-start justify-between gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/60 cursor-pointer">
+                <div className="space-y-1">
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                    Hide Exact Contact Details
+                  </span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 block leading-relaxed">
+                    Only show contact handles after you mutually accept a companion request or activity invite.
+                  </span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={hideContactDetails}
+                  onChange={(e) => setHideContactDetails(e.target.checked)}
+                  className="w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 accent-emerald-600 mt-1 cursor-pointer"
+                />
+              </label>
+            </div>
+
+            <div className="pt-2 flex justify-end">
+              <button
+                type="button"
+                onClick={handleSavePrivacy}
+                className="px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all"
+              >
+                Save Privacy Preferences
+              </button>
+            </div>
           </div>
-
-          <div className="pt-2 flex justify-end">
-            <button
-              type="button"
-              onClick={handleSavePrivacy}
-              className="px-6 py-2.5 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md transition-all"
-            >
-              Save Privacy Preferences
-            </button>
-          </div>
-        </div>
-
-      {/* ── ACTION LIST (Safety, Dark Mode, Sign Out) ── */}
-      <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-6 shadow-sm mt-6 animate-fade-in space-y-1">
+        )}
         <button
           type="button"
           onClick={() => setShowSecurityModal(true)}

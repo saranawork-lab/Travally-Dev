@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import {
-  SlidersHorizontal,
   ArrowUpDown,
   Check,
   ChevronDown,
@@ -11,13 +10,6 @@ import {
   Layers,
   Zap,
   Calendar,
-  Film,
-  Coffee,
-  Footprints,
-  BookOpen,
-  Beer,
-  Compass,
-  ShoppingBag,
   RotateCcw,
 } from "lucide-react";
 import {
@@ -57,9 +49,6 @@ export interface ActivityFiltersProps {
   onSearchChange?: (q: string) => void;
   sortBy?: string;
   onSortChange?: (sort: string) => void;
-  openSpotsOnly?: boolean;
-  onOpenSpotsToggle?: (val: boolean) => void;
-  totalCount?: number;
 }
 
 export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
@@ -67,9 +56,6 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
   onSelectCategory,
   sortBy = "UPCOMING",
   onSortChange,
-  openSpotsOnly = false,
-  onOpenSpotsToggle,
-  totalCount,
 }) => {
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);

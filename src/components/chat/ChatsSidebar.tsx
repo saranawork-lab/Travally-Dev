@@ -8,9 +8,7 @@ import {
   Compass,
   Search,
   PanelLeftClose,
-  PanelLeftOpen,
   MessageSquare,
-  ChevronRight,
   X
 } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
