@@ -10,7 +10,6 @@ import {
   Eye,
   Trash2,
   X,
-  Sparkles,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { safeJsonParse } from "@/lib/utils";

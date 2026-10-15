@@ -20,7 +20,6 @@ import {
   MapPin,
   Trash2,
   Bike,
-  Sparkles,
   Loader2,
   Info,
 } from "lucide-react";
@@ -639,7 +638,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         <div className="mb-6 pb-5 border-b border-slate-100 dark:border-emerald-950/60">
           <div className="text-center mb-4">
             <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60">
-              <Sparkles className="w-3 h-3 text-emerald-500" />
+              <Compass className="w-3 h-3 text-emerald-500" />
               <span>Central Creation Studio</span>
             </span>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1.5">

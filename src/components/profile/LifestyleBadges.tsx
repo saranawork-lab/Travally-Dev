@@ -6,7 +6,6 @@ import {
   Cigarette,
   Wine,
   Salad,
-  Sparkles,
   Settings,
   EyeOff,
   Coffee,
@@ -54,7 +53,7 @@ export const LifestyleBadges: React.FC<LifestyleBadgesProps> = ({ lifestyle, isO
     return (
       <div className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 dark:bg-[#111915] border border-slate-200/80 dark:border-emerald-950/70 text-xs">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-amber-500" />
+          <Compass className="w-4 h-4 text-emerald-500" />
           <span className="text-slate-600 dark:text-slate-300 font-semibold">
             Add your lifestyle badges (smoker / drinker / diet)
           </span>

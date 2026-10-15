@@ -44,7 +44,6 @@ import {
   XCircle,
   Linkedin,
   Pencil,
-  Sparkles,
 } from "lucide-react";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";

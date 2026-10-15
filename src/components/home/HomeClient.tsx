@@ -30,7 +30,6 @@ import {
   Radio,
   Key,
   Pencil,
-  Sparkles,
   Compass,
   Quote,
   Repeat2,
