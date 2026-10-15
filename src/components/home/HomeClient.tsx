@@ -854,7 +854,7 @@ export default function HomeClient() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="columns-1 md:columns-2 gap-4 [column-fill:_balance]">
                 {instants.map((post) => {
                   const hasLiked = currentUser ? post.likedBy.includes(currentUser.id) : false;
                   const hasReposted = currentUser ? (post.repostedBy || []).includes(currentUser.id) : false;
@@ -865,7 +865,7 @@ export default function HomeClient() {
                   return (
                     <article
                       key={post.id}
-                      className="group relative rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/10 hover:border-emerald-500/50 dark:hover:border-emerald-600/50 transition-all duration-300 flex flex-col justify-between overflow-hidden gap-4"
+                      className="break-inside-avoid mb-4 inline-block w-full align-top group relative rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/10 hover:border-emerald-500/50 dark:hover:border-emerald-600/50 transition-all duration-300 overflow-hidden"
                     >
                       {/* Top Explorer Accent Stripe */}
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" />
@@ -983,65 +983,65 @@ export default function HomeClient() {
                             )}
                           </div>
                         )}
-                      </div>
 
-                      {/* 5. Explorer Interaction Dock */}
-                      <div className="pt-2.5 border-t border-slate-100 dark:border-emerald-950/60 flex items-center justify-between gap-2 text-xs">
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          {/* Like Button (icon + count only, NO text) */}
+                        {/* 5. Explorer Interaction Dock */}
+                        <div className="pt-2.5 border-t border-slate-100 dark:border-emerald-950/60 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            {/* Like Button (icon + count only, NO text) */}
+                            <button
+                              type="button"
+                              onClick={() => handleLikeInstant(post.id)}
+                              disabled={likingId === post.id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
+                                hasLiked
+                                  ? "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 shadow-xs"
+                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-rose-300 dark:hover:border-rose-900/60 hover:text-rose-600 dark:hover:text-rose-400"
+                              }`}
+                              title={hasLiked ? "Unlike" : "Like"}
+                            >
+                              <Heart
+                                className={`w-3.5 h-3.5 transition-transform ${
+                                  hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
+                                }`}
+                              />
+                              <span>{post.likesCount || 0}</span>
+                            </button>
+
+                            {/* Repost Button (icon + count only, NO text) */}
+                            <button
+                              type="button"
+                              onClick={() => handleRepostInstant(post.id)}
+                              disabled={repostingId === post.id}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
+                                hasReposted
+                                  ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 shadow-xs"
+                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-emerald-300 dark:hover:border-emerald-900/60 hover:text-emerald-600 dark:hover:text-emerald-400"
+                              }`}
+                              title={hasReposted ? "Undo Repost" : "Repost"}
+                            >
+                              <Repeat2
+                                className={`w-3.5 h-3.5 transition-transform ${
+                                  hasReposted ? "text-emerald-600 dark:text-emerald-400 scale-110 stroke-[2.5]" : ""
+                                }`}
+                              />
+                              <span>{post.repostsCount || 0}</span>
+                            </button>
+                          </div>
+
+                          {/* Share Button (icon only, NO text) */}
                           <button
                             type="button"
-                            onClick={() => handleLikeInstant(post.id)}
-                            disabled={likingId === post.id}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
-                              hasLiked
-                                ? "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 shadow-xs"
-                                : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-rose-300 dark:hover:border-rose-900/60 hover:text-rose-600 dark:hover:text-rose-400"
-                            }`}
-                            title={hasLiked ? "Unlike" : "Like"}
+                            onClick={() => handleShareDispatch(post.id)}
+                            className="inline-flex items-center justify-center p-2 rounded-full bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1c2822] hover:text-emerald-600 dark:hover:text-emerald-400 transition active:scale-95 font-semibold text-xs"
+                            title="Share"
                           >
-                            <Heart
-                              className={`w-3.5 h-3.5 transition-transform ${
-                                hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
-                              }`}
-                            />
-                            <span>{post.likesCount || 0}</span>
-                          </button>
-
-                          {/* Repost Button (icon + count only, NO text) */}
-                          <button
-                            type="button"
-                            onClick={() => handleRepostInstant(post.id)}
-                            disabled={repostingId === post.id}
-                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
-                              hasReposted
-                                ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 shadow-xs"
-                                : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-emerald-300 dark:hover:border-emerald-900/60 hover:text-emerald-600 dark:hover:text-emerald-400"
-                            }`}
-                            title={hasReposted ? "Undo Repost" : "Repost"}
-                          >
-                            <Repeat2
-                              className={`w-3.5 h-3.5 transition-transform ${
-                                hasReposted ? "text-emerald-600 dark:text-emerald-400 scale-110 stroke-[2.5]" : ""
-                              }`}
-                            />
-                            <span>{post.repostsCount || 0}</span>
+                            {copiedPostId === post.id ? (
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                            ) : (
+                              <Share2 className="w-3.5 h-3.5" />
+                            )}
                           </button>
                         </div>
-
-                        {/* Share Button (icon only, NO text) */}
-                        <button
-                          type="button"
-                          onClick={() => handleShareDispatch(post.id)}
-                          className="inline-flex items-center justify-center p-2 rounded-full bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1c2822] hover:text-emerald-600 dark:hover:text-emerald-400 transition active:scale-95 font-semibold text-xs"
-                          title="Share"
-                        >
-                          {copiedPostId === post.id ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-500" />
-                          ) : (
-                            <Share2 className="w-3.5 h-3.5" />
-                          )}
-                        </button>
                       </div>
                     </article>
                   );
