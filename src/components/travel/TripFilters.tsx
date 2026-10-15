@@ -17,14 +17,17 @@ import {
   IconCultural,
   IconSlowTravel,
   IconBackpacking,
+  IconBikersGroup,
   IconAdventure,
   IconRoadTrip,
   IconLuxury,
   IconRelaxation,
 } from "@/constants/categories";
+import { useLanguage } from "@/context/LanguageContext";
 
 const TRAVEL_STYLES = [
   { id: "ALL", label: "All Styles", icon: Compass },
+  { id: "BIKERS_GROUP", label: "Bikers Group Trip", icon: IconBikersGroup },
   { id: "CULTURAL", label: "Cultural & Heritage", icon: IconCultural },
   { id: "SLOW_TRAVEL", label: "Slow Travel", icon: IconSlowTravel },
   { id: "BACKPACKING", label: "Backpacking & Hostels", icon: IconBackpacking },
@@ -32,13 +35,6 @@ const TRAVEL_STYLES = [
   { id: "ROAD_TRIP", label: "Scenic Road Trip", icon: IconRoadTrip },
   { id: "LUXURY", label: "Boutique & Luxury", icon: IconLuxury },
   { id: "RELAXATION", label: "Relaxation & Wellness", icon: IconRelaxation },
-];
-
-const TRIP_SORT_OPTIONS = [
-  { id: "UPCOMING", label: "Departure Soonest", shortLabel: "Soonest", icon: Calendar },
-  { id: "SPOTS_LEFT", label: "Most Spots Available", shortLabel: "Spots Left", icon: Users },
-  { id: "NEWEST", label: "Recently Posted", shortLabel: "Newest", icon: Zap },
-  { id: "DESTINATION", label: "Destination (A-Z)", shortLabel: "Destination", icon: ArrowUpDown },
 ];
 
 export interface TripFiltersProps {
@@ -59,11 +55,19 @@ export const TripFilters: React.FC<TripFiltersProps> = ({
   sortBy = "UPCOMING",
   onSortChange,
 }) => {
+  const { t } = useLanguage();
   const [styleOpen, setStyleOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
   const styleRef = useRef<HTMLDivElement>(null);
   const sortRef = useRef<HTMLDivElement>(null);
+
+  const TRIP_SORT_OPTIONS = [
+    { id: "UPCOMING", label: "Departure Soonest", shortLabel: t.sortSoonest, icon: Calendar },
+    { id: "SPOTS_LEFT", label: "Most Spots Available", shortLabel: t.sortSpotsLeft, icon: Users },
+    { id: "NEWEST", label: "Recently Posted", shortLabel: t.sortNewest, icon: Zap },
+    { id: "DESTINATION", label: "Destination (A-Z)", shortLabel: t.sortDestination, icon: ArrowUpDown },
+  ];
 
   // Click outside to dismiss dropdowns
   useEffect(() => {
@@ -111,7 +115,7 @@ export const TripFilters: React.FC<TripFiltersProps> = ({
               setStyleOpen(!styleOpen);
               setSortOpen(false);
             }}
-            className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
               selectedStyle !== "ALL"
                 ? "bg-orange-500 text-white border-orange-600 shadow-orange-500/20 font-bold"
                 : "bg-white dark:bg-[#111a15] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-emerald-950/70 hover:border-orange-400 dark:hover:border-orange-600"
@@ -119,7 +123,7 @@ export const TripFilters: React.FC<TripFiltersProps> = ({
           >
             <ActiveStyleIcon className="w-3.5 h-3.5 shrink-0" />
             <span>
-              {selectedStyle === "ALL" ? "All Travel Styles" : activeStyle.label}
+              {selectedStyle === "ALL" ? t.allStyles : activeStyle.label}
             </span>
             <ChevronDown
               className={`w-3 h-3 opacity-70 transition-transform shrink-0 ${
@@ -173,14 +177,14 @@ export const TripFilters: React.FC<TripFiltersProps> = ({
               setSortOpen(!sortOpen);
               setStyleOpen(false);
             }}
-            className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
               sortBy !== "UPCOMING"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs font-bold"
                 : "bg-white dark:bg-[#111a15] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-emerald-950/70 hover:border-orange-400 dark:hover:border-orange-600"
             }`}
           >
             <ArrowUpDown className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-            <span>Sort: {activeSort.shortLabel || activeSort.label}</span>
+            <span>{t.sortLabel}: {activeSort.shortLabel || activeSort.label}</span>
             <ChevronDown
               className={`w-3 h-3 opacity-70 transition-transform shrink-0 ${
                 sortOpen ? "rotate-180" : ""
@@ -192,7 +196,7 @@ export const TripFilters: React.FC<TripFiltersProps> = ({
           {sortOpen && (
             <div className="absolute left-0 top-full mt-1.5 w-56 bg-white dark:bg-[#111a15] border border-slate-200 dark:border-emerald-950/80 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in-50 zoom-in-95">
               <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Sort Order
+                {t.sortLabel}
               </div>
               <div className="space-y-0.5">
                 {TRIP_SORT_OPTIONS.map((opt) => {

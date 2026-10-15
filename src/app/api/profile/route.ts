@@ -73,6 +73,7 @@ export async function PUT(req: NextRequest) {
       avatarUrl,
       hideContactDetails,
       discoveryVisible,
+      showLifestylePublic,
     } = body;
 
     // If password or email are provided (e.g. from Google or LinkedIn OAuth users creating a direct login password/email), update User model
@@ -121,6 +122,7 @@ export async function PUT(req: NextRequest) {
     if (drinkingHabit !== undefined) mergedConnPrefs.drinkingHabit = drinkingHabit;
     if (dietaryPreference !== undefined) mergedConnPrefs.dietaryPreference = dietaryPreference;
     if (lifestyleTags !== undefined) mergedConnPrefs.lifestyleTags = lifestyleTags;
+    if (showLifestylePublic !== undefined) mergedConnPrefs.showLifestylePublic = showLifestylePublic;
     if (password && typeof password === "string" && password.trim().length >= 4) {
       mergedConnPrefs.hasCustomPassword = true;
     }
@@ -170,5 +172,38 @@ export async function PUT(req: NextRequest) {
   } catch (error) {
     console.error("PUT profile error:", error);
     return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
+  }
+}
+
+export async function DELETE() {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = user.id;
+
+    // Remove user's data across all collections
+    await db.$transaction([
+      db.profile.deleteMany({ where: { userId } }),
+      db.participant.deleteMany({ where: { userId } }),
+      db.joinRequest.deleteMany({ where: { applicantId: userId } }),
+      db.message.deleteMany({ where: { senderId: userId } }),
+      db.notification.deleteMany({ where: { userId } }),
+      db.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } }),
+      db.report.deleteMany({ where: { reporterId: userId } }),
+      db.activity.deleteMany({ where: { organizerId: userId } }),
+      db.travelPlan.deleteMany({ where: { organizerId: userId } }),
+      db.user.delete({ where: { id: userId } }),
+    ]);
+
+    const response = NextResponse.json({ success: true, message: "Account and all data permanently deleted" });
+    response.cookies.delete("travally_token");
+    response.cookies.delete("token");
+    return response;
+  } catch (error) {
+    console.error("DELETE user error:", error);
+    return NextResponse.json({ error: "Failed to delete account" }, { status: 500 });
   }
 }

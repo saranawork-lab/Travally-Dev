@@ -4,14 +4,15 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Home,
   Compass,
   PlusCircle,
-  Inbox,
   MessageSquare,
   Shield,
 } from "lucide-react";
 import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 
@@ -24,6 +25,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser, logout } = useAuth();
+  const { t } = useLanguage();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
 
   // State: whether user is hovering over the sidebar
@@ -95,17 +97,19 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   }, [isExpanded]);
 
   // Active item determination
+  const isHome = pathname === "/";
   const isDiscover = pathname.startsWith("/discover");
-  const isCreate = pathname.startsWith("/activities/create") || pathname.startsWith("/travel/create");
-  const isRequests = pathname.startsWith("/requests");
-  const isChats = pathname.startsWith("/chats");
+  const isCreate =
+    pathname.startsWith("/activities/create") ||
+    pathname.startsWith("/travel/create") ||
+    pathname.startsWith("/create");
+  const isChats = pathname.startsWith("/chats") || pathname.startsWith("/requests");
   const isSafety = pathname.startsWith("/safety");
   const isProfileActive = pathname.startsWith("/profile") || pathname.startsWith("/settings");
 
-  // Hide sidebar when not logged in, or on landing, full-screen onboarding, login, register, and single chat rooms
+  // Hide sidebar when not logged in, or on full-screen onboarding, login, register, and single chat rooms
   if (
     !currentUser ||
-    pathname === "/" ||
     pathname?.startsWith("/onboarding") ||
     pathname === "/login" ||
     pathname === "/register" ||
@@ -114,10 +118,27 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
     return null;
   }
 
+  const combinedChatsBadge = (totalUnreadMessages > 0 ? totalUnreadMessages : unreadChatsCount) + pendingRequestsCount;
+  const chatsBadgeDisplay =
+    combinedChatsBadge > 0
+      ? combinedChatsBadge > 9
+        ? "9+"
+        : combinedChatsBadge
+      : 0;
+
   const navItems = [
     {
+      id: "home",
+      label: t.home || "Home",
+      href: "/",
+      icon: Home,
+      isActive: isHome,
+      badge: 0,
+      badgeColor: "bg-emerald-500",
+    },
+    {
       id: "discover",
-      label: "Discover",
+      label: t.discover,
       href: `/discover?mode=${mode}`,
       icon: Compass,
       isActive: isDiscover,
@@ -126,36 +147,20 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
     },
     {
       id: "create",
-      label: "Create",
-      href: mode === "companion" ? "/activities/create" : "/travel/create",
+      label: t.create,
+      href: "/activities/create",
       icon: PlusCircle,
       isActive: isCreate,
       badge: 0,
       badgeColor: "bg-emerald-500",
     },
     {
-      id: "requests",
-      label: "Requests",
-      href: "/requests",
-      icon: Inbox,
-      isActive: isRequests,
-      badge: pendingRequestsCount,
-      badgeColor: "bg-gradient-to-r from-orange-100 to-amber-100 text-orange-900 border border-orange-300/80 shadow-xs",
-    },
-    {
       id: "chats",
-      label: "Chats",
+      label: t.chats,
       href: "/chats",
       icon: MessageSquare,
       isActive: isChats,
-      badge:
-        totalUnreadMessages > 0
-          ? totalUnreadMessages > 9
-            ? "9+"
-            : totalUnreadMessages
-          : unreadChatsCount > 9
-            ? "9+"
-            : unreadChatsCount,
+      badge: chatsBadgeDisplay,
       badgeColor: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-900 border border-emerald-300/80 shadow-xs",
     },
     {

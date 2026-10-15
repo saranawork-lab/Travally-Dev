@@ -10,6 +10,7 @@ import { TripFilters } from "@/components/travel/TripFilters";
 import { DatabaseHealthGuard } from "@/components/common/DatabaseHealthGuard";
 import { PlusCircle, SearchX, Compass, Search, MapPin, Users, Calendar, Luggage } from "lucide-react";
 import Link from "next/link";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface DiscoverClientProps {
   initialUser: any;
@@ -18,6 +19,7 @@ interface DiscoverClientProps {
 function DiscoverContent({ initialUser }: DiscoverClientProps) {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const initialMode = (searchParams.get("mode") as AppMode) || "companion";
   const [mode, setMode] = useState<AppMode>(initialMode);
@@ -244,7 +246,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
               >
                 <div className="flex items-center justify-center gap-2 font-bold text-[15px] sm:text-base">
                   <Users className="w-5 h-5" />
-                  Companion
+                  {t.companion}
                 </div>
                 {mode === "companion" && <div className="absolute bottom-0 left-6 right-6 h-1 bg-emerald-600 dark:bg-emerald-500 rounded-t-full" />}
               </button>
@@ -255,7 +257,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
               >
                 <div className="flex items-center justify-center gap-2 font-bold text-[15px] sm:text-base">
                   <Luggage className="w-5 h-5" />
-                  Travel
+                  {t.travel}
                 </div>
                 {mode === "travel" && <div className="absolute bottom-0 left-6 right-6 h-1 bg-orange-600 dark:bg-orange-500 rounded-t-full" />}
               </button>
@@ -266,8 +268,8 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
         {/* Existing Feed Content */}
         <div className="max-w-7xl mx-auto w-full px-3.5 sm:px-6 lg:px-8 pt-2 sm:pt-4 pb-32 sm:pb-16 space-y-4 sm:space-y-6">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              {mode === "companion" ? "Discover Companions" : "Discover Travel"}
+            <h2 className="text-lg sm:text-2xl font-bold sm:font-extrabold text-slate-900 dark:text-white tracking-tight leading-snug">
+              {mode === "companion" ? t.discoverCompanions : t.discoverTravel}
             </h2>
           </div>
 
@@ -299,12 +301,10 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
               <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 max-w-lg mx-auto">
                 <SearchX className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  No activities match your filter
+                  {t.noActivitiesFound}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-                  {activityOpenSpotsOnly
-                    ? "Try turning off 'Spots Available' filter to view upcoming activities that are currently full."
-                    : "Be the first to organize an activity for this category in your area!"}
+                  {t.noActivitiesDesc}
                 </p>
                 <div className="pt-4">
                   <Link
@@ -312,7 +312,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
                     className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold text-emerald-950 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 shadow-xs transition"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Create an Activity</span>
+                    <span>{t.createActivity}</span>
                   </Link>
                 </div>
               </div>
@@ -359,10 +359,10 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
               <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 max-w-lg mx-auto">
                 <Compass className="w-10 h-10 text-orange-500 mx-auto mb-3" />
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
-                  No expeditions found for this destination or style
+                  {t.noTripsFound}
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
-                  Publish your upcoming destination and connect with fellow explorers traveling at the same time.
+                  {t.noTripsDesc}
                 </p>
                 <div className="pt-4">
                   <Link
@@ -370,7 +370,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
                     className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold text-orange-950 dark:text-orange-200 bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-950/70 hover:from-orange-200 hover:to-amber-100 border border-orange-300/80 dark:border-orange-800/60 shadow-xs transition"
                   >
                     <PlusCircle className="w-3.5 h-3.5" />
-                    <span>Publish a Travel Plan</span>
+                    <span>{t.createTrip}</span>
                   </Link>
                 </div>
               </div>

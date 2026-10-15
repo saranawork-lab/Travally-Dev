@@ -13,6 +13,7 @@ import {
 import { LogoMark } from "@/components/common/Logo";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface VirtualMembershipCardProps {
   displayName: string;
@@ -41,6 +42,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
   totalActivities = 0,
   totalTrips = 0,
 }) => {
+  const { t } = useLanguage();
   const [copied, setCopied] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const cardRef = useRef<HTMLDivElement>(null);
@@ -190,7 +192,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
                         Travally
                       </span>
                       <span className="text-[7px] sm:text-[8px] font-semibold tracking-[0.2em] text-emerald-400/70 uppercase -mt-0.5">
-                        Digital Identity Pass
+                        {t.digitalIdentityPass}
                       </span>
                     </div>
                   </div>
@@ -271,7 +273,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
                   {/* Tier */}
                   <div className="space-y-0.5 min-w-0">
                     <span className="block text-[7px] sm:text-[8px] font-semibold uppercase tracking-[0.12em] text-emerald-400/60">
-                      Tier
+                      {t.tierLabel}
                     </span>
                     <span className="font-bold text-[9px] sm:text-[11px] tracking-tight sm:tracking-wide bg-gradient-to-r from-amber-300 via-orange-300 to-amber-200 bg-clip-text text-transparent flex items-center gap-1 truncate">
                       <span className="shrink-0">{tierEmoji}</span>
@@ -283,7 +285,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
                   <div className="flex items-center gap-2 sm:gap-3 shrink-0">
                     <div className="text-center">
                       <span className="block text-[7px] sm:text-[8px] font-semibold uppercase tracking-wider text-emerald-400/60">
-                        Meetups
+                        {t.meetupsLabel}
                       </span>
                       <span className="font-black text-[10px] sm:text-xs text-white/90">
                         {totalActivities}
@@ -292,7 +294,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
                     <div className="w-px h-4 sm:h-5 bg-white/[0.08]" />
                     <div className="text-center">
                       <span className="block text-[7px] sm:text-[8px] font-semibold uppercase tracking-wider text-emerald-400/60">
-                        Trips
+                        {t.tripsLabel}
                       </span>
                       <span className="font-black text-[10px] sm:text-xs text-white/90">
                         {totalTrips}
@@ -301,7 +303,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
                     <div className="w-px h-4 sm:h-5 bg-white/[0.08]" />
                     <div className="text-center">
                       <span className="block text-[7px] sm:text-[8px] font-semibold uppercase tracking-wider text-emerald-400/60">
-                        Since
+                        {t.sinceLabel}
                       </span>
                       <span className="font-bold text-[9px] sm:text-[10px] text-white/90 tracking-wide whitespace-nowrap">
                         {formattedDate}
@@ -423,7 +425,7 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
         <span className="text-slate-500 dark:text-slate-400 text-[11px] flex items-center gap-1.5">
           <RotateCcw className="w-3 h-3 text-orange-500/60" />
           <span className="text-slate-400 dark:text-slate-500">
-            Tap card to flip
+            {t.tapCardToFlip}
           </span>
         </span>
 
@@ -435,12 +437,12 @@ export const VirtualMembershipCard: React.FC<VirtualMembershipCardProps> = ({
           {copied ? (
             <>
               <CheckCircle className="w-3 h-3 text-emerald-600" />
-              <span>Copied!</span>
+              <span>{t.copied}</span>
             </>
           ) : (
             <>
               <Copy className="w-3 h-3" />
-              <span>Copy ID</span>
+              <span>{t.copyId}</span>
             </>
           )}
         </button>

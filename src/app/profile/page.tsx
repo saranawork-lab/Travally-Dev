@@ -3,21 +3,15 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
-  User,
-  ShieldCheck,
   MapPin,
   Linkedin,
-  Save,
-  CheckCircle,
-  X,
-  LogOut,
   CreditCard,
-  Award,
-  Shield,
-  Copy,
-  Check,
-  Edit3,
   Settings,
+  Camera,
+  Eye,
+  Trash2,
+  X,
+  Sparkles,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { safeJsonParse } from "@/lib/utils";
@@ -25,31 +19,26 @@ import { useAuth } from "@/context/AuthContext";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 import { VirtualMembershipCard } from "@/components/profile/VirtualMembershipCard";
+import { UserProfileTabs } from "@/components/profile/UserProfileTabs";
+import { LifestyleBadges } from "@/components/profile/LifestyleBadges";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function MyProfilePage() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [savedSuccess, setSavedSuccess] = useState(false);
-  const [copiedPass, setCopiedPass] = useState(false);
   const [isCardModalOpen, setIsCardModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
 
-  // Form states
+  const [isAvatarMenuOpen, setIsAvatarMenuOpen] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
   const [city, setCity] = useState("");
-  const [gender, setGender] = useState("PREFER_NOT_TO_SAY");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
-
-  // Interests
-  const [interestInput, setInterestInput] = useState("");
-  const [interests, setInterests] = useState<string[]>([]);
-
-  // Preferred Activities
-  const [preferredActivities, setPreferredActivities] = useState<string[]>([]);
 
   const fetchProfile = async () => {
     try {
@@ -59,14 +48,11 @@ export default function MyProfilePage() {
         const p = data.user?.profile;
         if (p) {
           setProfile(p);
-          setDisplayName(p.displayName || "");
+          setDisplayName(p.displayName || data.user.displayName || "");
           setBio(p.bio || "");
           setCity(p.city || "");
-          setGender(p.gender || "PREFER_NOT_TO_SAY");
           setLinkedinUrl(p.linkedinUrl || "");
           setAvatarUrl(p.avatarUrl || "");
-          setInterests(safeJsonParse<string[]>(p.interests, []));
-          setPreferredActivities(safeJsonParse<string[]>(p.preferredActivities, []));
         }
       }
     } catch (e) {
@@ -80,65 +66,39 @@ export default function MyProfilePage() {
     fetchProfile();
   }, []);
 
-  const addInterest = () => {
-    if (interestInput.trim() && !interests.includes(interestInput.trim())) {
-      setInterests([...interests, interestInput.trim()]);
-      setInterestInput("");
+  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = async () => {
+        const result = reader.result as string;
+        setAvatarUrl(result);
+        setIsAvatarMenuOpen(false);
+        try {
+          await fetch("/api/profile", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ avatarUrl: result }),
+          });
+        } catch (err) {
+          console.error("Failed to persist avatar:", err);
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const removeInterest = (tag: string) => {
-    setInterests(interests.filter((t) => t !== tag));
-  };
-
-  const toggleActivityPref = (act: string) => {
-    if (preferredActivities.includes(act)) {
-      setPreferredActivities(preferredActivities.filter((a) => a !== act));
-    } else {
-      setPreferredActivities([...preferredActivities, act]);
-    }
-  };
-
-  const handleSave = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    setSavedSuccess(false);
-
+  const handleRemoveAvatar = async () => {
+    setAvatarUrl("");
+    setIsAvatarMenuOpen(false);
     try {
-      const res = await fetch("/api/profile", {
+      await fetch("/api/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          displayName,
-          bio,
-          city,
-          gender,
-          linkedinUrl,
-          avatarUrl,
-          interests,
-          preferredActivities,
-        }),
+        body: JSON.stringify({ avatarUrl: null }),
       });
-
-      if (res.ok) {
-        setSavedSuccess(true);
-        setTimeout(() => setSavedSuccess(false), 3000);
-      } else {
-        alert("Failed to save profile changes.");
-      }
     } catch (err) {
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleCopyPass = () => {
-    if (typeof navigator !== "undefined" && (profile?.membershipNumber || currentUser?.id)) {
-      const passNum = profile?.membershipNumber || `TRV-${String(userRank).padStart(4, "0")}`;
-      navigator.clipboard.writeText(passNum);
-      setCopiedPass(true);
-      setTimeout(() => setCopiedPass(false), 2000);
+      console.error("Failed to remove avatar:", err);
     }
   };
 
@@ -146,30 +106,34 @@ export default function MyProfilePage() {
     return <div className="py-20 text-center text-xs text-slate-400">Loading your profile & founding pass...</div>;
   }
 
-  const ACTIVITIES_LIST = [
-    "Movies",
-    "Food and Cafes",
-    "Walking",
-    "Studying",
-    "Events",
-    "Shopping",
-    "City Exploration",
-  ];
-
   const userRank = currentUser?.joinRank || parseRankFromMembership(profile?.membershipNumber);
   const userBadge = getBadgeForRank(userRank);
   const membershipNum = profile?.membershipNumber || `TRV-${String(userRank).padStart(4, "0")}`;
+  const currentAvatarSrc = avatarUrl || currentUser?.avatarUrl;
+
+  const connPrefs: any = safeJsonParse(profile?.connectionPreferences, {});
+  const lifestyle = {
+    smokingHabit: connPrefs.smokingHabit,
+    drinkingHabit: connPrefs.drinkingHabit,
+    dietaryPreference: connPrefs.dietaryPreference,
+    lifestyleTags: connPrefs.lifestyleTags,
+    showLifestylePublic: connPrefs.showLifestylePublic,
+  };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
-
-      <form onSubmit={handleSave} className="space-y-6 animate-fade-in">
-        <div className={`bg-white dark:bg-dark-card rounded-3xl border border-slate-200 dark:border-dark-border p-6 sm:p-8 shadow-sm flex flex-col gap-8 relative ${!isEditing ? "opacity-90" : ""}`}>
-          {/* Global Profile Header (Always visible) */}
-          <div className="flex flex-col items-center justify-center gap-4">
-            <div className="flex flex-col items-center gap-3 text-center">
+    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-28">
+      {/* ── PROFILE HEADER CARD (Read-only on profile, edited in settings) ── */}
+      <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/80 p-6 sm:p-8 shadow-sm flex flex-col gap-6 relative">
+        <div className="flex flex-col items-center justify-center gap-4 text-center">
+          {/* Avatar with Dropdown */}
+          <div className="relative">
+            <div
+              className="relative cursor-pointer group"
+              onClick={() => setIsAvatarMenuOpen(!isAvatarMenuOpen)}
+              title="Click to update photo"
+            >
               <AvatarBadge
-                src={avatarUrl || currentUser?.avatarUrl}
+                src={currentAvatarSrc}
                 name={displayName || currentUser?.displayName}
                 rank={userRank}
                 badge={userBadge}
@@ -177,247 +141,145 @@ export default function MyProfilePage() {
                 showCrown={true}
                 showRibbon={true}
               />
-              <div className="flex flex-col items-center gap-1.5">
-                <div className="flex items-center justify-center gap-2 flex-wrap">
-                  <h2 className="font-bold text-lg text-slate-900 dark:text-white">
-                    {displayName || "Your Name"}
-                  </h2>
-                  <VerificationBadge
-                    status={profile?.verificationStatus || "UNVERIFIED"}
-                    isVerified={profile?.isVerified}
-                    hasLinkedin={!!linkedinUrl}
-                    showLabel
-                  />
-                </div>
-                <p className="text-xs text-slate-500">{city || "City not set"}</p>
-              </div>
-            </div>
-            
-            <div className="flex items-center justify-center gap-2 w-full sm:w-auto mt-2">
-              <button
-                type="button"
-                onClick={() => setIsCardModalOpen(true)}
-                className="p-1.5 sm:px-3 sm:py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-600 dark:text-amber-400 font-bold text-xs flex items-center justify-center gap-1.5 transition-colors"
-                title="View Travally Card"
-              >
-                <CreditCard className="w-4 h-4" />
-                <span className="hidden sm:inline">Travally Card</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setIsEditing(!isEditing)}
-                className={`flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                  isEditing 
-                    ? "bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-300"
-                    : "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/60"
-                }`}
-              >
-                {isEditing ? <X className="w-4 h-4" /> : <Edit3 className="w-4 h-4" />}
-                <span>{isEditing ? "Cancel" : "Edit Profile"}</span>
-              </button>
-              <Link
-                href="/settings"
-                className="p-2 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-[#111c16] dark:hover:bg-[#19261f] text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors"
-                title="Account Settings & Sign Out"
-              >
-                <Settings className="w-5 h-5" />
-              </Link>
-            </div>
-          </div>
-
-          {/* Core Details (Always visible above tabs) */}
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                Display Name *
-              </label>
-              <input
-                required
-                disabled={!isEditing}
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                City / Location
-              </label>
-              <input
-                type="text"
-                disabled={!isEditing}
-                placeholder="e.g. San Francisco, CA"
-                value={city}
-                onChange={(e) => setCity(e.target.value)}
-                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                Gender
-              </label>
-              <select
-                value={gender}
-                disabled={!isEditing}
-                onChange={(e) => setGender(e.target.value)}
-                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 appearance-none'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
-              >
-                <option value="MALE">Male</option>
-                <option value="FEMALE">Female</option>
-                <option value="OTHER">Others</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Bio */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-              Short Bio
-            </label>
-            <textarea
-              rows={3}
-              disabled={!isEditing}
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              placeholder="Tell others about what you enjoy doing on weekends, what inspires you, and your favorite travel spots..."
-              className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50 resize-none'} p-3.5 text-xs text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 leading-relaxed transition-colors`}
-            />
-          </div>
-        </div>
-        
-        {/* ── PROFILE DETAILS FORM ── */}
-        <div className="space-y-6">
-
-            {/* LinkedIn Verification Link */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5 flex items-center gap-1.5">
-                <Linkedin className="w-3.5 h-3.5 text-[#0A66C2]" />
-                <span>LinkedIn Profile URL (Optional Verification)</span>
-              </label>
-              <input
-                type="url"
-                disabled={!isEditing}
-                placeholder="https://linkedin.com/in/username"
-                value={linkedinUrl}
-                onChange={(e) => setLinkedinUrl(e.target.value)}
-                className={`w-full rounded-2xl border ${isEditing ? 'border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated' : 'border-transparent bg-slate-50/50 dark:bg-dark-elevated/50'} px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-colors`}
-              />
-            </div>
-
-            {/* Interests Tags */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
-                Personal Interests &amp; Passions
-              </label>
-              {isEditing && (
-                <div className="flex gap-2 mb-2">
-                  <input
-                    type="text"
-                    placeholder="Add interest (e.g. Cinema, Architecture, Pour-Over, Hiking)..."
-                    value={interestInput}
-                    onChange={(e) => setInterestInput(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        addInterest();
-                      }
-                    }}
-                    className="flex-1 rounded-2xl border border-slate-300 dark:border-dark-border bg-white dark:bg-dark-elevated px-3.5 py-2 text-xs text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-                  />
-                  <button
-                    type="button"
-                    onClick={addInterest}
-                    className="px-4 py-2 rounded-2xl text-xs font-semibold bg-slate-100 dark:bg-dark-elevated hover:bg-slate-200 dark:hover:bg-slate-700 transition"
-                  >
-                    Add
-                  </button>
-                </div>
-              )}
-              <div className="flex flex-wrap gap-1.5">
-                {interests.map((t, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 text-xs border border-emerald-200 dark:border-emerald-800"
-                  >
-                    <span>{t}</span>
-                    {isEditing && (
-                      <button type="button" onClick={() => removeInterest(t)} className="hover:text-rose-500">
-                        <X className="w-3 h-3" />
-                      </button>
-                    )}
-                  </span>
-                ))}
+              <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <Camera className="w-8 h-8 text-white opacity-80" />
               </div>
             </div>
 
-            {/* Preferred Activities */}
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-2">
-                Preferred Activities
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {ACTIVITIES_LIST.map((act) => {
-                  const isSelected = preferredActivities.includes(act);
-                  return (
-                    <button
-                      key={act}
-                      disabled={!isEditing}
-                      type="button"
-                      onClick={() => toggleActivityPref(act)}
-                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition ${
-                        isSelected
-                          ? "bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 text-emerald-950 dark:text-emerald-200 border border-emerald-300/80 dark:border-emerald-700 font-bold shadow-xs"
-                          : "bg-slate-100 dark:bg-dark-elevated text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                      } ${!isEditing ? "opacity-90 cursor-default" : ""}`}
-                    >
-                      {act}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-
-            {/* Save Button */}
-            {isEditing && (
-              <div className="flex items-center justify-between pt-2">
-                {savedSuccess ? (
-                  <span className="text-xs font-semibold text-emerald-600 flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" /> Changes saved successfully!
-                  </span>
-                ) : (
-                  <span />
-                )}
-
+            {isAvatarMenuOpen && (
+              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-[#1a231f] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden text-sm">
                 <button
-                  type="submit"
-                  disabled={saving}
-                  className="px-6 py-2.5 rounded-full text-xs font-bold text-emerald-950 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 disabled:opacity-60 transition shadow-xs flex items-center gap-1.5"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 transition-colors text-left"
                 >
-                  <Save className="w-4 h-4 text-emerald-700 dark:text-emerald-300" />
-                  <span>{saving ? "Saving..." : "Save Profile Changes"}</span>
+                  <Camera className="w-4 h-4 text-emerald-500" />
+                  <span className="font-medium">Change Photo</span>
                 </button>
+                {currentAvatarSrc && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsAvatarModalOpen(true);
+                        setIsAvatarMenuOpen(false);
+                      }}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 transition-colors text-left"
+                    >
+                      <Eye className="w-4 h-4 text-blue-500" />
+                      <span className="font-medium">View Photo</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRemoveAvatar}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 transition-colors text-left border-t border-slate-100 dark:border-slate-800"
+                    >
+                      <Trash2 className="w-4 h-4 text-red-500" />
+                      <span className="font-medium">Remove Photo</span>
+                    </button>
+                  </>
+                )}
               </div>
             )}
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleAvatarChange}
+            />
+          </div>
+
+          {/* Name & Badges */}
+          <div className="flex flex-col items-center gap-1.5">
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <h1 className="font-black text-xl sm:text-2xl text-slate-900 dark:text-white tracking-tight">
+                {displayName || "Explorer"}
+              </h1>
+              <VerificationBadge
+                status={profile?.verificationStatus || "UNVERIFIED"}
+                isVerified={profile?.isVerified}
+                hasLinkedin={!!linkedinUrl}
+                showLabel
+              />
+
+              {/* LinkedIn: Logo only as requested */}
+              {linkedinUrl && (
+                <a
+                  href={linkedinUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1.5 rounded-xl bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 text-[#0A66C2] transition border border-[#0A66C2]/30"
+                  title="LinkedIn Profile"
+                >
+                  <Linkedin className="w-4 h-4 fill-current" />
+                </a>
+              )}
+            </div>
+
+            {/* Location (Read-only) */}
+            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+              <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>{city || "Location not set"}</span>
+            </div>
+
+            {/* Short Bio (Read-only) */}
+            {bio && (
+              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-lg mx-auto leading-relaxed pt-1">
+                {bio}
+              </p>
+            )}
+          </div>
+
+          {/* Action Bar (Travally Pass & Settings button) */}
+          <div className="flex items-center justify-center gap-2.5 flex-wrap pt-1">
+            <button
+              type="button"
+              onClick={() => setIsCardModalOpen(true)}
+              className="px-4 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 dark:bg-amber-950/40 dark:hover:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center gap-2 transition-colors border border-amber-200/60 dark:border-amber-800/40 shadow-xs"
+            >
+              <CreditCard className="w-4 h-4" />
+              <span>{t.travallyCardBtn}</span>
+            </button>
+
+            {/* Edit is ONLY through settings as requested */}
+            <Link
+              href="/settings"
+              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#16221c] dark:hover:bg-[#1e2f27] text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-2 transition-colors border border-slate-200/80 dark:border-emerald-950 shadow-xs"
+            >
+              <Settings className="w-4 h-4 text-emerald-500" />
+              <span>Settings &amp; Edit Profile</span>
+            </Link>
           </div>
         </div>
+
+        {/* ── LIFESTYLE BADGES (Smoker / Drinker / Diet) ── */}
+        <div className="pt-4 border-t border-slate-100 dark:border-emerald-950/60">
+          <LifestyleBadges lifestyle={lifestyle} isOwn={true} />
+        </div>
+      </div>
+
+      {/* ── ALL 6 CONTENT TABS (Instants, Grow, Travel, Companion, Find Me, Treasure) ── */}
+      {currentUser?.id && (
+        <div className="bg-white/80 dark:bg-[#111815]/80 backdrop-blur-md rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-6 shadow-sm">
+          <UserProfileTabs
+            userId={currentUser.id}
+            userName={displayName || "Me"}
+            isOwn={true}
+          />
+        </div>
+      )}
+
       {/* ── TRAVALLY CARD MODAL ── */}
       {isCardModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
-          {/* Backdrop */}
-          <div 
-            className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm" 
+          <div
+            className="absolute inset-0 bg-slate-900/60 dark:bg-black/80 backdrop-blur-sm"
             onClick={() => setIsCardModalOpen(false)}
           />
-          
-          {/* Modal Content */}
-          <div className="relative w-full max-w-2xl bg-transparent max-h-[90vh] overflow-y-auto custom-scrollbar rounded-3xl animate-in fade-in zoom-in-95 duration-200">
-            
-            {/* Close Button */}
+
+          <div className="relative w-full max-w-2xl bg-transparent max-h-[90vh] overflow-y-auto no-scrollbar rounded-3xl animate-in fade-in zoom-in-95 duration-200">
             <button
               type="button"
               onClick={() => setIsCardModalOpen(false)}
@@ -427,15 +289,13 @@ export default function MyProfilePage() {
             </button>
 
             <div className="space-y-6 pt-12 sm:pt-0">
-              {/* 1. 3D Pass Card */}
               <div className="bg-gradient-to-b from-slate-50 to-white dark:from-[#111815] dark:to-[#0d1411] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-4 sm:p-8 md:p-10 shadow-2xl space-y-6">
                 <div className="text-center max-w-lg mx-auto mb-2">
                   <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white">
-                    Travally Pass
+                    {t.travallyPass}
                   </h2>
                 </div>
 
-                {/* The 3D Foil Holographic Card */}
                 <VirtualMembershipCard
                   displayName={displayName || currentUser?.displayName || currentUser?.email?.split("@")[0] || "Travally Explorer"}
                   avatarUrl={avatarUrl || currentUser?.avatarUrl}
@@ -445,74 +305,36 @@ export default function MyProfilePage() {
                   memberSince={profile?.memberSince || profile?.createdAt}
                   isVerified={profile?.isVerified}
                   city={city || profile?.city}
-                  interests={interests}
+                  interests={[]}
                   totalActivities={0}
-                  totalTrips={0}
                 />
-
-                {/* Quick Actions for Pass */}
-                <div className="flex items-center justify-center gap-3 pt-2">
-                  <button
-                    type="button"
-                    onClick={handleCopyPass}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white dark:bg-emerald-950/60 border border-slate-200 dark:border-emerald-800 text-xs font-bold text-slate-700 dark:text-emerald-300 shadow-2xs hover:border-emerald-500 transition"
-                  >
-                    {copiedPass ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4 text-amber-500" />}
-                    <span>{copiedPass ? "Pass Number Copied!" : `Copy Pass: ${membershipNum}`}</span>
-                  </button>
-                </div>
-              </div>
-
-              {/* 2. Verified Badges */}
-              <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
-                <div className="space-y-1">
-                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
-                    <Award className="w-5 h-5 text-emerald-500" />
-                    <span>Verified Badges</span>
-                  </h2>
-                  <p className="text-xs text-slate-500">
-                    Your badges build trust across activity groups and companion listings.
-                  </p>
-                </div>
-
-                <div className="pt-2">
-                  {/* Identity Verification Status */}
-                  <div className="p-5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/70 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                        Identity Verification
-                      </span>
-                      <VerificationBadge
-                        status={profile?.verificationStatus || "UNVERIFIED"}
-                        isVerified={profile?.isVerified}
-                        hasLinkedin={!!linkedinUrl}
-                        showLabel
-                      />
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800/60 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-                        <ShieldCheck className="w-6 h-6" />
-                      </div>
-                      <div>
-                        <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                          {profile?.isVerified ? "Verified Member" : "Unverified Member"}
-                        </h3>
-                        <p className="text-[11px] text-slate-500">
-                          {profile?.isVerified
-                            ? "Identity verified by Travally."
-                            : "Connect LinkedIn profile to display verified badge on activities."}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
         </div>
       )}
-      
-      </form>
+
+      {/* ── AVATAR VIEWER MODAL ── */}
+      {isAvatarModalOpen && currentAvatarSrc && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
+          onClick={() => setIsAvatarModalOpen(false)}
+        >
+          <div className="relative max-w-md w-full bg-slate-900 rounded-3xl overflow-hidden border border-slate-800 shadow-2xl">
+            <button
+              onClick={() => setIsAvatarModalOpen(false)}
+              className="absolute top-3 right-3 p-2 rounded-full bg-black/60 text-white hover:bg-black/80 transition z-10"
+            >
+              <X className="w-4 h-4" />
+            </button>
+            <img
+              src={currentAvatarSrc}
+              alt={displayName}
+              className="w-full h-auto max-h-[70vh] object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

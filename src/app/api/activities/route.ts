@@ -22,23 +22,34 @@ export async function GET(req: NextRequest) {
 
     const currentUser = await getCurrentUser();
 
-    // Find blocked users to exclude
+    // Find blocked users and user profile in parallel if authenticated
     let blockedUserIds: string[] = [];
+    let userProfile: any = null;
+    
     if (currentUser) {
-      const blocks = await db.block.findMany({
-        where: {
-          OR: [
-            { blockerId: currentUser.id },
-            { blockedId: currentUser.id },
-          ],
-        },
-      });
+      const [blocks, profile] = await Promise.all([
+        db.block.findMany({
+          where: {
+            OR: [
+              { blockerId: currentUser.id },
+              { blockedId: currentUser.id },
+            ],
+          },
+        }),
+        db.profile.findUnique({
+          where: { userId: currentUser.id },
+        })
+      ]);
+      
       blockedUserIds = blocks.map((b) => (b.blockerId === currentUser.id ? b.blockedId : b.blockerId));
+      userProfile = profile;
     }
+
+    const organizerId = searchParams.get("organizerId") || searchParams.get("userId");
 
     const where: any = {
       status: status === "ALL" ? undefined : status,
-      organizerId: { notIn: blockedUserIds },
+      organizerId: organizerId ? organizerId : { notIn: blockedUserIds },
     };
 
     if (category && category !== "ALL") {
@@ -109,10 +120,8 @@ export async function GET(req: NextRequest) {
     let matchedActivities = sanitizedActivities;
 
     if (currentUser) {
-      // 1. Fetch user's profile to get interests, preferred activities, city, age, and gender
-      const userProfile = await db.profile.findUnique({
-        where: { userId: currentUser.id },
-      });
+      // 1. We already fetched userProfile in parallel with blocks
+
 
       const userCity = userProfile?.city?.toLowerCase() || "";
       const userAge = userProfile?.age;

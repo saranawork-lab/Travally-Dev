@@ -1,17 +1,19 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Users, MapPin, Luggage } from "lucide-react";
+import { Users, Luggage } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface PrimaryNavigationProps {
   initialUser?: any;
 }
 
-export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = ({ initialUser }) => {
+const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUser }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
 
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -71,7 +73,7 @@ export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = ({ initialUse
   const navItems = [
     {
       id: "companion",
-      label: "Companion",
+      label: t.companion,
       href: "/discover?mode=companion",
       icon: Users,
       activeBorderClass: "border-emerald-500",
@@ -79,7 +81,7 @@ export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = ({ initialUse
     },
     {
       id: "travel",
-      label: "Travel",
+      label: t.travel,
       href: "/discover?mode=travel",
       icon: Luggage,
       activeBorderClass: "border-orange-500",
@@ -128,4 +130,13 @@ export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = ({ initialUse
   );
 };
 
+export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = (props) => {
+  return (
+    <Suspense fallback={null}>
+      <PrimaryNavigationContent {...props} />
+    </Suspense>
+  );
+};
+
 export default PrimaryNavigation;
+

@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Users, Compass } from "lucide-react";
+import { useLanguage } from "@/context/LanguageContext";
 
 export type AppMode = "companion" | "travel";
 
@@ -18,6 +19,8 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
   className = "",
   size = "md",
 }) => {
+  const { t } = useLanguage();
+
   return (
     <div
       role="radiogroup"
@@ -38,8 +41,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
         }`}
       >
         <Users className={size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4"} />
-        <span>Companion</span>
-        <span className="hidden sm:inline">Mode</span>
+        <span>{t.companion}</span>
       </button>
 
       <button
@@ -56,8 +58,7 @@ export const ModeToggle: React.FC<ModeToggleProps> = ({
         }`}
       >
         <Compass className={size === "sm" ? "w-3.5 h-3.5" : "w-4 h-4"} />
-        <span>Travel</span>
-        <span className="hidden sm:inline">Mode</span>
+        <span>{t.travel}</span>
       </button>
     </div>
   );

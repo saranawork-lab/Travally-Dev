@@ -4,14 +4,15 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
+  Home,
   Compass,
   PlusCircle,
-  Inbox,
   MessageSquare,
   User,
 } from "lucide-react";
 import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 
 interface BottomNavProps {
@@ -19,30 +20,18 @@ interface BottomNavProps {
 }
 
 const renderGradientLabel = (label: string) => {
-  const gradientClass = "text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-emerald-500";
-  const orangeClass = "text-orange-500";
-  const emeraldClass = "text-emerald-500";
-
-  switch (label) {
-    case "Discover":
-      return <><span className={orangeClass}>Dis</span><span className={gradientClass}>co</span><span className={emeraldClass}>ver</span></>;
-    case "Create":
-      return <><span className={orangeClass}>Cr</span><span className={gradientClass}>ea</span><span className={emeraldClass}>te</span></>;
-    case "Requests":
-      return <><span className={orangeClass}>Req</span><span className={gradientClass}>ue</span><span className={emeraldClass}>sts</span></>;
-    case "Chats":
-      return <><span className={orangeClass}>Ch</span><span className={gradientClass}>a</span><span className={emeraldClass}>ts</span></>;
-    case "Profile":
-      return <><span className={orangeClass}>Pro</span><span className={gradientClass}>f</span><span className={emeraldClass}>ile</span></>;
-    default:
-      return <span className={emeraldClass}>{label}</span>;
-  }
+  return (
+    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-emerald-500 to-teal-500 font-black">
+      {label}
+    </span>
+  );
 };
 
 const BottomNav: React.FC<BottomNavProps> = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const navRef = React.useRef<HTMLDivElement>(null);
@@ -51,24 +40,30 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   const userBadge = getBadgeForRank(userRank);
 
   // Determine active item
-  const isCreate = pathname.startsWith("/activities/create") || pathname.startsWith("/travel/create");
-  const isRequests = pathname.startsWith("/requests");
-  const isChats = pathname.startsWith("/chats");
+  const isHome = pathname === "/";
+  const isDiscover = pathname.startsWith("/discover");
+  const isCreate =
+    pathname.startsWith("/activities/create") ||
+    pathname.startsWith("/travel/create") ||
+    pathname.startsWith("/create");
+  const isChats = pathname.startsWith("/chats") || pathname.startsWith("/requests");
   const isProfile =
     pathname.startsWith("/profile") ||
     pathname.startsWith("/settings") ||
     pathname.startsWith("/safety") ||
     pathname.startsWith("/admin");
 
-  const activeId = isProfile
-    ? "profile"
-    : isChats
-      ? "chats"
-      : isRequests
-        ? "requests"
-        : isCreate
-          ? "create"
-          : "discover";
+  const activeId = isHome
+    ? "home"
+    : isDiscover
+      ? "discover"
+      : isCreate
+        ? "create"
+        : isChats
+          ? "chats"
+          : isProfile
+            ? "profile"
+            : "home";
 
   useEffect(() => {
     let animationFrameId: number;
@@ -106,13 +101,11 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     };
   }, [activeId, pathname]);
 
-
   // 1. NEVER render bottom dock when not logged in
   if (!currentUser) return null;
 
-  // 2. NEVER render on public landing page or auth/onboarding pages
+  // 2. NEVER render on auth/onboarding pages
   if (
-    pathname === "/" ||
     pathname === "/login" ||
     pathname === "/register" ||
     pathname?.startsWith("/onboarding")
@@ -125,12 +118,26 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     return null;
   }
 
-
+  const combinedChatsBadge = (totalUnreadMessages > 0 ? totalUnreadMessages : unreadChatsCount) + pendingRequestsCount;
+  const chatsBadgeDisplay =
+    combinedChatsBadge > 0
+      ? combinedChatsBadge > 9
+        ? "9+"
+        : combinedChatsBadge
+      : 0;
 
   const navItems = [
     {
+      id: "home",
+      label: t.home || "Home",
+      href: "/",
+      icon: Home,
+      badge: 0,
+      badgeColor: "bg-emerald-500",
+    },
+    {
       id: "discover",
-      label: "Discover",
+      label: t.discover,
       href: "/discover",
       icon: Compass,
       badge: 0,
@@ -138,38 +145,23 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     },
     {
       id: "create",
-      label: "Create",
-      href: currentUser?.mode === "traveler" ? "/travel/create" : "/activities/create",
+      label: t.create,
+      href: "/activities/create",
       icon: PlusCircle,
       badge: 0,
       badgeColor: "bg-emerald-500",
     },
     {
-      id: "requests",
-      label: "Requests",
-      href: "/requests",
-      icon: Inbox,
-      badge: pendingRequestsCount,
-      badgeColor: "bg-gradient-to-r from-orange-100 to-amber-100 text-orange-900 border border-orange-300/80 shadow-xs",
-    },
-    {
       id: "chats",
-      label: "Chats",
+      label: t.chats,
       href: "/chats",
       icon: MessageSquare,
-      badge:
-        totalUnreadMessages > 0
-          ? totalUnreadMessages > 9
-            ? "9+"
-            : totalUnreadMessages
-          : unreadChatsCount > 9
-            ? "9+"
-            : unreadChatsCount,
+      badge: chatsBadgeDisplay,
       badgeColor: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-900 border border-emerald-300/80 shadow-xs",
     },
     {
       id: "profile",
-      label: "Profile",
+      label: t.profile,
       href: "/profile",
       icon: User,
       isProfile: true,

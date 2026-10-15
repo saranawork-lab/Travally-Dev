@@ -8,6 +8,7 @@ import { AppMode } from "@/components/common/ModeToggle";
 import { NotificationDropdown } from "@/components/layout/NotificationDropdown";
 
 import { useAuth } from "@/context/AuthContext";
+import { useLanguage } from "@/context/LanguageContext";
 import { Search, X } from "lucide-react";
 import { LiquidWaveButton } from "@/components/ui/LiquidWaveButton";
 
@@ -26,6 +27,7 @@ const Navbar: React.FC<NavbarProps> = ({
   const router = useRouter();
   const [mode, setMode] = useState<AppMode>(initialMode);
   const { currentUser } = useAuth();
+  const { t } = useLanguage();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -112,19 +114,18 @@ const Navbar: React.FC<NavbarProps> = ({
     return null;
   }
 
-  const isAuthOrLandingPage = pathname === "/" || pathname === "/login" || pathname === "/register";
+  const isAuthOrLandingPage = pathname === "/login" || pathname === "/register";
   const shouldAnimateLogo = isAuthOrLandingPage ? true : isSidebarOpen;
-  const isLandingPage = pathname === "/";
   const isDiscoverPage = pathname === "/discover";
   
   // Discover page navbar is absolute, so it always sits on the hero and is transparent
-  const isTransparent = isLandingPage ? !isScrolled : isDiscoverPage ? true : false;
+  const isTransparent = isDiscoverPage;
   const isLoggedInApp = currentUser && !isAuthOrLandingPage;
 
   return (
     <header
       className={`z-40 w-full transition-all duration-300 ${
-        isLandingPage ? "fixed top-0" : isDiscoverPage ? "absolute top-0" : "sticky top-0"
+        isDiscoverPage ? "absolute top-0" : "sticky top-0"
       } ${
         isTransparent
           ? "bg-transparent border-transparent"
@@ -192,7 +193,7 @@ const Navbar: React.FC<NavbarProps> = ({
                 onFocus={() => setIsSearchFocused(true)}
                 onBlur={() => setIsSearchFocused(false)}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                placeholder="Search activities, trips, vibes..."
+                placeholder={t.searchPlaceholder}
                 className="w-full pl-10 pr-10 py-2 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-800/80 border border-transparent text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:bg-white dark:focus:bg-slate-800 focus:border-emerald-500/30 transition-all"
               />
               {searchQuery && (
@@ -216,37 +217,30 @@ const Navbar: React.FC<NavbarProps> = ({
           {isLoggedInApp ? (
             <NotificationDropdown />
           ) : (
-            <div className="flex items-center gap-1.5 sm:gap-3">
-              {currentUser && pathname === "/" ? (
-                <LiquidWaveButton href="/discover">
-                  Discover
-                </LiquidWaveButton>
-              ) : pathname === "/login" ? (
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {pathname === "/login" ? (
                 <LiquidWaveButton href="/register" size="sm">
-                  Join Free
+                  {t.joinFree}
                 </LiquidWaveButton>
               ) : pathname === "/register" ? (
                 <Link
                   href="/login"
-                  className="group relative px-3.5 sm:px-4 py-1.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 transition-all duration-300 hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden"
+                  className="group relative px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 transition-all duration-300 hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden"
                 >
-                  <span className="relative z-10 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Log In</span>
+                  <span className="relative z-10 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{t.login}</span>
                   <div className="absolute inset-0 bg-slate-100 dark:bg-slate-800 scale-0 group-hover:scale-100 rounded-full transition-transform duration-300 origin-center" />
                 </Link>
               ) : (
                 <>
                   <Link
                     href="/login"
-                    className={`group relative px-3 sm:px-4 py-1.5 sm:py-2 rounded-full text-xs font-bold transition-all duration-300 hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden ${isTransparent
-                        ? "text-white/90"
-                        : "text-slate-700 dark:text-slate-200"
-                      }`}
+                    className="group relative px-3 sm:px-4 py-1.5 rounded-full text-xs font-bold text-slate-700 dark:text-slate-200 transition-all duration-300 hover:scale-105 active:scale-95 whitespace-nowrap overflow-hidden"
                   >
-                    <span className={`relative z-10 transition-colors ${isTransparent ? "group-hover:text-white" : "group-hover:text-emerald-600 dark:group-hover:text-emerald-400"}`}>Log In</span>
-                    <div className={`absolute inset-0 scale-0 group-hover:scale-100 rounded-full transition-transform duration-300 origin-center ${isTransparent ? "bg-white/10" : "bg-slate-50 dark:bg-[#131c18]"}`} />
+                    <span className="relative z-10 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">{t.login}</span>
+                    <div className="absolute inset-0 scale-0 group-hover:scale-100 rounded-full transition-transform duration-300 origin-center bg-slate-100 dark:bg-[#131c18]" />
                   </Link>
-                  <LiquidWaveButton href="/register">
-                    Join Free
+                  <LiquidWaveButton href="/register" size="sm">
+                    {t.joinFree}
                   </LiquidWaveButton>
                 </>
               )}

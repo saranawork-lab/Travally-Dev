@@ -14,8 +14,9 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = () => {
   const pathname = usePathname();
 
-
-
+  if (pathname === "/") {
+    return null;
+  }
   // Mouse tracking state for the dynamic torch beam
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const [isHovered, setIsHovered] = useState(false);
@@ -46,18 +47,11 @@ const Footer: React.FC<FooterProps> = () => {
     return () => clearInterval(interval);
   }, [isHovered]);
 
-  // 1. Hide inside chat rooms, auth pages, and onboarding
+  // 1. Never render on Home ("/"), chat rooms, auth, onboarding, or in-app pages
   if (
-    (pathname?.startsWith("/chats/") && pathname !== "/chats") ||
-    pathname === '/login' ||
-    pathname === '/register' ||
-    pathname?.startsWith("/onboarding")
+    pathname === "/" ||
+    pathname !== "/landing"
   ) {
-    return null;
-  }
-
-  // 2. Hide on internal in-app pages, but ALWAYS show on landing page
-  if (pathname !== "/") {
     return null;
   }
 

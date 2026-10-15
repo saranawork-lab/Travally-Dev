@@ -19,19 +19,22 @@ export async function GET(req: NextRequest) {
     let userTravelProfile: UserTravelProfile = {};
 
     if (currentUser) {
-      const blocks = await db.block.findMany({
-        where: {
-          OR: [
-            { blockerId: currentUser.id },
-            { blockedId: currentUser.id },
-          ],
-        },
-      });
+      const [blocks, profile] = await Promise.all([
+        db.block.findMany({
+          where: {
+            OR: [
+              { blockerId: currentUser.id },
+              { blockedId: currentUser.id },
+            ],
+          },
+        }),
+        db.profile.findUnique({
+          where: { userId: currentUser.id },
+        })
+      ]);
+      
       blockedUserIds = blocks.map((b) => (b.blockerId === currentUser.id ? b.blockedId : b.blockerId));
 
-      const profile = await db.profile.findUnique({
-        where: { userId: currentUser.id },
-      });
       if (profile) {
         userTravelProfile = {
           departureCity: profile.city || undefined,
@@ -40,9 +43,12 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    const organizerId = searchParams.get("organizerId") || searchParams.get("userId");
+    const status = searchParams.get("status");
+
     const where: any = {
-      status: "OPEN",
-      organizerId: { notIn: blockedUserIds },
+      status: status === "ALL" ? undefined : (status || (organizerId ? undefined : "OPEN")),
+      organizerId: organizerId ? organizerId : { notIn: blockedUserIds },
     };
 
     if (style && style !== "ALL") {

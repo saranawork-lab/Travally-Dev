@@ -129,9 +129,9 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
         </div>
       </div>
 
-      {/* Search Input */}
-      <div className="p-3 pb-2 shrink-0">
-        <div className="relative">
+      {/* Search Input & Filter */}
+      <div className="p-3 pb-2 shrink-0 flex items-center gap-2">
+        <div className="relative flex-1">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
@@ -141,46 +141,18 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
             className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-[#141d18] border border-slate-200 dark:border-emerald-950/70 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500 shadow-2xs"
           />
         </div>
+        <button
+          type="button"
+          onClick={() => setFilterType(filterType === "ALL" ? "ACTIVITY" : filterType === "ACTIVITY" ? "TRAVEL" : "ALL")}
+          className="w-8 h-8 rounded-xl flex items-center justify-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 transition shrink-0"
+          title={`Filter: ${filterType}`}
+        >
+          {filterType === "ALL" && <MessageSquare className="w-4 h-4 text-slate-500" />}
+          {filterType === "ACTIVITY" && <Users className="w-4 h-4 text-emerald-500" />}
+          {filterType === "TRAVEL" && <Compass className="w-4 h-4 text-amber-500" />}
+        </button>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="px-3 pb-2 flex items-center gap-1.5 shrink-0 overflow-x-auto scrollbar-none">
-        <button
-          type="button"
-          onClick={() => setFilterType("ALL")}
-          className={`px-3 py-1 rounded-full text-[11px] font-bold transition ${
-            filterType === "ALL"
-              ? "bg-gradient-to-r from-emerald-100 via-teal-50 to-orange-100 dark:from-emerald-950/60 dark:to-orange-950/60 text-slate-800 dark:text-slate-100 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs"
-              : "bg-slate-100/80 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
-          }`}
-        >
-          All
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterType("ACTIVITY")}
-          className={`px-3 py-1 rounded-full text-[11px] font-bold transition flex items-center gap-1 ${
-            filterType === "ACTIVITY"
-              ? "bg-gradient-to-r from-emerald-100 to-teal-50 dark:from-emerald-950/70 dark:to-teal-900/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs"
-              : "bg-slate-100/80 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 hover:text-emerald-700"
-          }`}
-        >
-          <Users className="w-3 h-3" />
-          <span>Companion</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setFilterType("TRAVEL")}
-          className={`px-3 py-1 rounded-full text-[11px] font-bold transition flex items-center gap-1 ${
-            filterType === "TRAVEL"
-              ? "bg-gradient-to-r from-orange-100 to-amber-50 dark:from-orange-950/70 dark:to-amber-900/60 text-orange-800 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60 shadow-xs"
-              : "bg-slate-100/80 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 hover:text-orange-700"
-          }`}
-        >
-          <Compass className="w-3 h-3" />
-          <span>Trips</span>
-        </button>
-      </div>
 
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-1 scrollbar-thin">

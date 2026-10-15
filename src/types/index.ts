@@ -215,6 +215,7 @@ export type ActivityCategory =
   | "OTHER";
 
 type TravelStyle =
+  | "BIKERS_GROUP"
   | "BACKPACKING"
   | "CULTURAL"
   | "SLOW_TRAVEL"

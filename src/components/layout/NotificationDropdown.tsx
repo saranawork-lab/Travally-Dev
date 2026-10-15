@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Bell, Check, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { formatTimeAgo } from "@/lib/utils";
+import { useLanguage } from "@/context/LanguageContext";
 
 interface AppNotification {
   id: string;
@@ -73,6 +74,7 @@ export const NotificationDropdown: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { t } = useLanguage();
 
   const fetchNotifications = async () => {
     try {
@@ -143,7 +145,7 @@ export const NotificationDropdown: React.FC = () => {
         <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 shadow-2xl z-50 overflow-hidden animate-slide-up">
           <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 dark:border-emerald-950/60 bg-slate-50/70 dark:bg-[#16201b]">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-sm text-slate-900 dark:text-white">Notifications</span>
+              <span className="font-bold text-sm text-slate-900 dark:text-white">{t.notifications}</span>
               {unreadCount > 0 && (
                 <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-400">
                   {unreadCount} new
@@ -155,7 +157,7 @@ export const NotificationDropdown: React.FC = () => {
                 onClick={markAllAsRead}
                 className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
               >
-                <Check className="w-3 h-3" /> Mark all read
+                <Check className="w-3 h-3" /> {t.markAllRead}
               </button>
             )}
           </div>
@@ -163,7 +165,7 @@ export const NotificationDropdown: React.FC = () => {
           <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-emerald-950/60">
             {notifications.length === 0 ? (
               <div className="p-6 text-center text-slate-500 dark:text-slate-400 text-xs">
-                No notifications yet. You will be alerted when requests or messages arrive!
+                {t.noNotifications}
               </div>
             ) : (
               notifications.map((n) => {

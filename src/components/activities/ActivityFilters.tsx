@@ -22,6 +22,7 @@ import {
   IconDrives,
   IconHangouts,
 } from "@/constants/categories";
+import { useLanguage } from "@/context/LanguageContext";
 
 const CATEGORIES = [
   { id: "ALL", label: "All Activities", icon: Layers },
@@ -35,13 +36,6 @@ const CATEGORIES = [
   { id: "OTHER", label: "Other Hangouts", icon: IconHangouts },
 ];
 
-const SORT_OPTIONS = [
-  { id: "UPCOMING", label: "Upcoming Soonest", shortLabel: "Soonest", icon: Calendar },
-  { id: "SPOTS_LEFT", label: "Most Spots Available", shortLabel: "Spots Left", icon: Users },
-  { id: "NEWEST", label: "Recently Added", shortLabel: "Newest", icon: Zap },
-  { id: "TITLE", label: "Activity Name (A-Z)", shortLabel: "Name", icon: ArrowUpDown },
-];
-
 export interface ActivityFiltersProps {
   selectedCategory: string;
   onSelectCategory: (cat: string) => void;
@@ -49,6 +43,9 @@ export interface ActivityFiltersProps {
   onSearchChange?: (q: string) => void;
   sortBy?: string;
   onSortChange?: (sort: string) => void;
+  openSpotsOnly?: boolean;
+  onOpenSpotsToggle?: (val: boolean) => void;
+  totalCount?: number;
 }
 
 export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
@@ -57,11 +54,19 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
   sortBy = "UPCOMING",
   onSortChange,
 }) => {
+  const { t } = useLanguage();
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [sortOpen, setSortOpen] = useState(false);
 
   const categoryRef = useRef<HTMLDivElement>(null);
   const sortRef = useRef<HTMLDivElement>(null);
+
+  const SORT_OPTIONS = [
+    { id: "UPCOMING", label: "Upcoming Soonest", shortLabel: t.sortSoonest, icon: Calendar },
+    { id: "SPOTS_LEFT", label: "Most Spots Available", shortLabel: t.sortSpotsLeft, icon: Users },
+    { id: "NEWEST", label: "Recently Added", shortLabel: t.sortNewest, icon: Zap },
+    { id: "TITLE", label: "Activity Name (A-Z)", shortLabel: t.sortName, icon: ArrowUpDown },
+  ];
 
   // Click outside to dismiss dropdowns
   useEffect(() => {
@@ -109,7 +114,7 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
               setCategoryOpen(!categoryOpen);
               setSortOpen(false);
             }}
-            className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
               selectedCategory !== "ALL"
                 ? "bg-emerald-500 text-white border-emerald-600 shadow-emerald-500/20 font-bold"
                 : "bg-white dark:bg-[#111a15] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-emerald-950/70 hover:border-emerald-400 dark:hover:border-emerald-600"
@@ -117,7 +122,7 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
           >
             <ActiveCategoryIcon className="w-3.5 h-3.5 shrink-0" />
             <span>
-              {selectedCategory === "ALL" ? "All Categories" : activeCategory.label}
+              {selectedCategory === "ALL" ? t.allCategories : activeCategory.label}
             </span>
             <ChevronDown
               className={`w-3 h-3 opacity-70 transition-transform shrink-0 ${
@@ -171,14 +176,14 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
               setSortOpen(!sortOpen);
               setCategoryOpen(false);
             }}
-            className={`flex items-center gap-1.5 px-3 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
+            className={`flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1.5 sm:py-2 rounded-full text-[11px] sm:text-xs font-semibold transition shadow-xs border select-none whitespace-nowrap shrink-0 ${
               sortBy !== "UPCOMING"
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs font-bold"
                 : "bg-white dark:bg-[#111a15] text-slate-700 dark:text-slate-200 border-slate-200/80 dark:border-emerald-950/70 hover:border-emerald-400 dark:hover:border-emerald-600"
             }`}
           >
             <ArrowUpDown className="w-3.5 h-3.5 shrink-0 text-slate-400" />
-            <span>Sort: {activeSort.shortLabel || activeSort.label}</span>
+            <span>{t.sortLabel}: {activeSort.shortLabel || activeSort.label}</span>
             <ChevronDown
               className={`w-3 h-3 opacity-70 transition-transform shrink-0 ${
                 sortOpen ? "rotate-180" : ""
@@ -190,7 +195,7 @@ export const ActivityFilters: React.FC<ActivityFiltersProps> = ({
           {sortOpen && (
             <div className="absolute left-0 top-full mt-1.5 w-56 bg-white dark:bg-[#111a15] border border-slate-200 dark:border-emerald-950/80 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in-50 zoom-in-95">
               <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                Sort Order
+                {t.sortLabel}
               </div>
               <div className="space-y-0.5">
                 {SORT_OPTIONS.map((opt) => {

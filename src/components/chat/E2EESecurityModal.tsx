@@ -35,7 +35,7 @@ export const E2EESecurityModal: React.FC<E2EESecurityModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
       <div className="bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5 animate-slide-up relative">
         {/* Close Button */}
         <button

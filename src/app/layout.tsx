@@ -5,6 +5,7 @@ import Navbar from "@/components/layout/Navbar";
 import BottomNav from "@/components/layout/BottomNav";
 import Footer from "@/components/layout/Footer";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+import { LanguageProvider } from "@/context/LanguageContext";
 import { getCurrentUser } from "@/lib/auth";
 import { AuthProvider } from "@/context/AuthContext";
 import BrandIntroLoader from "@/components/common/BrandIntroLoader";
@@ -123,20 +124,22 @@ export default async function RootLayout({
         />
       </head>
       <body className={`${inter.className} min-h-screen flex flex-col antialiased bg-[#f8fafc] dark:bg-[#090d0b] text-slate-900 dark:text-slate-100`}>
-        <ThemeProvider>
-          <AuthProvider initialUser={currentUser}>
-            <BrandIntroLoader />
-            <GlobalIncomingCallListener />
-            <Navbar initialUser={currentUser} />
-            <PrimaryNavigation initialUser={currentUser} />
-            <div className="flex-1 flex min-w-0">
-              <DesktopSidebar initialUser={currentUser} />
-              <main className="flex-1 min-w-0">{children}</main>
-            </div>
-            <Footer initialUser={currentUser} />
-            <BottomNav initialUser={currentUser} />
-          </AuthProvider>
-        </ThemeProvider>
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthProvider initialUser={currentUser}>
+              <BrandIntroLoader />
+              <GlobalIncomingCallListener />
+              <Navbar initialUser={currentUser} />
+              <PrimaryNavigation initialUser={currentUser} />
+              <div className="flex-1 flex min-w-0">
+                <DesktopSidebar initialUser={currentUser} />
+                <main className="flex-1 min-w-0">{children}</main>
+              </div>
+              <Footer initialUser={currentUser} />
+              <BottomNav initialUser={currentUser} />
+            </AuthProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

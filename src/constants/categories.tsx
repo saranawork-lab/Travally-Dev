@@ -113,6 +113,13 @@ export const CATEGORIES: Record<string, CategoryConfig> = {
   },
 };
 
+import { Bike } from "lucide-react";
+
+export const IconBikersGroup = ({ className, ...props }: any) => (
+  <div className={`inline-flex items-center justify-center ${className || "w-full h-full"}`}>
+    <Bike className="w-full h-full text-amber-500" {...props} />
+  </div>
+);
 export const IconCultural = (props: any) => <CustomCategoryIcon src="/travel-icons/cultural.png" alt="Cultural & Heritage" {...props} />;
 export const IconSlowTravel = (props: any) => <CustomCategoryIcon src="/travel-icons/slow_travel.png" alt="Slow Travel" {...props} />;
 export const IconBackpacking = (props: any) => <CustomCategoryIcon src="/travel-icons/backpacking.png" alt="Backpacking & Hostels" {...props} />;
@@ -131,6 +138,14 @@ export interface TravelStyleConfig {
 }
 
 export const TRAVEL_STYLE_CONFIG: Record<string, TravelStyleConfig> = {
+  BIKERS_GROUP: {
+    label: "Bikers Group Trip",
+    icon: IconBikersGroup,
+    badgeBg: "bg-amber-600 text-white",
+    tagText: "text-amber-500 dark:text-amber-400",
+    border: "border-amber-500/30",
+    desc: "Motorcycle touring, biking expeditions, group highway rides & convoys",
+  },
   CULTURAL: {
     label: "Cultural & Heritage",
     icon: IconCultural,
@@ -190,6 +205,7 @@ export const TRAVEL_STYLE_CONFIG: Record<string, TravelStyleConfig> = {
 };
 
 export const TRAVEL_STYLES: Record<string, string> = {
+  BIKERS_GROUP: "Bikers Group Trip",
   BACKPACKING: "Backpacking",
   CULTURAL: "Cultural",
   SLOW_TRAVEL: "Slow Travel",

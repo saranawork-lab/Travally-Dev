@@ -24,8 +24,10 @@ import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { ReportModal } from "@/components/common/ReportModal";
 import { EditActivityModal } from "@/components/activities/EditActivityModal";
+import { useLanguage } from "@/context/LanguageContext";
 
 export default function ActivityDetailPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const id = params?.id as string;
@@ -169,7 +171,7 @@ export default function ActivityDetailPage() {
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Activities</span>
+          <span>{t.backToDiscover}</span>
         </Link>
       </div>
 
@@ -392,7 +394,7 @@ export default function ActivityDetailPage() {
                     onClick={handleCancelActivity}
                     className="px-3.5 py-2 rounded-xl text-xs font-semibold text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 border border-amber-300 dark:border-amber-800/60 transition"
                   >
-                    Cancel
+                    {t.cancel}
                   </button>
                 )}
                 <button
@@ -401,21 +403,21 @@ export default function ActivityDetailPage() {
                   className="px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 transition flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
-                  <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+                  <span>{isDeleting ? "Deleting..." : t.deleteBtn}</span>
                 </button>
               </div>
             ) : userRequest ? (
               userRequest.status === "PENDING" ? (
                 <div className="flex items-center gap-3">
                   <span className="px-3 py-1.5 rounded-xl text-xs font-semibold bg-orange-50 dark:bg-orange-950/50 text-orange-700 border border-orange-200 flex items-center gap-1.5">
-                    <Clock3 className="w-3.5 h-3.5" /> Request Pending Organizer Approval
+                    <Clock3 className="w-3.5 h-3.5" /> {t.requestSent}
                   </span>
                   <button
                     onClick={handleCancelJoinRequest}
                     disabled={isCancelling}
                     className="text-xs text-rose-600 hover:underline"
                   >
-                    Cancel Request
+                    {t.cancelRequest}
                   </button>
                 </div>
               ) : userRequest.status === "ACCEPTED" ? (
@@ -424,7 +426,7 @@ export default function ActivityDetailPage() {
                   className="px-5 py-2.5 rounded-xl text-xs font-bold text-emerald-900 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 shadow-xs transition flex items-center gap-2"
                 >
                   <CheckCircle className="w-4 h-4 text-emerald-700 dark:text-emerald-400" />
-                  <span>Enter Private Activity Chat</span>
+                  <span>{t.chatUnlocked}</span>
                 </Link>
               ) : (
                 <span className="px-3 py-1.5 rounded-xl text-xs bg-slate-100 dark:bg-dark-elevated text-slate-500">
@@ -449,7 +451,7 @@ export default function ActivityDetailPage() {
                 }}
                 className="w-full sm:w-auto px-6 py-2.5 rounded-full text-xs font-bold text-emerald-900 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 shadow-xs transition hover:scale-105 active:scale-95"
               >
-                I&apos;m Interested in Joining
+                {t.requestToJoin}
               </button>
             )}
           </div>

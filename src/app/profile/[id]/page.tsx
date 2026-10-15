@@ -18,8 +18,8 @@ import {
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { ReportModal } from "@/components/common/ReportModal";
-import { ActivityCard } from "@/components/activities/ActivityCard";
-import { TripCard } from "@/components/travel/TripCard";
+import { UserProfileTabs } from "@/components/profile/UserProfileTabs";
+import { LifestyleBadges } from "@/components/profile/LifestyleBadges";
 import { safeJsonParse } from "@/lib/utils";
 
 export default function PublicProfilePage() {
@@ -84,9 +84,14 @@ export default function PublicProfilePage() {
   }
 
   const p = user.profile;
-  const interests: string[] = safeJsonParse(p.interests, []);
-  const preferredActivities: string[] = safeJsonParse(p.preferredActivities, []);
   const connPrefs: any = safeJsonParse(p.connectionPreferences, {});
+  const lifestyle = {
+    smokingHabit: connPrefs.smokingHabit,
+    drinkingHabit: connPrefs.drinkingHabit,
+    dietaryPreference: connPrefs.dietaryPreference,
+    lifestyleTags: connPrefs.lifestyleTags,
+    showLifestylePublic: connPrefs.showLifestylePublic,
+  };
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
@@ -118,9 +123,23 @@ export default function PublicProfilePage() {
                   hasLinkedin={!!p.linkedinUrl}
                   showLabel
                 />
+                {/* LinkedIn: Logo only */}
+                {p.linkedinUrl && (
+                  <a
+                    href={p.linkedinUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-1.5 rounded-xl bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 text-[#0A66C2] border border-[#0A66C2]/30 transition"
+                    title="LinkedIn Profile"
+                  >
+                    <Linkedin className="w-4 h-4 fill-current" />
+                  </a>
+                )}
               </div>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {p.city || "San Francisco"} • {p.age ? `${p.age} years old` : "Member"}
+              <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
+                <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                <span>{p.city || "Explorer"}</span>
+                {p.age && <span>• {p.age} years old</span>}
               </p>
             </div>
           </div>
@@ -128,18 +147,6 @@ export default function PublicProfilePage() {
           {/* Block / Report Controls */}
           {!user.isSelf && (
             <div className="flex items-center gap-2">
-              {p.linkedinUrl && (
-                <a
-                  href={p.linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="px-3 py-1.5 rounded-xl border border-slate-200 dark:border-dark-border text-xs font-medium text-[#0A66C2] hover:bg-slate-50 dark:hover:bg-dark-elevated flex items-center gap-1"
-                >
-                  <Linkedin className="w-3.5 h-3.5" />
-                  <span>LinkedIn</span>
-                  <ExternalLink className="w-3 h-3 text-slate-400" />
-                </a>
-              )}
               <button
                 onClick={() => setReportOpen(true)}
                 className="p-2 rounded-xl text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition"
@@ -160,134 +167,31 @@ export default function PublicProfilePage() {
 
         {/* Bio */}
         {p.bio && (
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">About</h2>
-            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-              {p.bio}
+            <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line italic">
+              &ldquo;{p.bio}&rdquo;
             </p>
           </div>
         )}
 
-        {/* Passions & Interests */}
-        {interests.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Passions & Interests</h2>
-            <div className="flex flex-wrap gap-2">
-              {interests.map((tag, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-brand-50 dark:bg-brand-950/40 text-brand-800 dark:text-brand-300 border border-brand-200 dark:border-brand-800"
-                >
-                  {tag}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Preferred Activities */}
-        {preferredActivities.length > 0 && (
-          <div className="space-y-2">
-            <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400">Preferred Activities</h2>
-            <div className="flex flex-wrap gap-2">
-              {preferredActivities.map((act, i) => (
-                <span
-                  key={i}
-                  className="px-3 py-1 rounded-full text-xs font-medium bg-slate-100 dark:bg-dark-elevated text-slate-700 dark:text-slate-300"
-                >
-                  {act}
-                </span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Connection Intentions & Lifestyle Badges */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-elevated border border-slate-200/60 dark:border-dark-border text-xs space-y-2">
-            <span className="font-bold text-slate-800 dark:text-slate-200 block">Connection Intent</span>
-            <div className="flex flex-wrap gap-2 text-slate-600 dark:text-slate-400">
-              {connPrefs.friendship && <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold">🤝 Friendship</span>}
-              {connPrefs.activityPartner && <span className="px-2.5 py-1 rounded-lg bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 font-semibold">🎯 Activity Partner</span>}
-              {connPrefs.travel && <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 font-semibold">✈️ Travel Trips</span>}
-              {connPrefs.dating && <span className="px-2.5 py-1 rounded-lg bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 font-semibold">❤️ Dating</span>}
-            </div>
-          </div>
-
-          {(connPrefs.smokingHabit || connPrefs.drinkingHabit || connPrefs.dietaryPreference || (connPrefs.lifestyleTags && connPrefs.lifestyleTags.length > 0)) && (
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-dark-elevated border border-slate-200/60 dark:border-dark-border text-xs space-y-2">
-              <span className="font-bold text-slate-800 dark:text-slate-200 block">Lifestyle & Compatibility</span>
-              <div className="flex flex-wrap gap-1.5">
-                {connPrefs.smokingHabit && (
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
-                    {connPrefs.smokingHabit === "NON_SMOKER" ? "🚭 Non-Smoker" : connPrefs.smokingHabit === "OCCASIONAL" ? "🚬 Occasional Smoker" : connPrefs.smokingHabit === "REGULAR" ? "💨 Regular Smoker" : "🤐 Smoking: Private"}
-                  </span>
-                )}
-                {connPrefs.drinkingHabit && (
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
-                    {connPrefs.drinkingHabit === "NON_DRINKER" ? "🧃 Non-Drinker" : connPrefs.drinkingHabit === "SOCIAL" ? "🥂 Social Drinker" : connPrefs.drinkingHabit === "REGULAR" ? "🍷 Regular Drinker" : "🤐 Drinking: Private"}
-                  </span>
-                )}
-                {connPrefs.dietaryPreference && (
-                  <span className="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-[11px]">
-                    {connPrefs.dietaryPreference === "PURE_VEG" ? "🥗 Pure Veg" : connPrefs.dietaryPreference === "EGGETARIAN" ? "🍳 Eggetarian" : connPrefs.dietaryPreference === "NON_VEG" ? "🍗 Non-Veg" : "🥑 Vegan"}
-                  </span>
-                )}
-                {Array.isArray(connPrefs.lifestyleTags) && connPrefs.lifestyleTags.map((t: string) => (
-                  <span key={t} className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-semibold text-[11px]">
-                    {t}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
+        {/* Lifestyle & Compatibility Badges (Smoker, Drinker, Diet) */}
+        <div className="pt-2">
+          <LifestyleBadges lifestyle={lifestyle} isOwn={user.isSelf} />
         </div>
       </div>
 
-      {/* Member's Organized Activities */}
-      {user.activities && user.activities.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Users className="w-4 h-4 text-brand-600 dark:text-brand-400" />
-            <span>Activities Organized by {p.displayName}</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {user.activities.map((act: any) => (
-              <ActivityCard
-                key={act.id}
-                activity={{ ...act, organizer: user }}
-                onRefresh={fetchProfile}
-              />
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Member's Travel Plans */}
-      {user.travelPlans && user.travelPlans.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-            <Compass className="w-4 h-4 text-travel-600 dark:text-travel-400" />
-            <span>Travel Expeditions Hosted by {p.displayName}</span>
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {user.travelPlans.map((trip: any) => (
-              <TripCard
-                key={trip.id}
-                trip={{ ...trip, organizer: user }}
-                onRefresh={fetchProfile}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+      {/* Member Content Tabs (Instants, Grow, Travel — Companion, Find Me, Treasure are owner-only) */}
+      <div className="bg-white/80 dark:bg-[#111815]/80 backdrop-blur-md rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-6 shadow-sm">
+        <UserProfileTabs userId={user.id} userName={p.displayName} isOwn={user.isSelf} />
+      </div>
 
       <ReportModal
         isOpen={reportOpen}
         onClose={() => setReportOpen(false)}
-        targetType="USER"
         targetId={user.id}
-        targetName={p.displayName}
+        targetName={p.displayName || "Explorer"}
+        targetType="USER"
       />
     </div>
   );

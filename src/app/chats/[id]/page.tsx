@@ -47,6 +47,7 @@ import { E2EESecurityModal } from "@/components/chat/E2EESecurityModal";
 import { ChatsSidebar } from "@/components/chat/ChatsSidebar";
 import { GroupMembersDrawer } from "@/components/chat/GroupMembersDrawer";
 import { encryptChatMessage, decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
+import { useLanguage } from "@/context/LanguageContext";
 
 // Quick reactions shown on the floating pill
 const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "🔥", "👍"];
@@ -115,6 +116,7 @@ const parseMessageContent = (raw: string): MessagePayload => {
 };
 
 export default function ActiveChatPage() {
+  const { t } = useLanguage();
   const params = useParams();
   const router = useRouter();
   const conversationId = params?.id as string;
@@ -793,17 +795,17 @@ export default function ActiveChatPage() {
             <ShieldAlert className="w-8 h-8 text-rose-500" />
           </div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-            Private Group Gate
+            {t.privateGateTitle}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            This private group chat is protected. Direct messaging unlocks automatically once your join request is accepted by the host.
+            {t.privateGateDesc}
           </p>
           <Link
             href="/discover"
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Return to Discover</span>
+            <span>{t.returnToDiscover}</span>
           </Link>
         </div>
       </div>
@@ -818,17 +820,17 @@ export default function ActiveChatPage() {
             <Clock className="w-8 h-8" />
           </div>
           <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">
-            Chat Expired & Deleted
+            {t.chatExpiredTitle}
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-            In accordance with Travally’s privacy policy, this chat reached its 7-day validity period after event completion and was permanently deleted from the database.
+            {t.chatExpiredDesc}
           </p>
           <Link
             href="/chats"
             className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md transition-all"
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Return to Chats</span>
+            <span>{t.returnToChats}</span>
           </Link>
         </div>
       </div>
@@ -996,7 +998,7 @@ export default function ActiveChatPage() {
               title="Start Voice Call"
             >
               <Phone className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-300 shrink-0" />
-              <span className="hidden sm:inline">Call</span>
+              <span className="hidden sm:inline">{t.callBtn}</span>
             </button>
 
             {conversation?.activity && (
@@ -1037,7 +1039,7 @@ export default function ActiveChatPage() {
             title="Tap to verify End-to-End Encryption keys"
           >
             <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>Messages and calls are end-to-end encrypted. No one outside of this chat, not even Travally, can read or listen to them. Tap to learn more.</span>
+            <span>{t.e2eeNotice}</span>
           </button>
 
           {/* 7-Day Post-Event Validity / Auto-Deletion Notice */}
@@ -1527,7 +1529,7 @@ export default function ActiveChatPage() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Tap to message"
+              placeholder={t.tapToMessage}
               className="flex-1 max-h-32 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none leading-relaxed py-1.5"
               rows={1}
             />

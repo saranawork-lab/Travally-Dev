@@ -149,6 +149,31 @@ export async function POST(req: NextRequest) {
       console.warn("MongoDB connection issue during findUser:", dbQueryErr?.message);
     }
 
+    // If demo user is missing in MongoDB for any reason, auto-create it with full Indian profile
+    if (!user && DEFAULT_DEMO_USERS[targetPrimary]) {
+      const demoData = DEFAULT_DEMO_USERS[targetPrimary];
+      const defaultHash = await bcrypt.hash("Password123!", 10);
+      try {
+        user = await db.user.create({
+          data: {
+            email: demoData.email,
+            passwordHash: defaultHash,
+            role: demoData.role,
+            profile: {
+              create: demoData.profile,
+            },
+          },
+          include: { profile: true },
+        });
+      } catch (createErr) {
+        console.error("Auto-seed demo account error:", createErr);
+        user = await db.user.findUnique({
+          where: { email: demoData.email },
+          include: { profile: true },
+        });
+      }
+    }
+
     if (!user) {
       return NextResponse.json({ error: "Invalid email, phone number, or password" }, { status: 401 });
     }
