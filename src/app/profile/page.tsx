@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   MapPin,
-  Linkedin,
   CreditCard,
   Settings,
   Camera,
@@ -200,22 +199,8 @@ export default function MyProfilePage() {
               <VerificationBadge
                 status={profile?.verificationStatus || "UNVERIFIED"}
                 isVerified={profile?.isVerified}
-                hasLinkedin={!!linkedinUrl}
                 showLabel
               />
-
-              {/* LinkedIn: Logo only as requested */}
-              {linkedinUrl && (
-                <a
-                  href={linkedinUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-1.5 rounded-xl bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 text-[#0A66C2] transition border border-[#0A66C2]/30"
-                  title="LinkedIn Profile"
-                >
-                  <Linkedin className="w-4 h-4 fill-current" />
-                </a>
-              )}
             </div>
 
             {/* Location (Read-only) */}

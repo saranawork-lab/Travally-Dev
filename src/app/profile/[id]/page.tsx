@@ -7,7 +7,6 @@ import {
   User,
   ShieldCheck,
   MapPin,
-  Linkedin,
   ArrowLeft,
   Flag,
   UserX,
@@ -120,21 +119,8 @@ export default function PublicProfilePage() {
                 <VerificationBadge
                   status={p.verificationStatus || "UNVERIFIED"}
                   isVerified={p.isVerified}
-                  hasLinkedin={!!p.linkedinUrl}
                   showLabel
                 />
-                {/* LinkedIn: Logo only */}
-                {p.linkedinUrl && (
-                  <a
-                    href={p.linkedinUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="p-1.5 rounded-xl bg-[#0A66C2]/15 hover:bg-[#0A66C2]/25 text-[#0A66C2] border border-[#0A66C2]/30 transition"
-                    title="LinkedIn Profile"
-                  >
-                    <Linkedin className="w-4 h-4 fill-current" />
-                  </a>
-                )}
               </div>
               <p className="text-xs text-slate-500 mt-0.5 flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-emerald-500 shrink-0" />

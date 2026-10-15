@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Clock, ShieldCheck, ShieldAlert, Linkedin } from "lucide-react";
+import { CheckCircle2, Clock, ShieldCheck, ShieldAlert } from "lucide-react";
 
 interface VerificationBadgeProps {
   status: "VERIFIED" | "PENDING" | "UNVERIFIED" | string;
@@ -28,11 +28,6 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
       >
         <ShieldCheck className={size === "sm" ? "w-3 h-3" : size === "lg" ? "w-4 h-4" : "w-3.5 h-3.5"} />
         {showLabel && <span>Verified</span>}
-        {hasLinkedin && (
-          <span title="LinkedIn Connected" className="ml-0.5 text-[#0A66C2]">
-            <Linkedin className={size === "sm" ? "w-2.5 h-2.5" : "w-3 h-3"} />
-          </span>
-        )}
       </span>
     );
   }
