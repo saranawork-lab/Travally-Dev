@@ -224,42 +224,61 @@ export default function HomeClient() {
   const [findMeVibe, setFindMeVibe] = useState("Coffee & Books");
   const [submittingFindMe, setSubmittingFindMe] = useState(false);
 
-  // Fetch data
+  // Fetch data with instant cache and non-blocking background revalidation
   const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [resInstants, resGrow, resTreasures, resFindMe] = await Promise.all([
-        fetch("/api/home/instants"),
-        fetch("/api/home/grow"),
-        fetch("/api/home/treasure"),
-        fetch("/api/home/find-me"),
-      ]);
-
-      if (resInstants.ok) {
-        const d = await resInstants.json();
-        setInstants(d.posts || []);
-      }
-      if (resGrow.ok) {
-        const d = await resGrow.json();
-        setGrowList(d.initiatives || []);
-      }
-      if (resTreasures.ok) {
-        const d = await resTreasures.json();
-        const list = d.treasures || [];
-        setTreasures(list);
-        if (list.length > 0 && !selectedTreasure) {
-          setSelectedTreasure(list[0]);
+    // 1. Instant cache retrieval for 0ms UI render
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("travally_instants_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setInstants(parsed);
+            setLoading(false);
+          }
         }
-      }
-      if (resFindMe.ok) {
-        const d = await resFindMe.json();
-        setFindMeClues(d.clues || []);
-      }
-    } catch (e) {
-      console.error("Failed to load home data:", e);
-    } finally {
-      setLoading(false);
+      } catch {}
     }
+
+    // 2. Fetch instants with highest priority (unblocks feed immediately)
+    fetch("/api/home/instants")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.posts) {
+          setInstants(d.posts);
+          try {
+            sessionStorage.setItem("travally_instants_cache", JSON.stringify(d.posts));
+          } catch {}
+        }
+      })
+      .catch((e) => console.error("Error loading posts:", e))
+      .finally(() => setLoading(false));
+
+    // 3. Fetch secondary tabs in parallel without blocking community posts
+    fetch("/api/home/grow")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.initiatives) setGrowList(d.initiatives);
+      })
+      .catch(() => {});
+
+    fetch("/api/home/treasure")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        const list = d?.treasures || [];
+        setTreasures(list);
+        if (list.length > 0) {
+          setSelectedTreasure((prev) => prev || list[0]);
+        }
+      })
+      .catch(() => {});
+
+    fetch("/api/home/find-me")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((d) => {
+        if (d?.clues) setFindMeClues(d.clues);
+      })
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -831,8 +850,34 @@ export default function HomeClient() {
         {/* ── TAB 1: INSTANTS (REAL COMMUNITY FEED) ── */}
         {activeTab === "instants" && (
           <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-16 text-xs text-slate-400">Loading community posts...</div>
+            {loading && instants.length === 0 ? (
+              <div className="columns-1 md:columns-2 gap-4">
+                {[1, 2, 3, 4].map((n) => (
+                  <div
+                    key={n}
+                    className="break-inside-avoid mb-4 p-5 rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/70 animate-pulse space-y-3"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800 shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="h-3 w-28 bg-slate-200 dark:bg-slate-800 rounded-full" />
+                        <div className="h-2 w-20 bg-slate-100 dark:bg-slate-800/60 rounded-full" />
+                      </div>
+                    </div>
+                    <div className="space-y-2 py-1">
+                      <div className="h-3 w-full bg-slate-100 dark:bg-slate-800/80 rounded-full" />
+                      <div className="h-3 w-3/4 bg-slate-100 dark:bg-slate-800/80 rounded-full" />
+                    </div>
+                    {n % 2 === 0 && (
+                      <div className="h-44 w-full bg-slate-200/80 dark:bg-slate-800 rounded-2xl" />
+                    )}
+                    <div className="pt-2.5 border-t border-slate-100 dark:border-emerald-950/60 flex items-center justify-between">
+                      <div className="h-6 w-20 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                      <div className="h-6 w-8 bg-slate-100 dark:bg-slate-800 rounded-full" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : instants.length === 0 ? (
               <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 shadow-sm">
                 <div className="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center mx-auto mb-3">
