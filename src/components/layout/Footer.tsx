@@ -14,9 +14,6 @@ interface FooterProps {
 const Footer: React.FC<FooterProps> = () => {
   const pathname = usePathname();
 
-  if (pathname === "/") {
-    return null;
-  }
   // Mouse tracking state for the dynamic torch beam
   const [mousePos, setMousePos] = useState({ x: 50, y: 50 });
   const [isHovered, setIsHovered] = useState(false);

@@ -1,8 +1,4 @@
-import nextDynamic from "next/dynamic";
-
-const HomeClient = nextDynamic(() => import("@/components/home/HomeClient"), {
-  ssr: false,
-});
+import HomeClient from "@/components/home/HomeClient";
 
 export const dynamic = "force-dynamic";
 

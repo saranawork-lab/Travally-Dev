@@ -123,7 +123,10 @@ export default async function RootLayout({
           }}
         />
       </head>
-      <body className={`${inter.className} min-h-screen flex flex-col antialiased bg-[#f8fafc] dark:bg-[#090d0b] text-slate-900 dark:text-slate-100`}>
+      <body
+        suppressHydrationWarning
+        className={`${inter.className} min-h-screen flex flex-col antialiased bg-[#f8fafc] dark:bg-[#090d0b] text-slate-900 dark:text-slate-100`}
+      >
         <LanguageProvider>
           <ThemeProvider>
             <AuthProvider initialUser={currentUser}>
