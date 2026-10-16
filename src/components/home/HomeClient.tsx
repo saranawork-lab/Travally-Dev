@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import {
@@ -34,6 +34,9 @@ import {
   Quote,
   Repeat2,
   MoreVertical,
+  MessageCircle,
+  Reply,
+  CornerDownRight,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -57,6 +60,20 @@ const TreasureMap = dynamic(
 
 export type HomeTab = "instants" | "grow" | "treasure" | "find-me";
 
+export interface PostComment {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorAvatar?: string | null;
+  authorCity?: string | null;
+  authorRank?: number | null;
+  isVerified?: boolean;
+  content: string;
+  parentId?: string | null;
+  replyToName?: string | null;
+  createdAt: string;
+}
+
 interface CommunityPost {
   id: string;
   authorId: string;
@@ -72,6 +89,8 @@ interface CommunityPost {
   likedBy: string[];
   repostsCount?: number;
   repostedBy?: string[];
+  commentsCount?: number;
+  comments?: PostComment[];
   createdAt: string;
   updatedAt?: string;
   isEdited?: boolean;
@@ -167,6 +186,17 @@ export default function HomeClient() {
   const [editSuccessMsg, setEditSuccessMsg] = useState<string | null>(null);
   const [copiedPostId, setCopiedPostId] = useState<string | null>(null);
   const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
+
+  // Comments UI states
+  const [openCommentsPostId, setOpenCommentsPostId] = useState<string | null>(null);
+  const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({});
+  const [replyTargetMap, setReplyTargetMap] = useState<Record<string, { id: string; name: string } | null>>({});
+  const [submittingCommentPostId, setSubmittingCommentPostId] = useState<string | null>(null);
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null);
+
+  // Double tap to like heart animation
+  const [doubleTapHeartPostId, setDoubleTapHeartPostId] = useState<string | null>(null);
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
 
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -366,6 +396,131 @@ export default function HomeClient() {
         setRepostingId(null);
       }
     });
+  };
+
+  // Double tap to like handler
+  const handleDoubleTap = (postId: string) => {
+    setDoubleTapHeartPostId(postId);
+    setTimeout(() => {
+      setDoubleTapHeartPostId((curr) => (curr === postId ? null : curr));
+    }, 900);
+
+    const post = instants.find((p) => p.id === postId);
+    if (post) {
+      const hasLiked = currentUser ? post.likedBy?.includes(currentUser.id) : false;
+      if (!hasLiked) {
+        handleLikeInstant(postId);
+      }
+    }
+  };
+
+  const handleCardTouchOrClick = (postId: string) => {
+    const now = Date.now();
+    if (lastTapRef.current && lastTapRef.current.id === postId && now - lastTapRef.current.time < 350) {
+      handleDoubleTap(postId);
+      lastTapRef.current = null;
+    } else {
+      lastTapRef.current = { id: postId, time: now };
+    }
+  };
+
+  // Comments handlers
+  const toggleComments = (postId: string) => {
+    setOpenCommentsPostId((prev) => (prev === postId ? null : postId));
+  };
+
+  const handleCommentInputChange = (postId: string, val: string) => {
+    setCommentInputMap((prev) => ({ ...prev, [postId]: val }));
+  };
+
+  const handleSetReplyTarget = (postId: string, commentId: string, authorName: string) => {
+    setReplyTargetMap((prev) => ({ ...prev, [postId]: { id: commentId, name: authorName } }));
+  };
+
+  const handleCancelReply = (postId: string) => {
+    setReplyTargetMap((prev) => ({ ...prev, [postId]: null }));
+  };
+
+  const handleSubmitComment = async (postId: string) => {
+    if (!currentUser) {
+      setAuthPromptOpen(true);
+      return;
+    }
+
+    const text = (commentInputMap[postId] || "").trim();
+    if (!text) return;
+
+    const replyTarget = replyTargetMap[postId];
+    setSubmittingCommentPostId(postId);
+
+    try {
+      const res = await fetch("/api/home/instants/comments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          postId,
+          content: text,
+          parentId: replyTarget ? replyTarget.id : null,
+          replyToName: replyTarget ? replyTarget.name : null,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.comment) {
+          setInstants((prev) =>
+            prev.map((p) => {
+              if (p.id === postId) {
+                const updated = [...(p.comments || []), data.comment];
+                return {
+                  ...p,
+                  comments: updated,
+                  commentsCount: data.commentsCount || updated.length,
+                };
+              }
+              return p;
+            })
+          );
+          setCommentInputMap((prev) => ({ ...prev, [postId]: "" }));
+          setReplyTargetMap((prev) => ({ ...prev, [postId]: null }));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to post comment:", err);
+    } finally {
+      setSubmittingCommentPostId(null);
+    }
+  };
+
+  const handleDeleteComment = async (postId: string, commentId: string) => {
+    if (!currentUser) return;
+    setDeletingCommentId(commentId);
+    try {
+      const res = await fetch(`/api/home/instants/comments?postId=${postId}&commentId=${commentId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setInstants((prev) =>
+          prev.map((p) => {
+            if (p.id === postId) {
+              const updated = (p.comments || []).filter(
+                (c) => c.id !== commentId && c.parentId !== commentId
+              );
+              return {
+                ...p,
+                comments: updated,
+                commentsCount: Math.max(0, updated.length),
+              };
+            }
+            return p;
+          })
+        );
+      }
+    } catch (err) {
+      console.error("Failed to delete comment:", err);
+    } finally {
+      setDeletingCommentId(null);
+    }
   };
 
   // Delete Instant / Post
@@ -909,8 +1064,17 @@ export default function HomeClient() {
                   return (
                     <article
                       key={post.id}
+                      onDoubleClick={() => handleDoubleTap(post.id)}
                       className="break-inside-avoid mb-4 inline-block w-full align-top group relative rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/10 hover:border-emerald-500/50 dark:hover:border-emerald-600/50 transition-all duration-300 overflow-hidden"
                     >
+                      {/* Double Tap Heart Burst Animation */}
+                      {doubleTapHeartPostId === post.id && (
+                        <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none animate-in fade-in zoom-in duration-150">
+                          <div className="p-4 rounded-full bg-black/50 backdrop-blur-md shadow-2xl animate-bounce">
+                            <Heart className="w-14 h-14 sm:w-16 sm:h-16 fill-rose-500 text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
+                          </div>
+                        </div>
+                      )}
                       {/* Top Explorer Accent Stripe */}
                       <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" />
 
@@ -1012,7 +1176,16 @@ export default function HomeClient() {
 
                         {/* 4. Expedition Photo (if attached) */}
                         {post.imageUrl && (
-                          <div className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-emerald-950/80 bg-slate-100 dark:bg-slate-900 group/img">
+                          <div
+                            onDoubleClick={(e) => {
+                              e.stopPropagation();
+                              handleDoubleTap(post.id);
+                            }}
+                            onTouchEnd={() => {
+                              handleCardTouchOrClick(post.id);
+                            }}
+                            className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-emerald-950/80 bg-slate-100 dark:bg-slate-900 group/img cursor-pointer select-none"
+                          >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={post.imageUrl}
@@ -1070,6 +1243,21 @@ export default function HomeClient() {
                               />
                               <span>{post.repostsCount || 0}</span>
                             </button>
+
+                            {/* Comment Button */}
+                            <button
+                              type="button"
+                              onClick={() => toggleComments(post.id)}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
+                                openCommentsPostId === post.id
+                                  ? "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-800 shadow-xs"
+                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-blue-300 dark:hover:border-blue-900/60 hover:text-blue-600 dark:hover:text-blue-400"
+                              }`}
+                              title="Comments"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5" />
+                              <span>{post.commentsCount || (post.comments?.length) || 0}</span>
+                            </button>
                           </div>
 
                           {/* Share Button (icon only, NO text) */}
@@ -1086,6 +1274,237 @@ export default function HomeClient() {
                             )}
                           </button>
                         </div>
+
+                        {/* 6. Expandable Comments & Replies Section */}
+                        {openCommentsPostId === post.id && (
+                          <div className="pt-3 border-t border-slate-100 dark:border-emerald-950/60 space-y-3 animate-in fade-in duration-200">
+                            {/* Comments Header */}
+                            <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                              <span className="font-bold text-[11px] uppercase tracking-wider">
+                                Comments ({post.comments?.length || post.commentsCount || 0})
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => setOpenCommentsPostId(null)}
+                                className="text-[11px] hover:text-slate-700 dark:hover:text-slate-200 font-semibold"
+                              >
+                                Hide
+                              </button>
+                            </div>
+
+                            {/* Comments List */}
+                            {(!post.comments || post.comments.length === 0) ? (
+                              <p className="text-xs text-slate-400 dark:text-slate-500 italic py-2 text-center">
+                                No comments yet. Be the first to start the conversation!
+                              </p>
+                            ) : (
+                              <div className="space-y-2.5 max-h-80 overflow-y-auto no-scrollbar pr-0.5">
+                                {post.comments
+                                  .filter((c) => !c.parentId)
+                                  .map((comment) => {
+                                    const replies = (post.comments || []).filter(
+                                      (r) => r.parentId === comment.id
+                                    );
+                                    const isCommentAuthor = currentUser?.id === comment.authorId;
+                                    const isPostAuthor = currentUser?.id === post.authorId;
+                                    const canDelete = isCommentAuthor || isPostAuthor || currentUser?.role === "ADMIN";
+
+                                    return (
+                                      <div
+                                        key={comment.id}
+                                        className="rounded-2xl bg-slate-50/80 dark:bg-[#151f1a]/80 p-3 border border-slate-100 dark:border-emerald-950/60 space-y-2 text-xs"
+                                      >
+                                        {/* Comment Author Header */}
+                                        <div className="flex items-center justify-between gap-2">
+                                          <div className="flex items-center gap-2 min-w-0">
+                                            <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] flex items-center justify-center shrink-0 overflow-hidden">
+                                              {comment.authorAvatar ? (
+                                                <img
+                                                  src={comment.authorAvatar}
+                                                  alt={comment.authorName}
+                                                  className="w-full h-full object-cover"
+                                                />
+                                              ) : (
+                                                comment.authorName.charAt(0).toUpperCase()
+                                              )}
+                                            </div>
+                                            <div className="min-w-0">
+                                              <span className="font-bold text-slate-800 dark:text-slate-200 truncate block text-[11.5px]">
+                                                {comment.authorName}
+                                              </span>
+                                            </div>
+                                          </div>
+                                          <div className="flex items-center gap-1.5 text-[10px] text-slate-400 shrink-0">
+                                            <span>{formatTimeAgo(comment.createdAt)}</span>
+                                            {canDelete && (
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteComment(post.id, comment.id)}
+                                                disabled={deletingCommentId === comment.id}
+                                                className="p-1 hover:text-rose-500 transition rounded"
+                                                title="Delete comment"
+                                              >
+                                                {deletingCommentId === comment.id ? (
+                                                  <Loader2 className="w-3 h-3 animate-spin" />
+                                                ) : (
+                                                  <Trash2 className="w-3 h-3" />
+                                                )}
+                                              </button>
+                                            )}
+                                          </div>
+                                        </div>
+
+                                        {/* Comment Content */}
+                                        <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap pl-8">
+                                          {comment.content}
+                                        </p>
+
+                                        {/* Reply Trigger Button */}
+                                        <div className="pl-8 flex items-center gap-2">
+                                          <button
+                                            type="button"
+                                            onClick={() => handleSetReplyTarget(post.id, comment.id, comment.authorName)}
+                                            className="inline-flex items-center gap-1 text-[10.5px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition"
+                                          >
+                                            <Reply className="w-3 h-3" />
+                                            <span>Reply</span>
+                                          </button>
+                                        </div>
+
+                                        {/* Nested Replies */}
+                                        {replies.length > 0 && (
+                                          <div className="ml-8 pl-3 border-l-2 border-emerald-500/20 space-y-2 mt-2">
+                                            {replies.map((reply) => {
+                                              const isReplyAuthor = currentUser?.id === reply.authorId;
+                                              const canDeleteReply = isReplyAuthor || isPostAuthor || currentUser?.role === "ADMIN";
+
+                                              return (
+                                                <div
+                                                  key={reply.id}
+                                                  className="rounded-xl bg-white/70 dark:bg-[#1a2620]/70 p-2.5 border border-slate-100 dark:border-emerald-950/40 space-y-1.5"
+                                                >
+                                                  <div className="flex items-center justify-between gap-2">
+                                                    <div className="flex items-center gap-1.5 min-w-0">
+                                                      <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[9px] flex items-center justify-center shrink-0 overflow-hidden">
+                                                        {reply.authorAvatar ? (
+                                                          <img
+                                                            src={reply.authorAvatar}
+                                                            alt={reply.authorName}
+                                                            className="w-full h-full object-cover"
+                                                          />
+                                                        ) : (
+                                                          reply.authorName.charAt(0).toUpperCase()
+                                                        )}
+                                                      </div>
+                                                      <span className="font-bold text-slate-800 dark:text-slate-200 text-[11px] truncate">
+                                                        {reply.authorName}
+                                                      </span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 text-[9.5px] text-slate-400 shrink-0">
+                                                      <span>{formatTimeAgo(reply.createdAt)}</span>
+                                                      {canDeleteReply && (
+                                                        <button
+                                                          type="button"
+                                                          onClick={() => handleDeleteComment(post.id, reply.id)}
+                                                          disabled={deletingCommentId === reply.id}
+                                                          className="p-0.5 hover:text-rose-500 transition rounded"
+                                                          title="Delete reply"
+                                                        >
+                                                          {deletingCommentId === reply.id ? (
+                                                            <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                                                          ) : (
+                                                            <Trash2 className="w-2.5 h-2.5" />
+                                                          )}
+                                                        </button>
+                                                      )}
+                                                    </div>
+                                                  </div>
+                                                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap pl-6">
+                                                    {reply.replyToName && (
+                                                      <span className="text-emerald-600 dark:text-emerald-400 font-semibold mr-1">
+                                                        @{reply.replyToName}
+                                                      </span>
+                                                    )}
+                                                    {reply.content}
+                                                  </p>
+                                                  <div className="pl-6">
+                                                    <button
+                                                      type="button"
+                                                      onClick={() => handleSetReplyTarget(post.id, comment.id, reply.authorName)}
+                                                      className="text-[10px] font-bold text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition"
+                                                    >
+                                                      Reply
+                                                    </button>
+                                                  </div>
+                                                </div>
+                                              );
+                                            })}
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            )}
+
+                            {/* Comment Input Box */}
+                            <div className="pt-2 border-t border-slate-100 dark:border-emerald-950/60 space-y-1.5">
+                              {/* Replying banner if active */}
+                              {replyTargetMap[post.id] && (
+                                <div className="flex items-center justify-between px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-[10.5px] text-emerald-800 dark:text-emerald-300 font-semibold">
+                                  <div className="flex items-center gap-1">
+                                    <CornerDownRight className="w-3 h-3 text-emerald-600" />
+                                    <span>Replying to <strong>@{replyTargetMap[post.id]?.name}</strong></span>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleCancelReply(post.id)}
+                                    className="p-0.5 hover:text-slate-700 dark:hover:text-white"
+                                    title="Cancel reply"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              )}
+
+                              {/* Input Row */}
+                              <div className="flex items-center gap-2">
+                                <input
+                                  type="text"
+                                  value={commentInputMap[post.id] || ""}
+                                  onChange={(e) => handleCommentInputChange(post.id, e.target.value)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === "Enter" && !e.shiftKey) {
+                                      e.preventDefault();
+                                      handleSubmitComment(post.id);
+                                    }
+                                  }}
+                                  placeholder={
+                                    currentUser
+                                      ? replyTargetMap[post.id]
+                                        ? `Reply to @${replyTargetMap[post.id]?.name}...`
+                                        : "Write a comment..."
+                                      : "Log in to join the conversation..."
+                                  }
+                                  className="flex-1 px-3.5 py-2 rounded-full text-xs bg-slate-100 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/80 text-slate-800 dark:text-slate-200 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => handleSubmitComment(post.id)}
+                                  disabled={submittingCommentPostId === post.id || !(commentInputMap[post.id] || "").trim()}
+                                  className="p-2 rounded-full bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed transition shadow-sm shrink-0"
+                                  title="Send comment"
+                                >
+                                  {submittingCommentPostId === post.id ? (
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                  ) : (
+                                    <Send className="w-3.5 h-3.5" />
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </article>
                   );

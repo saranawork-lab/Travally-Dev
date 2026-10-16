@@ -35,6 +35,8 @@ export async function GET(req: Request) {
       userName: p.authorName,
       userAvatar: p.authorAvatar,
       likes: p.likedBy || [],
+      commentsCount: p.commentsCount !== undefined ? p.commentsCount : (Array.isArray(p.comments) ? p.comments.length : 0),
+      comments: Array.isArray(p.comments) ? p.comments : [],
     }));
 
     return NextResponse.json({ success: true, posts: formatted, instants: formatted });
@@ -74,6 +76,8 @@ export async function POST(req: Request) {
       likedBy: [],
       repostsCount: 0,
       repostedBy: [],
+      commentsCount: 0,
+      comments: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };

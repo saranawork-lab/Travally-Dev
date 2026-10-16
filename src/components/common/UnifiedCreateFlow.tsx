@@ -619,19 +619,6 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
 
   return (
     <div className="max-w-3xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-6 pb-36 sm:pb-28">
-      {/* Top back navigation */}
-      <div className="flex items-center justify-between">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/70 hover:bg-slate-100 dark:hover:bg-[#16201b] transition shadow-2xs"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          <span>Back to Home</span>
-        </Link>
-        <span className="text-[11px] font-bold text-slate-400 dark:text-slate-500">
-          Travally Unified Hub
-        </span>
-      </div>
 
       <div className="rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 bg-white dark:bg-[#111815] p-4 sm:p-7 shadow-xl relative overflow-hidden transition-all">
         {/* Creation Hub Header & Type Selector */}

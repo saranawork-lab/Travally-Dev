@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import {
   Camera,
@@ -55,6 +55,33 @@ export function UserInstantsSection({ userId, userName, isOwn }: UserInstantsSec
   const [editImageError, setEditImageError] = useState<string | null>(null);
   const [submittingEdit, setSubmittingEdit] = useState(false);
   const [editSuccess, setEditSuccess] = useState<string | null>(null);
+
+  // Double tap to like states
+  const [doubleTapHeartId, setDoubleTapHeartId] = useState<string | null>(null);
+  const lastTapRef = useRef<{ id: string; time: number } | null>(null);
+
+  const handleDoubleTap = (e: React.MouseEvent | React.TouchEvent, item: InstantItem) => {
+    e.stopPropagation();
+    setDoubleTapHeartId(item.id);
+    setTimeout(() => {
+      setDoubleTapHeartId((curr) => (curr === item.id ? null : curr));
+    }, 900);
+
+    const hasLiked = item.likes?.includes(userId);
+    if (!hasLiked) {
+      handleToggleLike(e as any, item);
+    }
+  };
+
+  const handleCardTouchOrClick = (item: InstantItem) => {
+    const now = Date.now();
+    if (lastTapRef.current && lastTapRef.current.id === item.id && now - lastTapRef.current.time < 350) {
+      handleDoubleTap({ stopPropagation: () => {} } as any, item);
+      lastTapRef.current = null;
+    } else {
+      lastTapRef.current = { id: item.id, time: now };
+    }
+  };
 
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -295,8 +322,18 @@ export function UserInstantsSection({ userId, userName, isOwn }: UserInstantsSec
               <div
                 key={item.id}
                 onClick={() => setActiveItem(item)}
+                onDoubleClick={(e) => handleDoubleTap(e, item)}
+                onTouchEnd={() => handleCardTouchOrClick(item)}
                 className="group relative rounded-3xl overflow-hidden bg-[#0c1511] border border-emerald-950/60 dark:border-emerald-900/50 shadow-md hover:shadow-2xl hover:shadow-emerald-950/30 hover:border-emerald-500/60 transition-all duration-500 cursor-pointer flex flex-col aspect-[4/5] select-none"
               >
+                {/* Double Tap Heart Burst Animation */}
+                {doubleTapHeartId === item.id && (
+                  <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none animate-in fade-in zoom-in duration-150">
+                    <div className="p-4 rounded-full bg-black/50 backdrop-blur-md shadow-2xl animate-bounce">
+                      <Heart className="w-14 h-14 fill-rose-500 text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
+                    </div>
+                  </div>
+                )}
                 {/* Image Cover or Stylized Memory Canvas */}
                 {item.imageUrl ? (
                   <div className="relative w-full h-full overflow-hidden bg-slate-950">
