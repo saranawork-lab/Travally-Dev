@@ -10,6 +10,7 @@ import {
   Eye,
   Trash2,
   X,
+  Loader2,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { safeJsonParse } from "@/lib/utils";
@@ -101,7 +102,14 @@ export default function MyProfilePage() {
   };
 
   if (loading) {
-    return <div className="py-20 text-center text-xs text-slate-400">Loading your profile & founding pass...</div>;
+    return (
+      <div className="py-24 flex flex-col items-center justify-center gap-3 text-center">
+        <Loader2 className="w-6 h-6 animate-spin text-emerald-600 dark:text-emerald-400" />
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400 animate-pulse">
+          Loading...
+        </span>
+      </div>
+    );
   }
 
   const userRank = currentUser?.joinRank || parseRankFromMembership(profile?.membershipNumber);
