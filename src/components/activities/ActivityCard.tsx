@@ -20,6 +20,7 @@ import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { ReportModal } from "@/components/common/ReportModal";
 import { ProfileModal } from "@/components/profile/ProfileModal";
+import { SwipeToJoinButton } from "@/components/common/SwipeToJoinButton";
 import { getActivityImage } from "@/lib/images";
 import { CATEGORIES } from "@/constants/categories";
 import type { Activity } from "@/types";
@@ -283,21 +284,17 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                 {isCancelled ? 'Cancelled' : isFull ? 'Full' : 'Closed'}
               </button>
             ) : (
-              <button
-                onClick={() => {
+              <SwipeToJoinButton
+                label="Slide to Join"
+                theme="emerald"
+                onJoin={() => {
                   if (!currentUser) {
                     window.location.href = "/login";
                     return;
                   }
                   setIsModalOpen(true);
                 }}
-                className="flex-1 h-12 rounded-[1.25rem] bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 dark:from-emerald-900/80 dark:via-teal-900/70 dark:to-emerald-900/80 text-emerald-950 dark:text-emerald-100 border border-emerald-300/90 dark:border-emerald-600/70 font-bold text-sm flex items-center justify-between px-4 transition-all shadow-xs"
-              >
-                <span>Join Activity</span>
-                <div className="w-6 h-6 rounded-full bg-emerald-200/80 dark:bg-emerald-700/80 text-emerald-800 dark:text-emerald-100 flex items-center justify-center">
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </div>
-              </button>
+              />
             )}
           </div>
 

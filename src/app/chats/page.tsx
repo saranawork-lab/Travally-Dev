@@ -161,11 +161,12 @@ function ChatsContent() {
         </div>
 
         {/* Content Panel */}
-        {activeMainTab === "requests" ? (
+        <div className={activeMainTab === "requests" ? "block" : "hidden"}>
           <RequestsView />
-        ) : (
-          /* Conversations List - Refined Single Line Items */
-          loading ? (
+        </div>
+
+        <div className={activeMainTab === "chats" ? "block" : "hidden"}>
+          {loading && conversations.length === 0 ? (
             <div className="space-y-2">
               {[1, 2, 3].map((i) => (
                 <div
@@ -202,11 +203,14 @@ function ChatsContent() {
           ) : (
             <div className="space-y-2">
               {filtered.map((conv) => {
+                const isDirect = conv.type === "DIRECT";
                 const isActivity = conv.type === "ACTIVITY";
                 const lastMsg = conv.messages && conv.messages.length > 0 ? conv.messages[0] : null;
                 const senderDisplayName = lastMsg?.sender?.profile?.displayName || lastMsg?.sender?.email?.split("@")[0];
                 const snippet = parseLastMessageSnippet(lastMsg?.content);
                 const timeDisplay = lastMsg ? formatTimeAgo(lastMsg.createdAt) : formatTimeAgo(conv.updatedAt);
+                const displayTitle = conv.otherUser?.displayName || conv.title;
+                const avatarUrl = conv.otherUser?.avatarUrl;
 
                 return (
                   <Link
@@ -216,31 +220,45 @@ function ChatsContent() {
                   >
                     {/* Single Line: Icon + Title + Snippet */}
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      <div
-                        className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white ${
-                          isActivity
-                            ? "bg-emerald-500"
-                            : "bg-orange-500"
-                        }`}
-                      >
-                        {isActivity ? <Users className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
-                      </div>
+                      {isDirect ? (
+                        avatarUrl ? (
+                          <img
+                            src={avatarUrl}
+                            alt={displayTitle}
+                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-emerald-900/60"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
+                            {displayTitle.charAt(0).toUpperCase()}
+                          </div>
+                        )
+                      ) : (
+                        <div
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white ${
+                            isActivity ? "bg-emerald-500" : "bg-orange-500"
+                          }`}
+                        >
+                          {isActivity ? <Users className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
+                        </div>
+                      )}
 
                       <div className="flex items-center gap-1.5 min-w-0 flex-1 text-xs">
                         {/* Title */}
-                        <span className="font-medium text-slate-800 dark:text-slate-100 truncate shrink-0 max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
-                          {conv.title}
+                        <span className="font-semibold text-slate-800 dark:text-slate-100 truncate shrink-0 max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                          {displayTitle}
                         </span>
 
                         {/* Pill Badge */}
                         <span
                           className={`text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 text-white ${
-                            isActivity
+                            isDirect
+                              ? "bg-teal-600/90"
+                              : isActivity
                               ? "bg-emerald-500"
                               : "bg-orange-500"
                           }`}
                         >
-                          {isActivity ? "Companion" : "Trip"}
+                          {isDirect ? "Direct" : isActivity ? "Companion" : "Trip"}
                         </span>
 
                         {/* Divider & Snippet */}
@@ -259,8 +277,8 @@ function ChatsContent() {
                 );
               })}
             </div>
-          )
-        )}
+          )}
+        </div>
       </div>
     </div>
   );

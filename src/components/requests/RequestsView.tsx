@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Inbox,
   Send,
@@ -24,6 +25,7 @@ import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { useLanguage } from "@/context/LanguageContext";
 
 export function RequestsView() {
+  const router = useRouter();
   const { t } = useLanguage();
   const [tab, setTab] = useState<"received" | "sent">("received");
   const [receivedRequests, setReceivedRequests] = useState<any[]>([]);
@@ -39,21 +41,16 @@ export function RequestsView() {
   // Applicant Profile Modal
   const [selectedApplicant, setSelectedApplicant] = useState<any>(null);
 
-  const fetchRequests = async () => {
-    setLoading(true);
+  const fetchRequests = async (isBackground = false) => {
+    if (!isBackground && receivedRequests.length === 0 && sentRequests.length === 0) {
+      setLoading(true);
+    }
     try {
-      const [resReceived, resSent] = await Promise.all([
-        fetch("/api/requests?view=received"),
-        fetch("/api/requests?view=sent"),
-      ]);
-
-      if (resReceived.ok) {
-        const dataReceived = await resReceived.json();
-        setReceivedRequests(dataReceived.requests || []);
-      }
-      if (resSent.ok) {
-        const dataSent = await resSent.json();
-        setSentRequests(dataSent.requests || []);
+      const res = await fetch("/api/requests?view=both");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.received) setReceivedRequests(data.received);
+        if (data.sent) setSentRequests(data.sent);
       }
     } catch (e) {
       console.error(e);
@@ -79,6 +76,15 @@ export function RequestsView() {
         body: JSON.stringify({ action }),
       });
       if (res.ok) {
+        const data = await res.json();
+        if (action === "ACCEPT") {
+          if (data.conversationId) {
+            router.push(`/chats/${data.conversationId}`);
+          } else {
+            router.push("/chats");
+          }
+          return;
+        }
         fetchRequests();
       } else {
         const err = await res.json();

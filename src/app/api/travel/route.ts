@@ -100,12 +100,21 @@ export async function GET(req: NextRequest) {
     const fullTripIdsToClose: string[] = [];
     const sanitizedTrips = travelPlans.filter((trip) => {
       const isFull = trip.currentAcceptedCount >= trip.groupSizeMax;
-      if (isFull) {
-        if (trip.status !== "CLOSED") {
-          fullTripIdsToClose.push(trip.id);
-          trip.status = "CLOSED";
+      const isPast = new Date(trip.endDate).getTime() < Date.now();
+      if (isFull && trip.status !== "CLOSED") {
+        fullTripIdsToClose.push(trip.id);
+        trip.status = "CLOSED";
+      }
+      if (!organizerId) {
+        if (
+          trip.status === "CLOSED" ||
+          trip.status === "FULL" ||
+          trip.status === "CANCELLED" ||
+          isFull ||
+          isPast
+        ) {
+          return false;
         }
-        return false; // Exclude closed/full trips from public discovery
       }
       return true;
     });

@@ -21,7 +21,7 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const call = getCallById(params.id);
+    const call = await getCallById(params.id);
     if (!call) {
       return NextResponse.json({ call: null, ended: true }, { status: 200 });
     }
@@ -49,7 +49,7 @@ export async function POST(
     const body = await req.json();
     const { action, sdpAnswer, candidate, fromCaller } = body;
 
-    const call = getCallById(params.id);
+    const call = await getCallById(params.id);
     if (!call) {
       return NextResponse.json(
         { call: null, ended: true, message: "Call has ended" },
@@ -61,17 +61,16 @@ export async function POST(
 
     switch (action) {
       case "ANSWER":
-        updated = answerCall(params.id, user.id, sdpAnswer) || call;
+        updated = (await answerCall(params.id, user.id, sdpAnswer)) || call;
         break;
 
       case "DECLINE": {
         const wasRinging = call.status === "RINGING";
-        updated = declineCall(params.id) || call;
+        updated = (await declineCall(params.id)) || call;
 
         // Log missed call notification for recipient
         if (wasRinging && call.conversationId) {
           try {
-            // Save missed call record in conversation chat
             await db.message.create({
               data: {
                 conversationId: call.conversationId,
@@ -80,7 +79,6 @@ export async function POST(
               },
             });
 
-            // Notify recipient about missed call
             if (user.id !== call.callerId) {
               await db.notification.create({
                 data: {
@@ -101,9 +99,8 @@ export async function POST(
 
       case "END": {
         const wasNeverConnected = call.status === "RINGING";
-        updated = endCall(params.id) || call;
+        updated = (await endCall(params.id)) || call;
 
-        // If caller ended before recipient answered, log missed call
         if (wasNeverConnected && call.conversationId) {
           try {
             await db.message.create({
@@ -114,7 +111,6 @@ export async function POST(
               },
             });
 
-            // Create missed call notification for all participants
             const recipientIds = call.participantIds.filter(
               (id) => id !== call.callerId
             );
@@ -138,7 +134,7 @@ export async function POST(
       }
 
       case "ICE_CANDIDATE":
-        addIceCandidate(params.id, Boolean(fromCaller), candidate);
+        await addIceCandidate(params.id, Boolean(fromCaller), candidate);
         break;
 
       default:

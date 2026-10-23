@@ -28,11 +28,20 @@ export async function GET() {
   }
 }
 
-export async function PATCH() {
+export async function PATCH(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const body = await req.json().catch(() => ({}));
+    if (body?.id) {
+      await db.notification.updateMany({
+        where: { id: body.id, userId: user.id },
+        data: { isRead: true },
+      });
+      return NextResponse.json({ success: true, message: "Notification marked as read" });
     }
 
     await db.notification.updateMany({

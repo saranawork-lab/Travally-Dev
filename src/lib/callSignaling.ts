@@ -1,5 +1,7 @@
-// In-memory real-time WebRTC Call Signaling Manager
-// Coordinates P2P audio calling between users without requiring third-party paid services.
+// MongoDB + In-Memory hybrid WebRTC Call Signaling Manager
+// Coordinates real-time P2P audio calling between users reliably across serverless workers.
+
+import { getDb } from "@/lib/mongo";
 
 export interface ActiveCall {
   id: string;
@@ -19,7 +21,7 @@ export interface ActiveCall {
   endedAt?: number;
 }
 
-// Global store to survive hot reload in development
+// In-memory cache for ultra-low latency within the same process
 declare global {
   // eslint-disable-next-line no-var
   var __travally_active_calls: Map<string, ActiveCall> | undefined;
@@ -32,25 +34,7 @@ if (process.env.NODE_ENV !== "production") {
   globalThis.__travally_active_calls = activeCalls;
 }
 
-// Auto-cleanup stale calls older than 5 minutes
-const cleanupStaleCalls = () => {
-  const now = Date.now();
-  activeCalls.forEach((call, id) => {
-    if (call.status === "ENDED" || call.status === "DECLINED") {
-      if (now - (call.endedAt || call.createdAt) > 60000) {
-        activeCalls.delete(id);
-      }
-    } else if (call.status === "RINGING" && now - call.createdAt > 45000) {
-      // Ringing timeout (45s without answer) -> mark as ended/missed
-      call.status = "ENDED";
-      call.endedAt = now;
-    } else if (now - call.createdAt > 300000) {
-      activeCalls.delete(id);
-    }
-  });
-};
-
-export const startCall = (params: {
+export const startCall = async (params: {
   conversationId: string;
   callerId: string;
   callerName: string;
@@ -58,18 +42,10 @@ export const startCall = (params: {
   isGroup: boolean;
   participantIds: string[];
   sdpOffer?: any;
-}): ActiveCall => {
-  cleanupStaleCalls();
+}): Promise<ActiveCall> => {
+  const now = Date.now();
+  const id = `call_${now}_${Math.random().toString(36).substring(2, 9)}`;
 
-  // End any existing call in this conversation
-  activeCalls.forEach((call) => {
-    if (call.conversationId === params.conversationId && call.status !== "ENDED") {
-      call.status = "ENDED";
-      call.endedAt = Date.now();
-    }
-  });
-
-  const id = `call_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   const newCall: ActiveCall = {
     id,
     conversationId: params.conversationId,
@@ -77,22 +53,70 @@ export const startCall = (params: {
     callerName: params.callerName,
     callerAvatar: params.callerAvatar,
     isGroup: params.isGroup,
-    participantIds: params.participantIds,
+    participantIds: params.participantIds || [],
     status: "RINGING",
     sdpOffer: params.sdpOffer,
     callerCandidates: [],
     recipientCandidates: [],
-    createdAt: Date.now(),
+    createdAt: now,
   };
 
+  // Cache in-memory
   activeCalls.set(id, newCall);
+
+  try {
+    const mongo = await getDb();
+    // End any lingering ringing calls for this conversation
+    await mongo.collection("active_calls").updateMany(
+      { conversationId: params.conversationId, status: { $ne: "ENDED" } },
+      { $set: { status: "ENDED", endedAt: now } }
+    );
+
+    await mongo.collection("active_calls").insertOne({
+      ...newCall,
+      _id: id as any,
+    });
+  } catch (err) {
+    console.error("startCall mongo error:", err);
+  }
+
   return newCall;
 };
 
-export const getActiveCallByConversation = (
+export const getActiveCallByConversation = async (
   conversationId: string
-): ActiveCall | null => {
-  cleanupStaleCalls();
+): Promise<ActiveCall | null> => {
+  try {
+    const mongo = await getDb();
+    const cutoff = Date.now() - 300000; // 5 min
+    const doc = await mongo.collection("active_calls").findOne({
+      conversationId,
+      status: { $in: ["RINGING", "CONNECTED"] },
+      createdAt: { $gt: cutoff },
+    });
+
+    if (doc) {
+      return {
+        id: doc.id || doc._id.toString(),
+        conversationId: doc.conversationId,
+        callerId: doc.callerId,
+        callerName: doc.callerName,
+        callerAvatar: doc.callerAvatar,
+        isGroup: doc.isGroup,
+        participantIds: doc.participantIds || [],
+        status: doc.status,
+        sdpOffer: doc.sdpOffer,
+        sdpAnswer: doc.sdpAnswer,
+        callerCandidates: doc.callerCandidates || [],
+        recipientCandidates: doc.recipientCandidates || [],
+        createdAt: doc.createdAt,
+      };
+    }
+  } catch (err) {
+    console.error("getActiveCallByConversation mongo error:", err);
+  }
+
+  // Fallback to in-memory
   let found: ActiveCall | null = null;
   activeCalls.forEach((call) => {
     if (
@@ -106,13 +130,56 @@ export const getActiveCallByConversation = (
   return found;
 };
 
-export const hasAnyActiveCalls = (): boolean => {
-  return activeCalls.size > 0;
+export const hasAnyActiveCalls = async (): Promise<boolean> => {
+  try {
+    const mongo = await getDb();
+    const cutoff = Date.now() - 45000;
+    const count = await mongo.collection("active_calls").countDocuments({
+      status: "RINGING",
+      createdAt: { $gt: cutoff },
+    });
+    return count > 0;
+  } catch {
+    return activeCalls.size > 0;
+  }
 };
 
-export const getActiveCallForUser = (userId: string): ActiveCall | null => {
-  if (activeCalls.size === 0) return null;
-  cleanupStaleCalls();
+export const getActiveCallForUser = async (userId: string): Promise<ActiveCall | null> => {
+  try {
+    const mongo = await getDb();
+    const cutoff = Date.now() - 45000; // 45 seconds ringing timeout
+    const doc = await mongo.collection("active_calls").findOne({
+      status: "RINGING",
+      callerId: { $ne: userId },
+      $or: [
+        { participantIds: { $size: 0 } },
+        { participantIds: userId },
+      ],
+      createdAt: { $gt: cutoff },
+    });
+
+    if (doc) {
+      return {
+        id: doc.id || doc._id.toString(),
+        conversationId: doc.conversationId,
+        callerId: doc.callerId,
+        callerName: doc.callerName,
+        callerAvatar: doc.callerAvatar,
+        isGroup: doc.isGroup,
+        participantIds: doc.participantIds || [],
+        status: doc.status,
+        sdpOffer: doc.sdpOffer,
+        sdpAnswer: doc.sdpAnswer,
+        callerCandidates: doc.callerCandidates || [],
+        recipientCandidates: doc.recipientCandidates || [],
+        createdAt: doc.createdAt,
+      };
+    }
+  } catch (err) {
+    console.error("getActiveCallForUser mongo error:", err);
+  }
+
+  // Fallback in-memory check
   let found: ActiveCall | null = null;
   activeCalls.forEach((call) => {
     if (
@@ -127,55 +194,142 @@ export const getActiveCallForUser = (userId: string): ActiveCall | null => {
   return found;
 };
 
-export const getCallById = (callId: string): ActiveCall | null => {
+export const getCallById = async (callId: string): Promise<ActiveCall | null> => {
+  try {
+    const mongo = await getDb();
+    const doc = await mongo.collection("active_calls").findOne({
+      $or: [{ id: callId }, { _id: callId as any }],
+    });
+
+    if (doc) {
+      return {
+        id: doc.id || doc._id.toString(),
+        conversationId: doc.conversationId,
+        callerId: doc.callerId,
+        callerName: doc.callerName,
+        callerAvatar: doc.callerAvatar,
+        isGroup: doc.isGroup,
+        participantIds: doc.participantIds || [],
+        status: doc.status,
+        sdpOffer: doc.sdpOffer,
+        sdpAnswer: doc.sdpAnswer,
+        callerCandidates: doc.callerCandidates || [],
+        recipientCandidates: doc.recipientCandidates || [],
+        createdAt: doc.createdAt,
+      };
+    }
+  } catch (err) {
+    console.error("getCallById mongo error:", err);
+  }
   return activeCalls.get(callId) || null;
 };
 
-export const answerCall = (
+export const answerCall = async (
   callId: string,
   recipientId: string,
   sdpAnswer?: any
-): ActiveCall | null => {
-  const call = activeCalls.get(callId);
-  if (!call || call.status !== "RINGING") return null;
+): Promise<ActiveCall | null> => {
+  const updateData: any = {
+    status: "CONNECTED",
+    connectedAt: Date.now(),
+  };
+  if (sdpAnswer) updateData.sdpAnswer = sdpAnswer;
 
-  call.status = "CONNECTED";
-  call.connectedAt = Date.now();
-  if (sdpAnswer) call.sdpAnswer = sdpAnswer;
+  try {
+    const mongo = await getDb();
+    await mongo.collection("active_calls").updateOne(
+      { $or: [{ id: callId }, { _id: callId as any }] },
+      { $set: updateData }
+    );
+  } catch (err) {
+    console.error("answerCall mongo error:", err);
+  }
 
-  return call;
+  const mem = activeCalls.get(callId);
+  if (mem) {
+    mem.status = "CONNECTED";
+    mem.connectedAt = Date.now();
+    if (sdpAnswer) mem.sdpAnswer = sdpAnswer;
+  }
+
+  return getCallById(callId);
 };
 
-export const declineCall = (callId: string): ActiveCall | null => {
-  const call = activeCalls.get(callId);
-  if (!call) return null;
+export const declineCall = async (callId: string): Promise<ActiveCall | null> => {
+  const updateData = {
+    status: "DECLINED",
+    endedAt: Date.now(),
+  };
 
-  call.status = "DECLINED";
-  call.endedAt = Date.now();
-  return call;
+  try {
+    const mongo = await getDb();
+    await mongo.collection("active_calls").updateOne(
+      { $or: [{ id: callId }, { _id: callId as any }] },
+      { $set: updateData }
+    );
+  } catch (err) {
+    console.error("declineCall mongo error:", err);
+  }
+
+  const mem = activeCalls.get(callId);
+  if (mem) {
+    mem.status = "DECLINED";
+    mem.endedAt = Date.now();
+  }
+
+  return getCallById(callId);
 };
 
-export const endCall = (callId: string): ActiveCall | null => {
-  const call = activeCalls.get(callId);
-  if (!call) return null;
+export const endCall = async (callId: string): Promise<ActiveCall | null> => {
+  const updateData = {
+    status: "ENDED",
+    endedAt: Date.now(),
+  };
 
-  call.status = "ENDED";
-  call.endedAt = Date.now();
-  return call;
+  try {
+    const mongo = await getDb();
+    await mongo.collection("active_calls").updateOne(
+      { $or: [{ id: callId }, { _id: callId as any }] },
+      { $set: updateData }
+    );
+  } catch (err) {
+    console.error("endCall mongo error:", err);
+  }
+
+  const mem = activeCalls.get(callId);
+  if (mem) {
+    mem.status = "ENDED";
+    mem.endedAt = Date.now();
+  }
+
+  return getCallById(callId);
 };
 
-export const addIceCandidate = (
+export const addIceCandidate = async (
   callId: string,
   fromCaller: boolean,
   candidate: any
-): boolean => {
-  const call = activeCalls.get(callId);
-  if (!call) return false;
+): Promise<boolean> => {
+  const pushField = fromCaller ? "callerCandidates" : "recipientCandidates";
 
-  if (fromCaller) {
-    call.callerCandidates.push(candidate);
-  } else {
-    call.recipientCandidates.push(candidate);
+  try {
+    const mongo = await getDb();
+    await mongo.collection("active_calls").updateOne(
+      { $or: [{ id: callId }, { _id: callId as any }] },
+      { $push: { [pushField]: candidate } as any }
+    );
+  } catch (err) {
+    console.error("addIceCandidate mongo error:", err);
   }
+
+  const mem = activeCalls.get(callId);
+  if (mem) {
+    if (fromCaller) {
+      mem.callerCandidates.push(candidate);
+    } else {
+      mem.recipientCandidates.push(candidate);
+    }
+  }
+
   return true;
 };

@@ -636,45 +636,204 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
             </p>
           </div>
 
-          {/* 6 Responsive Creation Category Pills */}
-          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
-            {CREATE_TYPES.map((type) => {
-              const Icon = type.icon;
-              const isActive = mode === type.id;
-              return (
+          {/* 4 Combined Responsive Creation Category Pills */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+            {/* 1. Post */}
+            <button
+              type="button"
+              onClick={() => handleModeChange("instant")}
+              className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
+                mode === "instant"
+                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 border-orange-500 font-black scale-[1.02]"
+                  : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
+                  mode === "instant"
+                    ? "bg-white/20 text-white"
+                    : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
+                }`}
+              >
+                <Camera className="w-4 h-4" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold block truncate max-w-full">
+                Post
+              </span>
+              <span
+                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-80 ${
+                  mode === "instant" ? "text-white/90" : "text-slate-400"
+                }`}
+              >
+                Photo / Moment
+              </span>
+            </button>
+
+            {/* 2. Combined Activity & Travel */}
+            <button
+              type="button"
+              onClick={() => {
+                if (mode !== "companion" && mode !== "travel") {
+                  handleModeChange("companion");
+                }
+              }}
+              className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
+                mode === "companion" || mode === "travel"
+                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/20 border-emerald-600 font-black scale-[1.02]"
+                  : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
+                  mode === "companion" || mode === "travel"
+                    ? "bg-white/20 text-white"
+                    : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
+                }`}
+              >
+                <Compass className="w-4 h-4" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold block truncate max-w-full">
+                Activity & Travel
+              </span>
+              <span
+                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-80 ${
+                  mode === "companion" || mode === "travel" ? "text-white/90" : "text-slate-400"
+                }`}
+              >
+                {mode === "travel" ? "Travel Trip" : "Companion Activity"}
+              </span>
+            </button>
+
+            {/* 3. Humanity & Nature Grow */}
+            <button
+              type="button"
+              onClick={() => handleModeChange("grow")}
+              className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
+                mode === "grow"
+                  ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-teal-600/20 border-teal-600 font-black scale-[1.02]"
+                  : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
+                  mode === "grow"
+                    ? "bg-white/20 text-white"
+                    : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
+                }`}
+              >
+                <Sprout className="w-4 h-4" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold block truncate max-w-full">
+                Nature & Humanity
+              </span>
+              <span
+                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-80 ${
+                  mode === "grow" ? "text-white/90" : "text-slate-400"
+                }`}
+              >
+                Grow Cause
+              </span>
+            </button>
+
+            {/* 4. Combined Treasure & Find Me */}
+            <button
+              type="button"
+              onClick={() => {
+                if (mode !== "treasure" && mode !== "find-me") {
+                  handleModeChange("treasure");
+                }
+              }}
+              className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
+                mode === "treasure" || mode === "find-me"
+                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20 border-blue-600 font-black scale-[1.02]"
+                  : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
+              }`}
+            >
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
+                  mode === "treasure" || mode === "find-me"
+                    ? "bg-white/20 text-white"
+                    : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
+                }`}
+              >
+                <Gem className="w-4 h-4" />
+              </div>
+              <span className="text-xs sm:text-sm font-bold block truncate max-w-full">
+                Treasure & Clue
+              </span>
+              <span
+                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-80 ${
+                  mode === "treasure" || mode === "find-me" ? "text-white/90" : "text-slate-400"
+                }`}
+              >
+                {mode === "find-me" ? "Find Me Clue" : "Treasure Quest"}
+              </span>
+            </button>
+          </div>
+
+          {/* Sub-toggle for Activity & Travel */}
+          {(mode === "companion" || mode === "travel") && (
+            <div className="flex justify-center mt-3 pt-3 border-t border-slate-100 dark:border-emerald-950/60 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 gap-1 shadow-inner">
                 <button
-                  key={type.id}
                   type="button"
-                  onClick={() => handleModeChange(type.id)}
-                  className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
-                    isActive
-                      ? `${type.activeClass} font-black scale-[1.02]`
-                      : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
+                  onClick={() => handleModeChange("companion")}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    mode === "companion"
+                      ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                   }`}
                 >
-                  <div
-                    className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-bold block truncate max-w-full">
-                    {type.label}
-                  </span>
-                  <span
-                    className={`text-[9px] hidden sm:block truncate max-w-full opacity-80 ${
-                      isActive ? "text-white/90" : "text-slate-400"
-                    }`}
-                  >
-                    {type.badge}
-                  </span>
+                  <Users className="w-3.5 h-3.5" />
+                  <span>Companion Activity</span>
                 </button>
-              );
-            })}
-          </div>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("travel")}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    mode === "travel"
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>Travel Trip</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Sub-toggle for Treasure & Find Me */}
+          {(mode === "treasure" || mode === "find-me") && (
+            <div className="flex justify-center mt-3 pt-3 border-t border-slate-100 dark:border-emerald-950/60 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 gap-1 shadow-inner">
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("treasure")}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    mode === "treasure"
+                      ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Gem className="w-3.5 h-3.5" />
+                  <span>Treasure Quest</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleModeChange("find-me")}
+                  className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
+                    mode === "find-me"
+                      ? "bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm"
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                  }`}
+                >
+                  <Flame className="w-3.5 h-3.5" />
+                  <span>Find Me Clue</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Global Error Banner */}

@@ -2,13 +2,12 @@ import db from "@/lib/db";
 
 let lastCleanupTime = 0;
 let isCleaningUp = false;
-const CLEANUP_COOLDOWN_MS = 60 * 1000; // Run at most once every 60 seconds
+const CLEANUP_COOLDOWN_MS = 5 * 60 * 1000; // Run at most once every 5 minutes
 
 /**
  * Cleanup function:
- * "oncce the event time reaches after 30 mins the all requests should disappear even from the db also"
  * Deletes any JoinRequest whose activity or travelPlan has passed event time + 30 mins.
- * Throttled to prevent SQLite file write locks on high-frequency badge polling.
+ * Throttled to prevent DB load.
  */
 export async function cleanupExpiredRequests() {
   const nowMs = Date.now();
@@ -20,11 +19,19 @@ export async function cleanupExpiredRequests() {
 
   try {
     const now = new Date();
-
-    // 1. Check all activities
-    const activities = await db.activity.findMany({
-      select: { id: true, date: true, startTime: true },
-    });
+    // Only inspect past events (date <= now)
+    const [activities, travelPlans] = await Promise.all([
+      db.activity.findMany({
+        where: { date: { lte: now } },
+        select: { id: true, date: true, startTime: true },
+        take: 100,
+      }),
+      db.travelPlan.findMany({
+        where: { startDate: { lte: now } },
+        select: { id: true, startDate: true },
+        take: 100,
+      }),
+    ]);
 
     const expiredActivityIds: string[] = [];
     for (const act of activities) {
@@ -34,17 +41,12 @@ export async function cleanupExpiredRequests() {
           const [h, m] = act.startTime.split(":").map(Number);
           actDate.setHours(h || 0, m || 0, 0, 0);
         }
-        const cutoff = new Date(actDate.getTime() + 30 * 60 * 1000); // 30 minutes after event start time
+        const cutoff = new Date(actDate.getTime() + 30 * 60 * 1000);
         if (now >= cutoff) {
           expiredActivityIds.push(act.id);
         }
       } catch (_) {}
     }
-
-    // 2. Check all travel plans
-    const travelPlans = await db.travelPlan.findMany({
-      select: { id: true, startDate: true },
-    });
 
     const expiredTravelPlanIds: string[] = [];
     for (const trip of travelPlans) {

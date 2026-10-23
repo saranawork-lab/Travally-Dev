@@ -5,8 +5,40 @@ import bcrypt from "bcryptjs";
 
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = new URL(req.url);
+    const targetUserId = searchParams.get("userId");
+
+    if (targetUserId) {
+      const targetUser = await db.user.findUnique({
+        where: { id: targetUserId },
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          createdAt: true,
+          profile: true,
+          activitiesOrganized: {
+            where: { status: "OPEN" },
+            select: { id: true, title: true, category: true, date: true, locationName: true },
+            take: 3,
+          },
+          travelPlansOrganized: {
+            where: { status: "OPEN" },
+            select: { id: true, destination: true, departureCity: true, startDate: true, travelStyle: true },
+            take: 3,
+          },
+        },
+      });
+
+      if (!targetUser) {
+        return NextResponse.json({ error: "User not found" }, { status: 404 });
+      }
+
+      return NextResponse.json({ user: targetUser });
+    }
+
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

@@ -19,6 +19,7 @@ import { CompatibilityBadge } from "@/components/travel/CompatibilityBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { ReportModal } from "@/components/common/ReportModal";
 import { ProfileModal } from "@/components/profile/ProfileModal";
+import { SwipeToJoinButton } from "@/components/common/SwipeToJoinButton";
 import { CompatibilityResult } from "@/lib/scoring";
 import { getTripImage } from "@/lib/images";
 import { TRAVEL_STYLE_CONFIG } from "@/constants/categories";
@@ -330,20 +331,17 @@ export const TripCard: React.FC<TripCardProps> = ({
                 Trip Full
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={() => {
+              <SwipeToJoinButton
+                label="Slide to Join"
+                theme="orange"
+                onJoin={() => {
                   if (!currentUser) {
                     window.location.href = "/login";
                     return;
                   }
                   setIsModalOpen(true);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-950/70 hover:from-orange-200 hover:to-amber-100 text-orange-950 dark:text-orange-200 border border-orange-300/90 dark:border-orange-700 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all hover:scale-[1.01]"
-              >
-                <span>Join Expedition</span>
-                <ArrowRight className="w-3.5 h-3.5 text-orange-700 dark:text-orange-300" />
-              </button>
+              />
             )}
           </div>
         </div>

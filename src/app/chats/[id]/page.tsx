@@ -35,9 +35,11 @@ import {
   Copy,
   Share2,
   Ban,
+  ShieldCheck,
 } from "lucide-react";
 import { formatTimeAgo, formatMessageTime } from "@/lib/utils";
 import { ReportModal } from "@/components/common/ReportModal";
+import { ProfileModal } from "@/components/profile/ProfileModal";
 import { RealisticEmoji } from "@/components/chat/RealisticEmoji";
 import { EmojiPickerPopover } from "@/components/chat/EmojiPickerPopover";
 import { VoiceCallModal, CallParticipant } from "@/components/chat/VoiceCallModal";
@@ -121,14 +123,42 @@ export default function ActiveChatPage() {
   const router = useRouter();
   const conversationId = params?.id as string;
 
-  const [conversation, setConversation] = useState<any>(null);
-  const [messages, setMessages] = useState<any[]>([]);
+  const [conversation, setConversation] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(`travally_chat_conv_${conversationId}`);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+  const [messages, setMessages] = useState<any[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return [];
+  });
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [inputMessage, setInputMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
+        if (cached) return false;
+      } catch {}
+    }
+    return true;
+  });
   const [sending, setSending] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [isChatExpired, setIsChatExpired] = useState(false);
+
+  // Profile modal states (to view other user profile from header)
+  const [selectedProfileUser, setSelectedProfileUser] = useState<any>(null);
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   // Floating Action States
   // Floating Action & Long-Press Message States
@@ -308,6 +338,9 @@ export default function ActiveChatPage() {
           // Full initial load
           if (data.conversation) {
             setConversation(data.conversation);
+            try {
+              sessionStorage.setItem(`travally_chat_conv_${conversationId}`, JSON.stringify(data.conversation));
+            } catch {}
           }
           const rawMessages = data.messages || [];
           const decryptedList = await Promise.all(
@@ -317,6 +350,9 @@ export default function ActiveChatPage() {
             }))
           );
           setMessages(decryptedList);
+          try {
+            sessionStorage.setItem(`travally_chat_msgs_${conversationId}`, JSON.stringify(decryptedList.slice(-50)));
+          } catch {}
 
           if (rawMessages.length > 0) {
             const latest = rawMessages[rawMessages.length - 1];
@@ -882,7 +918,25 @@ export default function ActiveChatPage() {
     });
   }
 
-  const isGroupRoom = otherParticipants.length > 1;
+  const isDirectChat =
+    conversation?.type === "DIRECT" ||
+    Boolean(conversation?.otherUser) ||
+    (!conversation?.activity && !conversation?.travelPlan && otherParticipants.length <= 1);
+
+  const directTitle =
+    conversation?.otherUser?.displayName ||
+    otherParticipants[0]?.displayName ||
+    (conversation?.title?.includes("&")
+      ? conversation.title
+          .split("&")
+          .map((s: string) => s.trim())
+          .find((s: string) => s !== currentUser?.displayName && s !== currentUser?.email?.split("@")[0])
+      : conversation?.title) ||
+    "Travel Companion";
+
+  const directAvatarUrl = conversation?.otherUser?.avatarUrl || otherParticipants[0]?.avatarUrl;
+  const isDirectVerified = Boolean(conversation?.otherUser?.isVerified);
+  const isGroupRoom = !isDirectChat && otherParticipants.length > 1;
 
   const handleCallEnded = (durationSecs: number, participantNames: string[]) => {
     if (durationSecs > 0) {
@@ -944,40 +998,83 @@ export default function ActiveChatPage() {
               </button>
             )}
 
-            {/* Group Avatar & Active Status (CLICKABLE TO OPEN GROUP MEMBERS PANEL) */}
+            {/* Group or Direct Chat Profile Avatar & Active Status */}
             <button
               type="button"
-              onClick={() => setIsMembersDrawerOpen(true)}
+              onClick={() => {
+                if (isDirectChat) {
+                  const targetId = conversation?.otherUser?.id || otherParticipants[0]?.id;
+                  if (targetId && targetId !== "partner-1") {
+                    setSelectedProfileUser({
+                      id: targetId,
+                      email: conversation?.otherUser?.email || "",
+                      profile: {
+                        displayName: directTitle,
+                        avatarUrl: directAvatarUrl,
+                        isVerified: isDirectVerified,
+                      },
+                    });
+                    setIsProfileModalOpen(true);
+                  }
+                } else {
+                  setIsMembersDrawerOpen(true);
+                }
+              }}
               className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 text-left hover:opacity-85 transition p-1 -ml-1 rounded-xl cursor-pointer"
-              title="Click to view all group members & details"
+              title={isDirectChat ? `View ${directTitle}'s profile` : "Click to view all group members & details"}
             >
-              <div
-                className={`w-8 h-8 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-xs ${
-                  isActivity
-                    ? "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-700/60"
-                    : "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-900/60 text-orange-700 dark:text-orange-300 border-orange-300/80 dark:border-orange-700/60"
-                }`}
-              >
-                {isActivity ? (
-                  <Users className="w-4 sm:w-5 h-4 sm:h-5" />
-                ) : (
-                  <Compass className="w-4 sm:w-5 h-4 sm:h-5" />
-                )}
-              </div>
+              {isDirectChat ? (
+                <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full shrink-0 shadow-xs ring-1 ring-slate-200/80 dark:ring-emerald-500/20 overflow-hidden bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xs sm:text-sm">
+                  {directAvatarUrl ? (
+                    <img
+                      src={directAvatarUrl}
+                      alt={directTitle}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>{directTitle.charAt(0).toUpperCase()}</span>
+                  )}
+                </div>
+              ) : (
+                <div
+                  className={`w-8 h-8 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-xs ${
+                    isActivity
+                      ? "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-700/60"
+                      : "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-900/60 text-orange-700 dark:text-orange-300 border-orange-300/80 dark:border-orange-700/60"
+                  }`}
+                >
+                  {isActivity ? (
+                    <Users className="w-4 sm:w-5 h-4 sm:h-5" />
+                  ) : (
+                    <Compass className="w-4 sm:w-5 h-4 sm:h-5" />
+                  )}
+                </div>
+              )}
 
               <div className="min-w-0 flex-1">
-                <h1 className="text-xs sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
-                  {conversation?.title || "Loading Group..."}
-                </h1>
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <h1 className="text-xs sm:text-base font-extrabold text-slate-900 dark:text-white truncate">
+                    {isDirectChat ? directTitle : (conversation?.title || "Loading Group...")}
+                  </h1>
+                  {isDirectChat && isDirectVerified && (
+                    <ShieldCheck className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-500 shrink-0" />
+                  )}
+                </div>
                 <div className="flex items-center gap-1.5 mt-0.5 text-[10px] sm:text-[11px]">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    Active Room
+                    Active now
                   </span>
                   <span className="text-slate-300 dark:text-slate-700">•</span>
-                  <span className="text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition font-medium underline underline-offset-2 truncate">
-                    {conversation?.activity?.participants?.length || conversation?.travelPlan?.participants?.length || 2} members
-                  </span>
+                  {isDirectChat ? (
+                    <span className="text-slate-500 dark:text-slate-400 font-medium">
+                      Direct chat
+                    </span>
+                  ) : (
+                    <span className="text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition font-medium underline underline-offset-2 truncate">
+                      {conversation?.activity?.participants?.length || conversation?.travelPlan?.participants?.length || otherParticipants.length + 1} members
+                    </span>
+                  )}
                 </div>
               </div>
             </button>
@@ -1056,21 +1153,44 @@ export default function ActiveChatPage() {
             <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           </div>
         ) : messages.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center text-center space-y-3">
-            <div className="w-20 h-20 bg-emerald-50 dark:bg-emerald-950/40 rounded-3xl flex items-center justify-center shadow-inner">
-              <Users className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-100">
-              Private chat activated!
+          <div className="flex h-full flex-col items-center justify-center text-center space-y-3 px-4">
+            {isDirectChat ? (
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md">
+                <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-[#111815] flex items-center justify-center">
+                  {directAvatarUrl ? (
+                    <img src={directAvatarUrl} alt={directTitle} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400">
+                      {directTitle.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-emerald-50 dark:bg-emerald-950/40 rounded-3xl flex items-center justify-center shadow-inner">
+                <Users className="w-8 h-8 sm:w-10 sm:h-10 text-emerald-600 dark:text-emerald-400" />
+              </div>
+            )}
+            <h3 className="text-base sm:text-lg font-bold text-slate-800 dark:text-slate-100">
+              {isDirectChat ? directTitle : "Private chat activated!"}
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs">
-              Say hello, confirm timing, or react with emojis to break the ice.
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs leading-relaxed">
+              {isDirectChat
+                ? "This is the start of your direct message history with this traveler."
+                : "Say hello, confirm timing, or react with emojis to break the ice."}
             </p>
           </div>
         ) : (
           messages.map((msg, idx) => {
             const isMe = msg.senderId === currentUser?.id;
-            const senderName = msg.sender?.profile?.displayName || msg.sender?.email?.split("@")[0] || "Member";
+            const senderName =
+              msg.sender?.profile?.displayName ||
+              (conversation?.otherUser?.id === msg.senderId ? conversation.otherUser.displayName : null) ||
+              msg.sender?.email?.split("@")[0] ||
+              "Member";
+            const senderAvatarUrl =
+              msg.sender?.profile?.avatarUrl ||
+              (conversation?.otherUser?.id === msg.senderId ? conversation.otherUser.avatarUrl : null);
 
             const parsed = parseMessageContent(msg.content);
             const isEmojiOnly = isStandaloneEmoji(parsed.text) && !parsed.mediaType && !parsed.replyTo;
@@ -1121,13 +1241,21 @@ export default function ActiveChatPage() {
                 >
                   {/* Sender Avatar for Received messages */}
                   {!isMe && (
-                    <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30 shrink-0 mb-1 shadow-sm">
-                      {senderName.charAt(0).toUpperCase()}
+                    <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30 shrink-0 mb-1 shadow-sm overflow-hidden">
+                      {senderAvatarUrl ? (
+                        <img
+                          src={senderAvatarUrl}
+                          alt={senderName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        senderName.charAt(0).toUpperCase()
+                      )}
                     </div>
                   )}
 
                   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} min-w-0`}>
-                    {!isMe && (
+                    {!isMe && isGroupRoom && (
                       <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-2 mb-0.5">
                         {senderName}
                       </span>
@@ -1777,6 +1905,14 @@ export default function ActiveChatPage() {
         onBlockUser={(targetUserId, targetName) => {
           handleBlockUser(targetUserId, targetName);
         }}
+      />
+
+      {/* Direct Chat Companion Profile Modal */}
+      <ProfileModal
+        isOpen={isProfileModalOpen}
+        onClose={() => setIsProfileModalOpen(false)}
+        user={selectedProfileUser}
+        showChatOption={false}
       />
 
       {/* ── INCOMING VOICE CALL ALERT DIALOG (LUMINOUS SPATIAL AUDIO CAPSULE) ── */}

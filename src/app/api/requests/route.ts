@@ -18,7 +18,97 @@ export async function GET(req: NextRequest) {
     cleanupExpiredRequests().catch(() => {});
 
     const { searchParams } = new URL(req.url);
-    const view = searchParams.get("view") || "received"; // received or sent
+    const view = searchParams.get("view") || "received"; // received, sent, or both
+
+    if (view === "both") {
+      const [receivedRequests, sentRequests] = await Promise.all([
+        db.joinRequest.findMany({
+          where: {
+            OR: [
+              { activity: { organizerId: user.id } },
+              { travelPlan: { organizerId: user.id } },
+            ],
+          },
+          include: {
+            applicant: {
+              select: {
+                id: true,
+                profile: {
+                  select: {
+                    displayName: true,
+                    avatarUrl: true,
+                    bio: true,
+                    city: true,
+                    age: true,
+                    gender: true,
+                    interests: true,
+                    isVerified: true,
+                    verificationStatus: true,
+                    linkedinUrl: true,
+                  },
+                },
+              },
+            },
+            activity: {
+              include: {
+                conversations: { select: { id: true } },
+              },
+            },
+            travelPlan: {
+              include: {
+                conversations: { select: { id: true } },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        db.joinRequest.findMany({
+          where: { applicantId: user.id },
+          include: {
+            activity: {
+              include: {
+                organizer: {
+                  select: {
+                    id: true,
+                    profile: {
+                      select: {
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                        verificationStatus: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            travelPlan: {
+              include: {
+                organizer: {
+                  select: {
+                    id: true,
+                    profile: {
+                      select: {
+                        displayName: true,
+                        avatarUrl: true,
+                        isVerified: true,
+                        verificationStatus: true,
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+      ]);
+
+      return NextResponse.json({
+        received: receivedRequests,
+        sent: sentRequests,
+      });
+    }
 
     if (view === "sent") {
       const sentRequests = await db.joinRequest.findMany({

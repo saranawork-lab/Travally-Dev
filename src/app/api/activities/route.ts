@@ -97,12 +97,21 @@ export async function GET(req: NextRequest) {
     const fullActivityIdsToClose: string[] = [];
     const sanitizedActivities = activities.filter((act) => {
       const isFull = act.currentAcceptedCount >= act.maxParticipants;
-      if (isFull) {
-        if (act.status !== "CLOSED") {
-          fullActivityIdsToClose.push(act.id);
-          act.status = "CLOSED";
+      const isPast = new Date(act.date).getTime() < Date.now();
+      if (isFull && act.status !== "CLOSED") {
+        fullActivityIdsToClose.push(act.id);
+        act.status = "CLOSED";
+      }
+      if (!organizerId) {
+        if (
+          act.status === "CLOSED" ||
+          act.status === "CANCELLED" ||
+          act.status === "EXPIRED" ||
+          isFull ||
+          isPast
+        ) {
+          return false;
         }
-        if (status === "OPEN") return false;
       }
       return true;
     });

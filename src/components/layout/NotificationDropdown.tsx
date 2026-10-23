@@ -126,6 +126,25 @@ export const NotificationDropdown: React.FC = () => {
     }
   };
 
+  const handleNotificationClick = async (n: AppNotification) => {
+    setIsOpen(false);
+    if (!n.isRead) {
+      setNotifications((prev) =>
+        prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      try {
+        await fetch("/api/notifications", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: n.id }),
+        });
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  };
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -196,7 +215,7 @@ export const NotificationDropdown: React.FC = () => {
                     <Link
                       key={n.id}
                       href={n.actionUrl}
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => handleNotificationClick(n)}
                       className={`block p-3.5 border-l-4 ${config.barColor} transition-all duration-200 cursor-pointer ${
                         !n.isRead
                           ? "bg-emerald-50/40 dark:bg-emerald-950/30 hover:bg-emerald-50/70 dark:hover:bg-emerald-950/50"
@@ -211,7 +230,8 @@ export const NotificationDropdown: React.FC = () => {
                 return (
                   <div
                     key={n.id}
-                    className={`p-3.5 border-l-4 ${config.barColor} transition-colors ${
+                    onClick={() => handleNotificationClick(n)}
+                    className={`p-3.5 border-l-4 ${config.barColor} transition-colors cursor-pointer ${
                       !n.isRead
                         ? "bg-emerald-50/40 dark:bg-emerald-950/30"
                         : "hover:bg-slate-50 dark:hover:bg-[#16201b]/50"

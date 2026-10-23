@@ -1,6 +1,8 @@
 import db from "@/lib/db";
 import { decryptChatMessage } from "@/lib/crypto";
 import { getChatRetentionInfo } from "@/lib/chatRetention";
+import { getDb } from "@/lib/mongo";
+import { ObjectId } from "mongodb";
 
 export interface CreateMessageInput {
   conversationId: string;
@@ -193,7 +195,17 @@ export const ChatService = {
       ? conversation.activity.participants
       : conversation.travelPlan?.participants || [];
 
-    const isMember = participants.some((p) => p.userId === userId);
+    const isOrganizer =
+      conversation.activity?.organizer?.id === userId ||
+      conversation.travelPlan?.organizer?.id === userId;
+
+    const isDirectMember =
+      conversation.type === "DIRECT" &&
+      (Array.isArray((conversation as any).participantIds)
+        ? (conversation as any).participantIds.includes(userId)
+        : true);
+
+    const isMember = isOrganizer || isDirectMember || participants.some((p) => p.userId === userId);
     if (!isMember && userRole !== "ADMIN") {
       return { error: "Access denied", status: 403 };
     }
@@ -257,14 +269,74 @@ export const ChatService = {
       ).catch(() => {});
     }
 
+    // Resolve other user's clean profile name when 2 persons are in the conversation
+    let otherUserProfile: { id: string; displayName: string; avatarUrl?: string | null; isVerified?: boolean } | null = null;
+
+    if (conversation.type === "DIRECT") {
+      try {
+        const mongo = await getDb();
+        let convDoc: any = null;
+        try {
+          convDoc = await mongo.collection("Conversation").findOne({ _id: new ObjectId(conversationId) });
+        } catch {
+          convDoc = await mongo.collection("Conversation").findOne({ id: conversationId });
+        }
+        const participantIds: string[] = convDoc?.participantIds || (conversation as any).participantIds || [];
+        const otherId = participantIds.find((pid: string) => pid !== userId);
+        if (otherId) {
+          const targetU = await db.user.findUnique({
+            where: { id: otherId },
+            include: { profile: true },
+          });
+          if (targetU?.profile) {
+            otherUserProfile = {
+              id: targetU.id,
+              displayName: targetU.profile.displayName,
+              avatarUrl: targetU.profile.avatarUrl,
+              isVerified: targetU.profile.isVerified,
+            };
+          }
+        }
+      } catch (err) {
+        console.warn("Error finding direct otherUser:", err);
+      }
+    } else if (participants.length === 1) {
+      // 2-person group (Host + 1 participant)
+      const hostId = conversation.activity?.organizer?.id || conversation.travelPlan?.organizer?.id;
+      if (hostId === userId) {
+        // current user is host; other person is the 1 participant
+        const p = participants[0];
+        if (p?.user?.profile) {
+          otherUserProfile = {
+            id: p.user.id,
+            displayName: p.user.profile.displayName,
+            avatarUrl: p.user.profile.avatarUrl,
+            isVerified: p.user.profile.isVerified,
+          };
+        }
+      } else if (hostId) {
+        // current user is participant; other person is host
+        const hostProfile = conversation.activity?.organizer?.profile || conversation.travelPlan?.organizer?.profile;
+        if (hostProfile) {
+          otherUserProfile = {
+            id: hostId,
+            displayName: hostProfile.displayName,
+            avatarUrl: hostProfile.avatarUrl,
+            isVerified: hostProfile.isVerified,
+          };
+        }
+      }
+    }
+
     return {
       isDelta: false,
       conversation: {
         id: conversation.id,
-        title: conversation.title,
+        title: otherUserProfile ? otherUserProfile.displayName : conversation.title,
         type: conversation.type,
         activity: conversation.activity,
         travelPlan: conversation.travelPlan,
+        otherUser: otherUserProfile,
         retentionInfo,
       },
       messages,
@@ -296,11 +368,13 @@ export const ChatService = {
       select: {
         id: true,
         title: true,
+        type: true,
         activity: {
           select: {
             id: true,
             status: true,
             date: true,
+            organizerId: true,
             participants: { select: { userId: true } },
           },
         },
@@ -309,6 +383,7 @@ export const ChatService = {
             id: true,
             status: true,
             endDate: true,
+            organizerId: true,
             participants: { select: { userId: true } },
           },
         },
@@ -331,7 +406,17 @@ export const ChatService = {
       ? conversation.activity.participants
       : conversation.travelPlan?.participants || [];
 
-    const isMember = participants.some((p) => p.userId === userId);
+    const isOrganizer =
+      conversation.activity?.organizerId === userId ||
+      conversation.travelPlan?.organizerId === userId;
+
+    const isDirectMember =
+      conversation.type === "DIRECT" &&
+      (Array.isArray((conversation as any).participantIds)
+        ? (conversation as any).participantIds.includes(userId)
+        : true);
+
+    const isMember = isOrganizer || isDirectMember || participants.some((p) => p.userId === userId);
     if (!isMember && userRole !== "ADMIN") {
       return { error: "Access denied. Only accepted participants can send messages.", status: 403 };
     }

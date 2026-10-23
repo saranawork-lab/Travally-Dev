@@ -5,7 +5,6 @@ import {
   startCall,
   getActiveCallByConversation,
   getActiveCallForUser,
-  hasAnyActiveCalls,
 } from "@/lib/callSignaling";
 
 export const dynamic = "force-dynamic";
@@ -17,22 +16,17 @@ export async function GET(req: NextRequest) {
 
     // Fast-path: if looking for conversation call
     if (conversationId) {
-      const activeCall = getActiveCallByConversation(conversationId);
+      const activeCall = await getActiveCallByConversation(conversationId);
       return NextResponse.json({ activeCall });
-    }
-
-    // Fast-path: if no calls exist globally, return null instantly without auth overhead
-    if (!hasAnyActiveCalls()) {
-      return NextResponse.json({ activeCall: null, incomingCall: null });
     }
 
     const user = await getCurrentUser();
     if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json({ activeCall: null, incomingCall: null });
     }
 
     // Global check for user's incoming call on any screen
-    const incomingCall = getActiveCallForUser(user.id);
+    const incomingCall = await getActiveCallForUser(user.id);
     return NextResponse.json({ activeCall: incomingCall, incomingCall });
   } catch (error) {
     return NextResponse.json({ activeCall: null, incomingCall: null });
@@ -64,7 +58,7 @@ export async function POST(req: NextRequest) {
       profile?.displayName || user.email?.split("@")[0] || "Travel Companion";
     const callerAvatar = profile?.avatarUrl || undefined;
 
-    const call = startCall({
+    const call = await startCall({
       conversationId,
       callerId: user.id,
       callerName,
@@ -73,6 +67,45 @@ export async function POST(req: NextRequest) {
       participantIds: participantIds || [],
       sdpOffer,
     });
+
+    // Notify participants about the incoming voice call so it appears in their notifications
+    const targetRecipientIds: string[] = (participantIds || []).filter((id: string) => id !== user.id);
+    
+    // If no participantIds passed, notify other participants in conversation
+    if (targetRecipientIds.length === 0) {
+      const conv = await db.conversation.findUnique({
+        where: { id: conversationId },
+        include: {
+          activity: { select: { participants: { select: { userId: true } }, organizerId: true } },
+          travelPlan: { select: { participants: { select: { userId: true } }, organizerId: true } },
+        },
+      });
+
+      if (conv) {
+        const pids = [
+          ...(conv.activity?.participants.map((p) => p.userId) || []),
+          ...(conv.travelPlan?.participants.map((p) => p.userId) || []),
+          conv.activity?.organizerId,
+          conv.travelPlan?.organizerId,
+        ].filter((id): id is string => Boolean(id) && id !== user.id);
+
+        for (const pid of Array.from(new Set(pids))) {
+          targetRecipientIds.push(pid);
+        }
+      }
+    }
+
+    for (const recipientId of targetRecipientIds) {
+      db.notification.create({
+        data: {
+          userId: recipientId,
+          type: "NEW_MESSAGE",
+          title: "📞 Incoming Voice Call",
+          body: `${callerName} is calling you on Travally...`,
+          actionUrl: `/chats/${conversationId}`,
+        },
+      }).catch((e) => console.error("Call notification error:", e));
+    }
 
     return NextResponse.json({ call });
   } catch (error) {

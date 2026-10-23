@@ -180,7 +180,10 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
         ) : (
           filtered.map((conv) => {
             const isActive = conv.id === activeConversationId;
+            const isDirect = conv.type === "DIRECT" || Boolean(conv.otherUser);
             const isActivity = conv.type === "ACTIVITY";
+            const displayTitle = conv.otherUser?.displayName || conv.title;
+            const avatarUrl = conv.otherUser?.avatarUrl;
             const lastMsg = conv.messages && conv.messages.length > 0 ? conv.messages[0] : null;
             const senderDisplayName =
               lastMsg?.sender?.profile?.displayName || lastMsg?.sender?.email?.split("@")[0];
@@ -206,15 +209,25 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                 }`}
               >
                 {/* Room Avatar */}
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
-                    isActivity
-                      ? "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40"
-                      : "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-900/60 text-orange-700 dark:text-orange-300 border-orange-200/60 dark:border-orange-800/40"
-                  }`}
-                >
-                  {isActivity ? <Users className="w-3.5 h-3.5" /> : <Compass className="w-3.5 h-3.5" />}
-                </div>
+                {isDirect ? (
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-emerald-300/60 dark:border-emerald-700/60 bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={displayTitle} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{displayTitle.charAt(0).toUpperCase()}</span>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                      isActivity
+                        ? "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40"
+                        : "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-900/60 text-orange-700 dark:text-orange-300 border-orange-200/60 dark:border-orange-800/40"
+                    }`}
+                  >
+                    {isActivity ? <Users className="w-3.5 h-3.5" /> : <Compass className="w-3.5 h-3.5" />}
+                  </div>
+                )}
 
                 {/* Content */}
                 <div className="flex-1 min-w-0 text-left">
@@ -226,7 +239,7 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                           : "text-slate-800 dark:text-slate-200"
                       }`}
                     >
-                      {conv.title}
+                      {displayTitle}
                     </span>
                     <span className="text-[10px] text-slate-400 dark:text-slate-500 shrink-0">
                       {timeAgo}
@@ -236,12 +249,14 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                   <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
                     <span
                       className={`text-[9px] px-1 py-0.2 rounded font-medium shrink-0 ${
-                        isActivity
+                        isDirect
+                          ? "bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300"
+                          : isActivity
                           ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300"
                           : "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300"
                       }`}
                     >
-                      {isActivity ? "Companion" : "Trip"}
+                      {isDirect ? "Direct" : isActivity ? "Companion" : "Trip"}
                     </span>
                     <span className="truncate">
                       {senderDisplayName ? `${senderDisplayName}: ` : ""}

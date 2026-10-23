@@ -88,7 +88,24 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         },
       });
 
-      // 2. Add to Participants
+      // 2. Add applicant and organizer to Participants
+      const existingOrganizer = await db.participant.findFirst({
+        where: {
+          userId: user.id,
+          activityId: activity.id,
+        },
+      });
+
+      if (!existingOrganizer) {
+        await db.participant.create({
+          data: {
+            userId: user.id,
+            activityId: activity.id,
+            role: "ORGANIZER",
+          },
+        });
+      }
+
       const existingParticipant = await db.participant.findFirst({
         where: {
           userId: joinRequest.applicantId,
@@ -170,6 +187,23 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           respondedAt: new Date(),
         },
       });
+
+      const existingOrganizer = await db.participant.findFirst({
+        where: {
+          userId: user.id,
+          travelPlanId: trip.id,
+        },
+      });
+
+      if (!existingOrganizer) {
+        await db.participant.create({
+          data: {
+            userId: user.id,
+            travelPlanId: trip.id,
+            role: "ORGANIZER",
+          },
+        });
+      }
 
       const existingParticipant = await db.participant.findFirst({
         where: {
