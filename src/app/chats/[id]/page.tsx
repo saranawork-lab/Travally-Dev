@@ -50,6 +50,7 @@ import { ChatsSidebar } from "@/components/chat/ChatsSidebar";
 import { GroupMembersDrawer } from "@/components/chat/GroupMembersDrawer";
 import { encryptChatMessage, decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
 import { useLanguage } from "@/context/LanguageContext";
+import { useAuth } from "@/context/AuthContext";
 
 // Quick reactions shown on the floating pill
 const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "🔥", "👍"];
@@ -141,7 +142,23 @@ export default function ActiveChatPage() {
     }
     return [];
   });
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const { currentUser: authUser } = useAuth();
+  const [currentUser, setCurrentUser] = useState<any>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("travally_auth_user");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    if (authUser) {
+      setCurrentUser(authUser);
+    }
+  }, [authUser]);
+
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(() => {
     if (typeof window !== "undefined") {
@@ -1152,7 +1169,7 @@ export default function ActiveChatPage() {
             </span>
           </div>
         </div>
-        {loading ? (
+        {loading || !currentUser ? (
           <div className="flex h-full items-center justify-center">
             <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin" />
           </div>
@@ -1186,7 +1203,10 @@ export default function ActiveChatPage() {
           </div>
         ) : (
           messages.map((msg, idx) => {
-            const isMe = msg.senderId === currentUser?.id;
+            const isMe = Boolean(
+              currentUser?.id &&
+              (msg.senderId === currentUser.id || msg.sender?.id === currentUser.id)
+            );
             const senderName =
               msg.sender?.profile?.displayName ||
               (conversation?.otherUser?.id === msg.senderId ? conversation.otherUser.displayName : null) ||

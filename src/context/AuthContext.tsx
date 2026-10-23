@@ -37,15 +37,43 @@ export const AuthProvider: React.FC<{
   initialUser?: SessionUser | null;
   children: React.ReactNode;
 }> = ({ initialUser = null, children }) => {
-  const [currentUser, setCurrentUser] = useState<SessionUser | null>(initialUser);
-  const [loading, setLoading] = useState(initialUser === undefined);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(() => {
+    if (initialUser !== undefined && initialUser !== null) return initialUser;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("travally_auth_user");
+        if (cached) return JSON.parse(cached);
+      } catch {}
+    }
+    return initialUser ?? null;
+  });
+  const [loading, setLoading] = useState(initialUser === undefined && !currentUser);
   const router = useRouter();
 
   // Keep state in sync with server component's initialUser
   useEffect(() => {
-    setCurrentUser(initialUser ?? null);
-    setLoading(false);
+    if (initialUser !== undefined) {
+      setCurrentUser(initialUser ?? null);
+      if (typeof window !== "undefined") {
+        try {
+          if (initialUser) localStorage.setItem("travally_auth_user", JSON.stringify(initialUser));
+          else localStorage.removeItem("travally_auth_user");
+        } catch {}
+      }
+      setLoading(false);
+    }
   }, [initialUser]);
+
+  // Sync state to localStorage whenever currentUser changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        if (currentUser) {
+          localStorage.setItem("travally_auth_user", JSON.stringify(currentUser));
+        }
+      } catch {}
+    }
+  }, [currentUser]);
 
   const refreshUser = useCallback(async () => {
     try {
@@ -57,6 +85,9 @@ export const AuthProvider: React.FC<{
             if (prev) {
               // Session was invalidated because user logged in on another device
               if (typeof window !== "undefined") {
+                try {
+                  localStorage.removeItem("travally_auth_user");
+                } catch {}
                 window.dispatchEvent(new Event("travally_auth_changed"));
               }
               router.push("/login?reason=session_expired");
@@ -65,10 +96,22 @@ export const AuthProvider: React.FC<{
           });
         } else {
           setCurrentUser(data.user);
+          if (typeof window !== "undefined") {
+            try {
+              localStorage.setItem("travally_auth_user", JSON.stringify(data.user));
+            } catch {}
+          }
         }
       } else {
         setCurrentUser((prev) => {
-          if (prev) router.push("/login?reason=session_expired");
+          if (prev) {
+            if (typeof window !== "undefined") {
+              try {
+                localStorage.removeItem("travally_auth_user");
+              } catch {}
+            }
+            router.push("/login?reason=session_expired");
+          }
           return null;
         });
       }
@@ -87,6 +130,9 @@ export const AuthProvider: React.FC<{
     } finally {
       setCurrentUser(null);
       if (typeof window !== "undefined") {
+        try {
+          localStorage.removeItem("travally_auth_user");
+        } catch {}
         window.dispatchEvent(new Event("travally_auth_changed"));
       }
       router.push("/");
