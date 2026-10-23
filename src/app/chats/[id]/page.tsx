@@ -143,19 +143,16 @@ export default function ActiveChatPage() {
     return [];
   });
   const { currentUser: authUser } = useAuth();
-  const [currentUser, setCurrentUser] = useState<any>(() => {
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("travally_auth_user");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return null;
-  });
+  const [currentUser, setCurrentUser] = useState<any>(authUser || null);
 
   useEffect(() => {
     if (authUser) {
       setCurrentUser(authUser);
+    } else if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("travally_auth_user");
+        if (cached) setCurrentUser(JSON.parse(cached));
+      } catch {}
     }
   }, [authUser]);
 

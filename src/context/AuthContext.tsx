@@ -37,30 +37,27 @@ export const AuthProvider: React.FC<{
   initialUser?: SessionUser | null;
   children: React.ReactNode;
 }> = ({ initialUser = null, children }) => {
-  const [currentUser, setCurrentUser] = useState<SessionUser | null>(() => {
-    if (initialUser !== undefined && initialUser !== null) return initialUser;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = localStorage.getItem("travally_auth_user");
-        if (cached) return JSON.parse(cached);
-      } catch {}
-    }
-    return initialUser ?? null;
-  });
-  const [loading, setLoading] = useState(initialUser === undefined && !currentUser);
+  const [currentUser, setCurrentUser] = useState<SessionUser | null>(initialUser ?? null);
+  const [loading, setLoading] = useState(initialUser === undefined);
   const router = useRouter();
 
-  // Keep state in sync with server component's initialUser
+  // Keep state in sync with server component's initialUser and fallback to cached session on client
   useEffect(() => {
-    if (initialUser !== undefined) {
-      setCurrentUser(initialUser ?? null);
+    if (initialUser !== undefined && initialUser !== null) {
+      setCurrentUser(initialUser);
       if (typeof window !== "undefined") {
         try {
-          if (initialUser) localStorage.setItem("travally_auth_user", JSON.stringify(initialUser));
-          else localStorage.removeItem("travally_auth_user");
+          localStorage.setItem("travally_auth_user", JSON.stringify(initialUser));
         } catch {}
       }
       setLoading(false);
+    } else if (typeof window !== "undefined") {
+      try {
+        const cached = localStorage.getItem("travally_auth_user");
+        if (cached) {
+          setCurrentUser(JSON.parse(cached));
+        }
+      } catch {}
     }
   }, [initialUser]);
 
