@@ -190,6 +190,18 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
             const snippet = parseLastMessageSnippet(lastMsg?.content);
             const timeAgo = lastMsg ? formatTimeAgo(lastMsg.createdAt) : formatTimeAgo(conv.updatedAt);
 
+            const cardBg = isDirect
+              ? isActive
+                ? "bg-slate-100 dark:bg-slate-800/80 border-slate-300 dark:border-slate-700 shadow-xs"
+                : "bg-white dark:bg-[#111815] border-slate-200/70 dark:border-slate-800/50 hover:bg-slate-50 dark:hover:bg-[#15201b]"
+              : isActivity
+              ? isActive
+                ? "bg-emerald-100/90 dark:bg-emerald-950/60 border-emerald-400 dark:border-emerald-700 shadow-xs"
+                : "bg-emerald-50/75 dark:bg-emerald-950/25 border-emerald-200/70 dark:border-emerald-900/40 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40 hover:border-emerald-300"
+              : isActive
+              ? "bg-orange-100/90 dark:bg-orange-950/60 border-orange-400 dark:border-orange-700 shadow-xs"
+              : "bg-orange-50/75 dark:bg-orange-950/25 border-orange-200/70 dark:border-orange-900/40 hover:bg-orange-100/70 dark:hover:bg-orange-950/40 hover:border-orange-300";
+
             return (
               <button
                 key={conv.id}
@@ -202,15 +214,11 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                     onCloseMobileDrawer();
                   }
                 }}
-                className={`w-full text-left p-2.5 rounded-2xl transition flex items-center gap-2.5 ${
-                  isActive
-                    ? "bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-orange-500/10 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-500/30 shadow-xs"
-                    : "hover:bg-slate-50 dark:hover:bg-[#141e19] border border-transparent"
-                }`}
+                className={`w-full text-left p-2.5 rounded-2xl transition-all flex items-center gap-2.5 border ${cardBg}`}
               >
                 {/* Room Avatar */}
                 {isDirect ? (
-                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-emerald-300/60 dark:border-emerald-700/60 bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
+                  <div className="w-8 h-8 rounded-full overflow-hidden shrink-0 border border-slate-200 dark:border-slate-700 bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white text-xs font-black shadow-xs">
                     {avatarUrl ? (
                       <img src={avatarUrl} alt={displayTitle} className="w-full h-full object-cover" />
                     ) : (
@@ -219,10 +227,10 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                   </div>
                 ) : (
                   <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                    className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-xs ${
                       isActivity
-                        ? "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/40"
-                        : "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-900/60 text-orange-700 dark:text-orange-300 border-orange-200/60 dark:border-orange-800/40"
+                        ? "bg-emerald-500 text-white border-emerald-400/60"
+                        : "bg-orange-500 text-white border-orange-400/60"
                     }`}
                   >
                     {isActivity ? <Users className="w-3.5 h-3.5" /> : <Compass className="w-3.5 h-3.5" />}
@@ -235,7 +243,11 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                     <span
                       className={`text-xs font-bold truncate ${
                         isActive
-                          ? "text-emerald-700 dark:text-emerald-300"
+                          ? isDirect
+                            ? "text-slate-900 dark:text-white"
+                            : isActivity
+                            ? "text-emerald-800 dark:text-emerald-200"
+                            : "text-orange-800 dark:text-orange-200"
                           : "text-slate-800 dark:text-slate-200"
                       }`}
                     >
@@ -246,18 +258,7 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-                    <span
-                      className={`text-[9px] px-1 py-0.2 rounded font-medium shrink-0 ${
-                        isDirect
-                          ? "bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300"
-                          : isActivity
-                          ? "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300"
-                          : "bg-orange-50 dark:bg-orange-950/50 text-orange-700 dark:text-orange-300"
-                      }`}
-                    >
-                      {isDirect ? "Direct" : isActivity ? "Companion" : "Trip"}
-                    </span>
+                  <div className="flex items-center text-[11px] text-slate-500 dark:text-slate-400 truncate">
                     <span className="truncate">
                       {senderDisplayName ? `${senderDisplayName}: ` : ""}
                       {snippet}

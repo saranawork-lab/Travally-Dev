@@ -212,11 +212,23 @@ function ChatsContent() {
                 const displayTitle = conv.otherUser?.displayName || conv.title;
                 const avatarUrl = conv.otherUser?.avatarUrl;
 
+                const cardBackground = isDirect
+                  ? "bg-white dark:bg-[#111815] border-slate-200/80 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-[#15201b]"
+                  : isActivity
+                  ? "bg-emerald-50/75 dark:bg-emerald-950/25 border-emerald-200/80 dark:border-emerald-900/50 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-800/70"
+                  : "bg-orange-50/75 dark:bg-orange-950/25 border-orange-200/80 dark:border-orange-900/50 hover:bg-orange-100/70 dark:hover:bg-orange-950/40 hover:border-orange-300 dark:hover:border-orange-800/70";
+
+                const titleHover = isDirect
+                  ? "group-hover:text-slate-900 dark:group-hover:text-white"
+                  : isActivity
+                  ? "group-hover:text-emerald-700 dark:group-hover:text-emerald-300"
+                  : "group-hover:text-orange-700 dark:group-hover:text-orange-300";
+
                 return (
                   <Link
                     key={conv.id}
                     href={`/chats/${conv.id}`}
-                    className="group flex items-center justify-between gap-2.5 px-3.5 py-3 rounded-2xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/60 hover:border-emerald-500/40 dark:hover:border-emerald-500/40 hover:bg-slate-50/80 dark:hover:bg-[#15201b] transition-all shadow-sm"
+                    className={`group flex items-center justify-between gap-2.5 px-3.5 py-3 rounded-2xl border transition-all shadow-xs ${cardBackground}`}
                   >
                     {/* Single Line: Icon + Title + Snippet */}
                     <div className="flex items-center gap-2.5 min-w-0 flex-1">
@@ -225,7 +237,7 @@ function ChatsContent() {
                           <img
                             src={avatarUrl}
                             alt={displayTitle}
-                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-emerald-900/60"
+                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
                           />
                         ) : (
                           <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
@@ -234,7 +246,7 @@ function ChatsContent() {
                         )
                       ) : (
                         <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white ${
+                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white shadow-xs ${
                             isActivity ? "bg-emerald-500" : "bg-orange-500"
                           }`}
                         >
@@ -244,25 +256,12 @@ function ChatsContent() {
 
                       <div className="flex items-center gap-1.5 min-w-0 flex-1 text-xs">
                         {/* Title */}
-                        <span className="font-semibold text-slate-800 dark:text-slate-100 truncate shrink-0 max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
+                        <span className={`font-semibold text-slate-800 dark:text-slate-100 truncate shrink-0 max-w-[170px] xs:max-w-[210px] sm:max-w-[280px] transition-colors ${titleHover}`}>
                           {displayTitle}
                         </span>
 
-                        {/* Pill Badge */}
-                        <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded font-medium shrink-0 text-white ${
-                            isDirect
-                              ? "bg-teal-600/90"
-                              : isActivity
-                              ? "bg-emerald-500"
-                              : "bg-orange-500"
-                          }`}
-                        >
-                          {isDirect ? "Direct" : isActivity ? "Companion" : "Trip"}
-                        </span>
-
                         {/* Divider & Snippet */}
-                        <span className="text-slate-400 dark:text-slate-500 truncate min-w-0">
+                        <span className="text-slate-500 dark:text-slate-400 truncate min-w-0">
                           • {senderDisplayName ? `${senderDisplayName}: ` : ""}{snippet}
                         </span>
                       </div>
