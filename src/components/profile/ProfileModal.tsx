@@ -44,6 +44,8 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
 
+  const [activeTab, setActiveTab] = useState<"about" | "passions">("about");
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -71,6 +73,28 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       isMounted = false;
     };
   }, [isOpen, user?.id]);
+
+  useEffect(() => {
+    const rawProfile = detailedUser?.profile || user?.profile;
+    const rawBio = rawProfile?.bio;
+    let count = 0;
+    if (rawProfile?.interests) {
+      if (Array.isArray(rawProfile.interests)) count += rawProfile.interests.length;
+      else if (typeof rawProfile.interests === "string") {
+        count += rawProfile.interests.split(",").filter(Boolean).length;
+      }
+    }
+    const rawConnPrefs: any = safeJsonParse(rawProfile?.connectionPreferences, {});
+    if (rawConnPrefs?.friendship) count++;
+    if (rawConnPrefs?.travel) count++;
+    if (Array.isArray(rawConnPrefs?.lifestyleTags)) count += rawConnPrefs.lifestyleTags.length;
+
+    if (!rawBio && count > 0) {
+      setActiveTab("passions");
+    } else {
+      setActiveTab("about");
+    }
+  }, [detailedUser, user?.profile]);
 
   if (!mounted || !isOpen || !user) return null;
 
@@ -100,6 +124,12 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
 
   const hasPreferences =
     connPrefs.friendship || connPrefs.travel || connPrefs.dating || lifestyleTags.length > 0;
+
+  const totalTags =
+    interests.length +
+    (connPrefs.friendship ? 1 : 0) +
+    (connPrefs.travel ? 1 : 0) +
+    lifestyleTags.length;
 
   const isSelf = currentUser?.id === user.id;
 
@@ -136,22 +166,6 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
       setStartingChat(false);
     }
   };
-
-  const [activeTab, setActiveTab] = useState<"about" | "passions">("about");
-
-  const totalTags =
-    interests.length +
-    (connPrefs.friendship ? 1 : 0) +
-    (connPrefs.travel ? 1 : 0) +
-    lifestyleTags.length;
-
-  useEffect(() => {
-    if (!bio && totalTags > 0) {
-      setActiveTab("passions");
-    } else {
-      setActiveTab("about");
-    }
-  }, [bio, totalTags]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
