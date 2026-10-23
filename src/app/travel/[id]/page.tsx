@@ -20,6 +20,7 @@ import { formatDate, safeJsonParse } from "@/lib/utils";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { CompatibilityBadge } from "@/components/travel/CompatibilityBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
+import { SwipeToJoinButton } from "@/components/common/SwipeToJoinButton";
 import { ReportModal } from "@/components/common/ReportModal";
 import { TRAVEL_STYLE_CONFIG } from "@/constants/categories";
 import { useLanguage } from "@/context/LanguageContext";
@@ -391,15 +392,18 @@ export default function TravelPlanDetailPage() {
                 Trip Full
               </button>
             ) : (
-              <button
-                onClick={() => {
-                  if (!currentUser) router.push("/login");
-                  else setIsModalOpen(true);
-                }}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-full text-xs font-bold text-orange-900 dark:text-orange-200 bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-950/70 hover:from-orange-200 hover:to-amber-100 border border-orange-300/80 dark:border-orange-800/60 shadow-xs transition hover:scale-105 active:scale-95"
-              >
-                {t.requestToJoin}
-              </button>
+              <div className="w-full sm:w-64">
+                <SwipeToJoinButton
+                  label={t.requestToJoin || "Slide to Join"}
+                  onJoin={() => {
+                    if (!currentUser) {
+                      router.push("/login");
+                      return;
+                    }
+                    setIsModalOpen(true);
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>

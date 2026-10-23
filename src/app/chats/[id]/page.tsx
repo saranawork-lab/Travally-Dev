@@ -873,7 +873,11 @@ export default function ActiveChatPage() {
     );
   }
 
-  const isActivity = conversation?.type === "ACTIVITY";
+  const isTravel =
+    conversation?.type === "TRAVEL" ||
+    Boolean(conversation?.travelPlanId) ||
+    Boolean(conversation?.travelPlan);
+  const isActivity = !isTravel;
 
   // Extract participants for Voice Call (both 1:1 and Group)
   const rawParticipants =
@@ -1296,12 +1300,18 @@ export default function ActiveChatPage() {
                         onTouchEnd={() => handleTouchEnd(msg, parsed)}
                         onContextMenu={(e) => handleContextMenu(msg, parsed, e)}
                         className={`relative group rounded-[20px] transition-all select-text cursor-pointer ${
-                          selectedMessage?.msg?.id === msg.id ? "ring-2 ring-orange-500/50 scale-[1.01]" : ""
+                          selectedMessage?.msg?.id === msg.id
+                            ? isTravel
+                              ? "ring-2 ring-orange-500/50 scale-[1.01]"
+                              : "ring-2 ring-emerald-500/50 scale-[1.01]"
+                            : ""
                         } ${
                         isEmojiOnly
                           ? "bg-transparent p-0.5 shadow-none"
                           : isMe
-                          ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/70 dark:to-amber-950/60 text-slate-800 dark:text-slate-100 border border-orange-200/90 dark:border-orange-800/60 shadow-xs rounded-br-[4px] px-3.5 pt-2 pb-1.5 min-w-[85px]"
+                          ? isTravel
+                            ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/70 dark:to-amber-950/60 text-slate-800 dark:text-slate-100 border border-orange-200/90 dark:border-orange-800/60 shadow-xs rounded-br-[4px] px-3.5 pt-2 pb-1.5 min-w-[85px]"
+                            : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/70 dark:to-teal-950/60 text-slate-800 dark:text-slate-100 border border-emerald-200/90 dark:border-emerald-800/60 shadow-xs rounded-br-[4px] px-3.5 pt-2 pb-1.5 min-w-[85px]"
                           : "bg-white dark:bg-[#16201b] text-slate-800 dark:text-slate-100 border border-slate-200/90 dark:border-emerald-950/80 shadow-xs rounded-bl-[4px] px-3.5 pt-2 pb-1.5 min-w-[75px]"
                       }`}
                     >
@@ -1330,7 +1340,9 @@ export default function ActiveChatPage() {
                           }}
                           className={`mb-1.5 p-2 rounded-xl text-xs cursor-pointer border-l-3 transition-colors ${
                             isMe
-                              ? "bg-white/80 dark:bg-black/20 border-orange-400 text-slate-800 dark:text-slate-200 hover:bg-white"
+                              ? isTravel
+                                ? "bg-white/80 dark:bg-black/20 border-orange-400 text-slate-800 dark:text-slate-200 hover:bg-white"
+                                : "bg-white/80 dark:bg-black/20 border-emerald-400 text-slate-800 dark:text-slate-200 hover:bg-white"
                               : "bg-slate-100 dark:bg-[#1d2b24] border-emerald-500 text-slate-700 dark:text-slate-300 hover:bg-slate-200/70"
                           }`}
                         >
@@ -1388,9 +1400,19 @@ export default function ActiveChatPage() {
                       {/* Media Container: Location Pin Card */}
                       {!parsed.isDeleted && parsed.mediaType === "LOCATION" && parsed.mediaData && (
                         <div
-                          className="mt-2 p-3 rounded-2xl border border-orange-200/90 dark:border-orange-800/60 bg-white/80 dark:bg-[#18241f] text-slate-800 dark:text-slate-200 shadow-xs flex items-start gap-3"
+                          className={`mt-2 p-3 rounded-2xl border ${
+                            isTravel
+                              ? "border-orange-200/90 dark:border-orange-800/60"
+                              : "border-emerald-200/90 dark:border-emerald-800/60"
+                          } bg-white/80 dark:bg-[#18241f] text-slate-800 dark:text-slate-200 shadow-xs flex items-start gap-3`}
                         >
-                          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 text-orange-700 border border-orange-300/80 flex items-center justify-center shrink-0 shadow-xs">
+                          <div
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 shadow-xs ${
+                              isTravel
+                                ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 text-orange-700 border border-orange-300/80"
+                                : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 text-emerald-700 border border-emerald-300/80"
+                            }`}
+                          >
                             <MapPin className="w-4 h-4" />
                           </div>
                           <div className="min-w-0 flex-1">
@@ -1404,7 +1426,11 @@ export default function ActiveChatPage() {
                               href={parsed.mediaData.mapLink}
                               target="_blank"
                               rel="noreferrer"
-                              className="text-[10px] font-bold text-orange-600 dark:text-orange-400 hover:underline mt-1 inline-block"
+                              className={`text-[10px] font-bold ${
+                                isTravel
+                                  ? "text-orange-600 dark:text-orange-400"
+                                  : "text-emerald-600 dark:text-emerald-400"
+                              } hover:underline mt-1 inline-block`}
                             >
                               Open in Maps →
                             </a>
@@ -1415,7 +1441,11 @@ export default function ActiveChatPage() {
                       {/* Media Container: Trip Card Snippet */}
                       {!parsed.isDeleted && parsed.mediaType === "TRIP" && parsed.mediaData && (
                         <div
-                          className="mt-2 p-3 rounded-2xl border border-orange-200/90 dark:border-orange-800/60 bg-white/80 dark:bg-[#18241f] text-slate-800 dark:text-slate-200 shadow-xs flex items-start gap-3"
+                          className={`mt-2 p-3 rounded-2xl border ${
+                            isTravel
+                              ? "border-orange-200/90 dark:border-orange-800/60"
+                              : "border-emerald-200/90 dark:border-emerald-800/60"
+                          } bg-white/80 dark:bg-[#18241f] text-slate-800 dark:text-slate-200 shadow-xs flex items-start gap-3`}
                         >
                           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 text-emerald-700 border border-emerald-300/80 flex items-center justify-center shrink-0 shadow-xs">
                             <Compass className="w-4 h-4" />
@@ -1438,7 +1468,11 @@ export default function ActiveChatPage() {
                       {!isEmojiOnly && (
                         <div
                           className={`flex items-center justify-end gap-1.5 mt-1 select-none ${
-                            isMe ? "text-orange-900/60 dark:text-orange-300/60" : "text-slate-400 dark:text-slate-500"
+                            isMe
+                              ? isTravel
+                                ? "text-orange-900/60 dark:text-orange-300/60"
+                                : "text-emerald-900/60 dark:text-emerald-300/60"
+                              : "text-slate-400 dark:text-slate-500"
                           }`}
                         >
                           <span
@@ -1511,7 +1545,9 @@ export default function ActiveChatPage() {
                               title={`Reacted by: ${reactors.join(", ")}`}
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold shadow-sm transition-all transform hover:scale-110 active:scale-95 ${
                                 hasReacted
-                                  ? "bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800"
+                                  ? isTravel
+                                    ? "bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800"
+                                    : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-700 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
                                   : "bg-white dark:bg-[#16201b] text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-emerald-950/60 hover:bg-slate-50"
                               }`}
                             >
@@ -1578,7 +1614,11 @@ export default function ActiveChatPage() {
         >
           <ChevronDown className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full bg-orange-500 text-white text-[10px] font-bold shadow-sm">
+            <span
+              className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full ${
+                isTravel ? "bg-orange-500" : "bg-emerald-500"
+              } text-white text-[10px] font-bold shadow-sm`}
+            >
               {unreadCount}
             </span>
           )}
@@ -1589,9 +1629,17 @@ export default function ActiveChatPage() {
       <footer className="relative z-20 px-3 sm:px-6 pb-3 pt-1 bg-transparent border-t-0 shadow-none">
         {/* Reply Quote Preview Banner */}
         {replyingTo && (
-          <div className="max-w-4xl mx-auto mb-2 px-3.5 py-2 rounded-2xl bg-white dark:bg-[#18241f] border-l-4 border-orange-500 border border-slate-200/80 dark:border-emerald-950/70 shadow-md flex items-center justify-between text-xs animate-slide-up">
+          <div
+            className={`max-w-4xl mx-auto mb-2 px-3.5 py-2 rounded-2xl bg-white dark:bg-[#18241f] border-l-4 ${
+              isTravel ? "border-orange-500" : "border-emerald-500"
+            } border border-slate-200/80 dark:border-emerald-950/70 shadow-md flex items-center justify-between text-xs animate-slide-up`}
+          >
             <div className="min-w-0 flex-1">
-              <span className="text-[11px] font-bold text-orange-600 dark:text-orange-400 block">
+              <span
+                className={`text-[11px] font-bold ${
+                  isTravel ? "text-orange-600 dark:text-orange-400" : "text-emerald-600 dark:text-emerald-400"
+                } block`}
+              >
                 Replying to {replyingTo.senderName}
               </span>
               <p className="text-slate-600 dark:text-slate-300 line-clamp-1 text-[11px]">
@@ -1637,7 +1685,9 @@ export default function ActiveChatPage() {
             }}
             className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-transform active:scale-95 ${
               isAttachmentOpen
-                ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 text-orange-700 dark:from-orange-950/80 dark:to-amber-900/60 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60 shadow-xs"
+                ? isTravel
+                  ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 text-orange-700 dark:from-orange-950/80 dark:to-amber-900/60 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60 shadow-xs"
+                  : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs"
                 : "bg-white dark:bg-[#18241f] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#203029] border border-slate-200/90 dark:border-emerald-950/80 shadow-xs"
             }`}
             title="Attach photo, location, or voice"
@@ -1646,7 +1696,13 @@ export default function ActiveChatPage() {
           </button>
 
           {/* Auto-expanding Input Box */}
-          <div className="flex-1 bg-white dark:bg-[#16201b] rounded-2xl border border-slate-200/90 dark:border-emerald-950/80 shadow-sm focus-within:ring-2 focus-within:ring-orange-500/30 focus-within:border-orange-500 transition-all flex items-end px-3 py-1.5 min-h-[46px]">
+          <div
+            className={`flex-1 bg-white dark:bg-[#16201b] rounded-2xl border border-slate-200/90 dark:border-emerald-950/80 shadow-sm focus-within:ring-2 ${
+              isTravel
+                ? "focus-within:ring-orange-500/30 focus-within:border-orange-500"
+                : "focus-within:ring-emerald-500/30 focus-within:border-emerald-500"
+            } transition-all flex items-end px-3 py-1.5 min-h-[46px]`}
+          >
             <textarea
               ref={textareaRef}
               value={inputMessage}
@@ -1670,7 +1726,9 @@ export default function ActiveChatPage() {
                 setIsEmojiPickerOpen(!isEmojiPickerOpen);
                 setIsAttachmentOpen(false);
               }}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-orange-500 transition-colors shrink-0"
+              className={`p-1.5 rounded-xl text-slate-400 ${
+                isTravel ? "hover:text-orange-500" : "hover:text-emerald-500"
+              } transition-colors shrink-0`}
               title="Emoji picker"
             >
               <Smile className="w-5 h-5" />
@@ -1683,7 +1741,11 @@ export default function ActiveChatPage() {
               type="button"
               onClick={() => handleSendMessage()}
               disabled={sending}
-              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 hover:from-orange-200 hover:to-amber-100 text-orange-700 dark:from-orange-950/80 dark:to-amber-900/60 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60 shadow-xs flex items-center justify-center shrink-0 transition-transform active:scale-95 disabled:opacity-50"
+              className={`w-11 h-11 rounded-2xl ${
+                isTravel
+                  ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 hover:from-orange-200 hover:to-amber-100 text-orange-700 dark:from-orange-950/80 dark:to-amber-900/60 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60"
+                  : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60"
+              } shadow-xs flex items-center justify-center shrink-0 transition-transform active:scale-95 disabled:opacity-50`}
               title="Send message"
             >
               <Send className="w-5 h-5 ml-0.5" />

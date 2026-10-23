@@ -45,6 +45,7 @@ import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 import type { TreasureItem } from "@/components/home/TreasureMap";
 import { ProfileModal } from "@/components/profile/ProfileModal";
+import { GrowInitiativeCard } from "@/components/home/GrowInitiativeCard";
 
 // Dynamically import TreasureMap to avoid SSR Leaflet window errors
 const TreasureMap = dynamic(
@@ -1620,81 +1621,19 @@ export default function HomeClient() {
                 {growList.map((item) => {
                   const hasJoined = currentUser ? item.joinedUserIds.includes(currentUser.id) : false;
                   return (
-                    <div
+                    <GrowInitiativeCard
                       key={item.id}
-                      className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-5 shadow-sm space-y-4 hover:border-emerald-500/40 transition-all flex flex-col justify-between"
-                    >
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                            {item.causeCategory.replace(/_/g, " ")}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedProfileUser({
-                                id: item.organizerId,
-                                email: "",
-                                profile: {
-                                  fullName: item.organizerName,
-                                  avatarUrl: item.organizerAvatar,
-                                },
-                              });
-                              setProfileModalShowChat(true); // Outside posts, message option is enabled!
-                              setIsProfileModalOpen(true);
-                            }}
-                            className="text-[11px] text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:underline transition font-medium cursor-pointer"
-                          >
-                            Organized by {item.organizerName}
-                          </button>
-                        </div>
-
-                        <h3 className="font-bold text-base text-slate-900 dark:text-white">
-                          {item.title}
-                        </h3>
-
-                        <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">
-                          {item.description}
-                        </p>
-
-                        <div className="flex items-center gap-4 text-xs text-slate-500 pt-1">
-                          <span className="flex items-center gap-1">
-                            <MapPin className="w-3.5 h-3.5 text-orange-500" />
-                            {item.locationName}
-                          </span>
-                          {item.date && (
-                            <span className="flex items-center gap-1">
-                              <Calendar className="w-3.5 h-3.5 text-emerald-500" />
-                              {new Date(item.date).toLocaleDateString()}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Volunteer Counter & Button */}
-                      <div className="pt-3 border-t border-slate-100 dark:border-emerald-950/60 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <Users className="w-4 h-4 text-emerald-600" />
-                          <span className="font-bold text-slate-900 dark:text-white">
-                            {item.volunteersCount}
-                          </span>
-                          <span>/ {item.volunteersNeeded} volunteers joined</span>
-                        </div>
-
-                        <button
-                          type="button"
-                          onClick={() => handleToggleJoinGrow(item.id)}
-                          disabled={joiningGrowId === item.id}
-                          className={`px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs ${
-                            hasJoined
-                              ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300"
-                              : "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white"
-                          }`}
-                        >
-                          {hasJoined ? "✓ Joined Volunteer" : "Volunteer / Join"}
-                        </button>
-                      </div>
-                    </div>
+                      item={item}
+                      currentUser={currentUser}
+                      hasJoined={hasJoined}
+                      isJoining={joiningGrowId === item.id}
+                      onToggleJoin={handleToggleJoinGrow}
+                      onOpenProfile={(user) => {
+                        setSelectedProfileUser(user);
+                        setProfileModalShowChat(true);
+                        setIsProfileModalOpen(true);
+                      }}
+                    />
                   );
                 })}
               </div>

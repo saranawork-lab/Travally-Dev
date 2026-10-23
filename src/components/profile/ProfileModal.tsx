@@ -6,12 +6,13 @@ import {
   X,
   MapPin,
   MessageSquare,
-  Compass,
-  ShieldCheck,
   Award,
   Loader2,
+  Sparkles,
+  Heart,
+  Plane,
+  Hash,
   Calendar,
-  Linkedin,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
@@ -43,8 +44,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const [detailedUser, setDetailedUser] = useState<any>(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [startingChat, setStartingChat] = useState(false);
-
-  const [activeTab, setActiveTab] = useState<"about" | "passions">("about");
+  const [animateIn, setAnimateIn] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -74,27 +74,16 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     };
   }, [isOpen, user?.id]);
 
+  // Entrance animation trigger
   useEffect(() => {
-    const rawProfile = detailedUser?.profile || user?.profile;
-    const rawBio = rawProfile?.bio;
-    let count = 0;
-    if (rawProfile?.interests) {
-      if (Array.isArray(rawProfile.interests)) count += rawProfile.interests.length;
-      else if (typeof rawProfile.interests === "string") {
-        count += rawProfile.interests.split(",").filter(Boolean).length;
-      }
-    }
-    const rawConnPrefs: any = safeJsonParse(rawProfile?.connectionPreferences, {});
-    if (rawConnPrefs?.friendship) count++;
-    if (rawConnPrefs?.travel) count++;
-    if (Array.isArray(rawConnPrefs?.lifestyleTags)) count += rawConnPrefs.lifestyleTags.length;
-
-    if (!rawBio && count > 0) {
-      setActiveTab("passions");
+    if (isOpen) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => setAnimateIn(true));
+      });
     } else {
-      setActiveTab("about");
+      setAnimateIn(false);
     }
-  }, [detailedUser, user?.profile]);
+  }, [isOpen]);
 
   if (!mounted || !isOpen || !user) return null;
 
@@ -125,11 +114,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
   const hasPreferences =
     connPrefs.friendship || connPrefs.travel || connPrefs.dating || lifestyleTags.length > 0;
 
-  const totalTags =
-    interests.length +
-    (connPrefs.friendship ? 1 : 0) +
-    (connPrefs.travel ? 1 : 0) +
-    lifestyleTags.length;
+  const hasVibes = interests.length > 0 || hasPreferences;
 
   const isSelf = currentUser?.id === user.id;
 
@@ -167,67 +152,72 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     }
   };
 
+  const firstName = displayName.split(" ")[0];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-950/70 dark:bg-black/85 backdrop-blur-md transition-opacity"
+        className={`absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300 ${
+          animateIn ? "opacity-100" : "opacity-0"
+        }`}
         onClick={onClose}
       />
 
-      {/* Modal Card - Strictly fitted to screen with ZERO vertical scroll */}
-      <div className="relative w-full max-w-[390px] flex flex-col bg-white dark:bg-[#0c1410] rounded-[32px] shadow-[0_25px_60px_-15px_rgba(0,0,0,0.5),0_0_30px_rgba(16,185,129,0.15)] border border-slate-200/90 dark:border-emerald-950/80 overflow-hidden animate-in fade-in zoom-in-95 duration-200 select-none">
-        {/* Close Button */}
-        <button
-          onClick={onClose}
-          className="absolute top-3 right-3 p-1.5 rounded-full bg-black/40 hover:bg-black/60 text-white/90 hover:text-white transition-all z-30 backdrop-blur-md cursor-pointer active:scale-90 shadow-sm"
-          title="Close profile"
-        >
-          <X className="w-4 h-4" />
-        </button>
+      {/* Popup Card */}
+      <div
+        className={`relative w-full max-w-[340px] transition-all duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          animateIn
+            ? "scale-100 opacity-100"
+            : "scale-90 opacity-0"
+        }`}
+      >
+        <div className="rounded-3xl overflow-hidden bg-white dark:bg-[#111816] shadow-[0_20px_60px_-12px_rgba(0,0,0,0.4)] border border-black/[0.05] dark:border-white/[0.06]">
 
-        {/* ── REALISTIC AURORA DEPTH BANNER ── */}
-        <div className="h-20 sm:h-22 relative overflow-hidden shrink-0 bg-[#041a14]">
-          {/* Base realistic mesh gradient */}
-          <div className="absolute inset-0 bg-gradient-to-br from-[#022c22] via-[#064e3b] via-[#0b5343] to-[#03241d]" />
+          {/* ═══ GRADIENT HERO ═══ */}
+          <div className="relative h-[140px] overflow-hidden">
+            {/* Gradient mesh */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500" />
+            <div className="absolute inset-0 bg-gradient-to-tl from-emerald-700/60 via-transparent to-teal-300/30" />
+            {/* Soft orbs */}
+            <div className="absolute top-[-30%] left-[-15%] w-[55%] h-[70%] rounded-full bg-emerald-300/25 blur-3xl animate-[floatSoft_6s_ease-in-out_infinite]" />
+            <div className="absolute bottom-[-25%] right-[-10%] w-[50%] h-[60%] rounded-full bg-cyan-300/20 blur-3xl animate-[floatSoft_8s_ease-in-out_infinite_reverse]" />
 
-          {/* Luminous spatial aurora orbs */}
-          <div className="absolute -top-10 -left-6 w-44 h-44 rounded-full bg-emerald-400/30 blur-3xl pointer-events-none" />
-          <div className="absolute -bottom-8 -right-6 w-48 h-48 rounded-full bg-gradient-to-br from-amber-400/20 via-teal-300/25 to-cyan-400/20 blur-2xl pointer-events-none" />
-          <div className="absolute top-0 right-1/4 w-32 h-32 rounded-full bg-teal-400/20 blur-2xl pointer-events-none" />
+            {/* Close */}
+            <button
+              onClick={onClose}
+              className="absolute top-3 right-3 z-30 w-7 h-7 rounded-full bg-black/20 backdrop-blur-md flex items-center justify-center text-white/80 hover:bg-black/30 hover:text-white transition-all active:scale-90 cursor-pointer"
+              title="Close"
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+            </button>
 
-          {/* Micro ambient grid accent */}
-          <div className="absolute inset-0 bg-[radial-gradient(#34d399_1px,transparent_1px)] [background-size:14px_14px] opacity-20 pointer-events-none" />
+            {/* Bottom fade */}
+            <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white dark:from-[#111816] to-transparent pointer-events-none" />
+          </div>
 
-          {/* Realistic depth vignette */}
-          <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/40 to-transparent pointer-events-none" />
-        </div>
-
-        {/* ── PROFILE BODY (COMPACT & FITTED WITH ZERO SCROLLING) ── */}
-        <div className="px-4.5 sm:px-5 pb-4.5 pt-0 relative z-10 flex flex-col">
-          {/* Avatar with Multi-Layered Realistic Glowing Aura & Iridescent Rim */}
-          <div className="relative flex justify-center -mt-10 mb-2">
-            {/* Luminous Glow Halo directly behind the photo */}
-            <div className="absolute -inset-3.5 rounded-full bg-gradient-to-tr from-emerald-500/50 via-teal-400/40 via-cyan-400/30 to-amber-300/25 blur-xl animate-pulse pointer-events-none" />
-            <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-emerald-400 to-teal-300 blur-md opacity-60 pointer-events-none" />
-
-            {/* Iridescent Gradient Floating Rim */}
-            <div className="relative p-[2.5px] rounded-full bg-gradient-to-tr from-emerald-400 via-teal-200 via-cyan-300 to-amber-300 shadow-[0_10px_25px_-5px_rgba(16,185,129,0.5),0_0_20px_rgba(20,184,166,0.3)] ring-2 ring-white/30 dark:ring-black/50">
-              <div className="bg-white dark:bg-[#0c1410] p-0.5 rounded-full">
-                <AvatarBadge
-                  src={avatarUrl}
-                  name={displayName}
-                  size="lg"
-                  showCrown={false}
-                />
+          {/* ═══ AVATAR (overlapping hero) ═══ */}
+          <div className="relative flex justify-center -mt-[52px] z-10">
+            <div className="relative">
+              <div className="absolute -inset-3 rounded-full bg-white/25 blur-xl animate-pulse pointer-events-none" />
+              <div className="p-[3px] rounded-full bg-gradient-to-br from-white/90 via-white/50 to-white/90 shadow-lg">
+                <div className="bg-white dark:bg-[#111816] p-[2px] rounded-full">
+                  <AvatarBadge
+                    src={avatarUrl}
+                    name={displayName}
+                    size="lg"
+                    showCrown={false}
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Name & Verification */}
-          <div className="text-center">
-            <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white flex items-center justify-center gap-1.5 leading-tight">
-              <span className="truncate max-w-[240px]">{displayName}</span>
+          {/* ═══ INFO ═══ */}
+          <div className="px-5 pt-2.5 pb-5 text-center">
+            {/* Name */}
+            <h2 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center justify-center gap-1.5 leading-tight">
+              <span className="truncate max-w-[200px]">{displayName}</span>
               <VerificationBadge
                 status={profile.verificationStatus || "UNVERIFIED"}
                 isVerified={profile.isVerified}
@@ -235,157 +225,108 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
               />
             </h2>
 
-            {/* Badges Pill Row */}
-            <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1 text-[10.5px]">
-              {membershipNumber && (
-                <span className="px-2 py-0.2 rounded-full font-mono font-bold bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/60">
-                  {membershipNumber}
+            {/* Meta row */}
+            <div className="flex items-center justify-center gap-1.5 mt-1 text-[11px] text-slate-500 dark:text-slate-400 flex-wrap">
+              {city && (
+                <span className="flex items-center gap-0.5">
+                  <MapPin className="w-3 h-3 text-emerald-500" />
+                  {city}
                 </span>
               )}
-              {city && (
-                <span className="px-2 py-0.2 rounded-full font-medium bg-slate-100 dark:bg-[#15201a] text-slate-600 dark:text-slate-300 border border-slate-200/80 dark:border-emerald-950/60 flex items-center gap-1">
-                  <MapPin className="w-2.5 h-2.5 text-emerald-500" />
-                  <span>{city}</span>
-                </span>
+              {membershipNumber && (
+                <>
+                  {city && <span className="text-slate-300 dark:text-slate-600">·</span>}
+                  <span className="font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    {membershipNumber}
+                  </span>
+                </>
               )}
               {joinRank && (
-                <span className="px-2 py-0.2 rounded-full font-bold bg-amber-50 dark:bg-amber-950/50 text-amber-700 dark:text-amber-300 border border-amber-200/80 dark:border-amber-800/60 flex items-center gap-0.5">
-                  <Award className="w-2.5 h-2.5 text-amber-500" />
-                  <span>#{joinRank}</span>
-                </span>
+                <>
+                  <span className="text-slate-300 dark:text-slate-600">·</span>
+                  <span className="flex items-center gap-0.5 font-bold text-amber-600 dark:text-amber-400">
+                    <Award className="w-3 h-3" />#{joinRank}
+                  </span>
+                </>
+              )}
+              {memberSince && (
+                <>
+                  <span className="text-slate-300 dark:text-slate-600">·</span>
+                  <span className="flex items-center gap-0.5">
+                    <Calendar className="w-3 h-3" />
+                    {new Date(memberSince).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
+                  </span>
+                </>
               )}
             </div>
 
-            {/* Message Action Button */}
-            {showChatOption && !isSelf && (
-              <div className="mt-2.5 flex justify-center">
-                <button
-                  type="button"
-                  onClick={handleStartMessage}
-                  disabled={startingChat}
-                  className="inline-flex items-center gap-1.5 px-5 py-1.5 rounded-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-extrabold text-xs shadow-md shadow-emerald-500/25 active:scale-95 transition-all cursor-pointer"
-                >
-                  {startingChat ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  ) : (
-                    <MessageSquare className="w-3.5 h-3.5" />
-                  )}
-                  <span>Message {displayName.split(" ")[0]}</span>
-                </button>
+            {/* ── Bio ── */}
+            {bio && (
+              <p className="mt-3 text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed text-left line-clamp-3">
+                {bio}
+              </p>
+            )}
+
+            {/* ── Interests & Vibes (all tags inline) ── */}
+            {hasVibes && (
+              <div className={`flex flex-wrap gap-1.5 justify-center ${bio ? "mt-3" : "mt-4"}`}>
+                {interests.map((interest: string, i: number) => (
+                  <span
+                    key={`i-${i}`}
+                    className="px-2 py-[3px] rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40"
+                  >
+                    {interest}
+                  </span>
+                ))}
+                {connPrefs.friendship && (
+                  <span className="px-2 py-[3px] rounded-full text-[11px] font-semibold bg-violet-50 dark:bg-violet-950/40 text-violet-600 dark:text-violet-300 border border-violet-200/50 dark:border-violet-800/40 flex items-center gap-0.5">
+                    <Heart className="w-2.5 h-2.5" />
+                    Friendship
+                  </span>
+                )}
+                {connPrefs.travel && (
+                  <span className="px-2 py-[3px] rounded-full text-[11px] font-semibold bg-sky-50 dark:bg-sky-950/40 text-sky-600 dark:text-sky-300 border border-sky-200/50 dark:border-sky-800/40 flex items-center gap-0.5">
+                    <Plane className="w-2.5 h-2.5" />
+                    Explorer
+                  </span>
+                )}
+                {lifestyleTags.map((tag, idx) => (
+                  <span
+                    key={`lt-${idx}`}
+                    className="px-2 py-[3px] rounded-full text-[11px] font-semibold bg-slate-100 dark:bg-white/[0.05] text-slate-500 dark:text-slate-300 border border-slate-200/50 dark:border-white/[0.08] flex items-center gap-0.5"
+                  >
+                    <Hash className="w-2.5 h-2.5 opacity-40" />
+                    {tag}
+                  </span>
+                ))}
               </div>
             )}
-          </div>
 
-          {/* ── UNIQUE SEGMENTED DECK SWITCHER (ZERO-SCROLL GUARANTEE) ── */}
-          <div className="mt-3 mb-2 flex items-center p-1 rounded-2xl bg-slate-100/90 dark:bg-[#121c17] border border-slate-200/70 dark:border-emerald-950/60 shadow-inner">
-            <button
-              type="button"
-              onClick={() => setActiveTab("about")}
-              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === "about"
-                  ? "bg-white dark:bg-[#192721] text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-emerald-800/40"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-            >
-              <span>About</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab("passions")}
-              className={`flex-1 py-1.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-                activeTab === "passions"
-                  ? "bg-white dark:bg-[#192721] text-emerald-700 dark:text-emerald-400 shadow-xs border border-slate-200/60 dark:border-emerald-800/40"
-                  : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
-              }`}
-            >
-              <span>Interests & Vibes</span>
-              {totalTags > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                  {totalTags}
+            {/* ── Hosted Activity ── */}
+            {detailedUser?.activitiesOrganized?.length > 0 && (
+              <div className="mt-3 flex items-center gap-1.5 text-[11px] bg-emerald-50/80 dark:bg-emerald-950/30 rounded-xl px-3 py-1.5 border border-emerald-100 dark:border-emerald-900/40 text-left">
+                <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
+                <span className="text-emerald-700 dark:text-emerald-300 truncate">
+                  <strong>Hosted:</strong> {detailedUser.activitiesOrganized[0].title}
                 </span>
-              )}
-            </button>
-          </div>
-
-          {/* ── DYNAMIC FITTED CARD DISPLAY ── */}
-          <div className="relative min-h-[120px] max-h-[140px] flex flex-col justify-center">
-            {activeTab === "about" ? (
-              <div className="rounded-2xl bg-slate-50 dark:bg-[#131e18] p-3 border border-slate-200/70 dark:border-emerald-950/60 text-left h-full flex flex-col justify-between overflow-hidden shadow-xs">
-                <div>
-                  <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-400 mb-1">
-                    <span>Explorer Bio</span>
-                    {memberSince && (
-                      <span className="font-medium text-slate-400 normal-case">
-                        Joined {new Date(memberSince).toLocaleDateString("en-US", { month: "short", year: "numeric" })}
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-200 leading-relaxed line-clamp-4">
-                    {bio || "This explorer hasn't added a bio yet."}
-                  </p>
-                </div>
-
-                {detailedUser?.activitiesOrganized?.length > 0 && (
-                  <div className="pt-1.5 border-t border-slate-200/50 dark:border-emerald-950/40 flex items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400">
-                    <span className="font-bold text-emerald-600 dark:text-emerald-400">Hosted:</span>
-                    <span className="truncate">{detailedUser.activitiesOrganized[0].title}</span>
-                  </div>
-                )}
               </div>
-            ) : (
-              <div className="rounded-2xl bg-slate-50 dark:bg-[#131e18] p-3 border border-slate-200/70 dark:border-emerald-950/60 text-left h-full flex flex-col justify-start gap-2 overflow-y-auto scrollbar-none shadow-xs">
-                {interests.length > 0 && (
-                  <div>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                      Interests & Hobbies
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {interests.map((interest: string, i: number) => (
-                        <span
-                          key={i}
-                          className="px-2 py-0.5 rounded-full text-[10.5px] font-semibold bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/50"
-                        >
-                          {interest}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
+            )}
 
-                {hasPreferences && (
-                  <div className={interests.length > 0 ? "pt-1.5 border-t border-slate-200/50 dark:border-emerald-950/40" : ""}>
-                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 block mb-1">
-                      Travel & Lifestyle Vibes
-                    </span>
-                    <div className="flex flex-wrap gap-1">
-                      {connPrefs.friendship && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 dark:bg-teal-950/50 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800">
-                          🤝 Friendship
-                        </span>
-                      )}
-                      {connPrefs.travel && (
-                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800">
-                          ✈️ Explorer
-                        </span>
-                      )}
-                      {lifestyleTags.map((tag, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
+            {/* ── Message CTA ── */}
+            {showChatOption && !isSelf && (
+              <button
+                type="button"
+                onClick={handleStartMessage}
+                disabled={startingChat}
+                className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-bold text-[13px] shadow-lg shadow-emerald-500/20 active:scale-[0.98] transition-all cursor-pointer disabled:opacity-60"
+              >
+                {startingChat ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <MessageSquare className="w-4 h-4" />
                 )}
-
-                {interests.length === 0 && !hasPreferences && (
-                  <div className="flex items-center justify-center h-full text-xs text-slate-400">
-                    No interests or lifestyle vibes added yet.
-                  </div>
-                )}
-              </div>
+                Message {firstName}
+              </button>
             )}
           </div>
         </div>
@@ -393,4 +334,3 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
     </div>
   );
 };
-

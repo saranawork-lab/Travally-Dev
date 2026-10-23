@@ -22,6 +22,7 @@ import {
 import { formatDate, isPastCutoff } from "@/lib/utils";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
+import { SwipeToJoinButton } from "@/components/common/SwipeToJoinButton";
 import { ReportModal } from "@/components/common/ReportModal";
 import { EditActivityModal } from "@/components/activities/EditActivityModal";
 import { useLanguage } from "@/context/LanguageContext";
@@ -441,18 +442,19 @@ export default function ActivityDetailPage() {
                 Requests Closed
               </button>
             ) : (
-              <button
-                onClick={() => {
-                  if (!currentUser) {
-                    router.push("/login");
-                  } else {
+              <div className="w-full sm:w-64">
+                <SwipeToJoinButton
+                  theme="emerald"
+                  label={t.requestToJoin || "Slide to Join"}
+                  onJoin={() => {
+                    if (!currentUser) {
+                      router.push("/login");
+                      return;
+                    }
                     setIsModalOpen(true);
-                  }
-                }}
-                className="w-full sm:w-auto px-6 py-2.5 rounded-full text-xs font-bold text-emerald-900 dark:text-emerald-200 bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-950/70 hover:from-emerald-200 hover:to-teal-100 border border-emerald-300/80 dark:border-emerald-800/60 shadow-xs transition hover:scale-105 active:scale-95"
-              >
-                {t.requestToJoin}
-              </button>
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
