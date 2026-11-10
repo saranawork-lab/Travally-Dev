@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
 import { getDb } from "@/lib/mongo";
+import dbPrisma from "@/lib/db";
 import { ObjectId } from "mongodb";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,20 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
+
+    // Fetch active users to enforce cascade visibility (no orphaned posts from deleted accounts)
+    const prismaUsers = await dbPrisma.user.findMany({
+      select: {
+        id: true,
+        profile: { select: { displayName: true, avatarUrl: true, isVerified: true } },
+      },
+    });
+    const validUserMap = new Map(prismaUsers.map((u) => [u.id, u]));
+    const validUserIds = new Set(prismaUsers.map((u) => u.id));
+
+    if (userId && !validUserIds.has(userId)) {
+      return NextResponse.json({ success: true, posts: [], instants: [] });
+    }
 
     const db = await getDb();
     const query: any = {};
@@ -24,20 +39,56 @@ export async function GET(req: Request) {
       .limit(50)
       .toArray();
 
-    // Map _id to id and provide field aliases for both Home and Account Instants
-    const formatted = posts.map((p) => ({
-      ...p,
-      id: p._id.toString(),
-      _id: undefined,
-      caption: p.content,
-      location: p.locationName,
-      userId: p.authorId,
-      userName: p.authorName,
-      userAvatar: p.authorAvatar,
-      likes: p.likedBy || [],
-      commentsCount: p.commentsCount !== undefined ? p.commentsCount : (Array.isArray(p.comments) ? p.comments.length : 0),
-      comments: Array.isArray(p.comments) ? p.comments : [],
-    }));
+    // Auto-detect and purge any posts whose author accounts no longer exist
+    const orphanPostIds: ObjectId[] = [];
+    const validPosts = posts.filter((p) => {
+      const aId = p.authorId?.toString();
+      if (!aId || !validUserIds.has(aId)) {
+        orphanPostIds.push(p._id);
+        return false;
+      }
+      return true;
+    });
+
+    if (orphanPostIds.length > 0) {
+      db.collection("community_posts")
+        .deleteMany({ _id: { $in: orphanPostIds } })
+        .catch((err) => console.warn("Background orphan post cleanup warning:", err));
+    }
+
+    // Map _id to id, filter deleted commenters, and dynamically sync user names/avatars
+    const formatted = validPosts.map((p) => {
+      const authorId = p.authorId?.toString();
+      const userRecord = validUserMap.get(authorId);
+      const displayName = userRecord?.profile?.displayName || p.authorName;
+      const avatarUrl = userRecord?.profile?.avatarUrl || p.authorAvatar;
+      const isVerified = userRecord?.profile?.isVerified ?? p.isVerified;
+
+      // Filter out comments from accounts that are deleted
+      const rawComments = Array.isArray(p.comments) ? p.comments : [];
+      const validComments = rawComments.filter((c: any) => {
+        const cAuthorId = (c.authorId || c.userId)?.toString();
+        return cAuthorId && validUserIds.has(cAuthorId);
+      });
+
+      // Filter out likes/reposts from accounts that are deleted
+      const validLikedBy = (p.likedBy || []).filter((uid: any) => validUserIds.has(uid?.toString()));
+
+      return {
+        ...p,
+        id: p._id.toString(),
+        _id: undefined,
+        caption: p.content,
+        location: p.locationName,
+        userId: authorId,
+        userName: displayName,
+        userAvatar: avatarUrl,
+        isVerified,
+        likes: validLikedBy,
+        commentsCount: validComments.length,
+        comments: validComments,
+      };
+    });
 
     return NextResponse.json({ success: true, posts: formatted, instants: formatted });
   } catch (error) {

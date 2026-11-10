@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
 import db from "@/lib/db";
+import { getDb } from "@/lib/mongo";
 
 export async function POST() {
   try {
+    const mongo = await getDb();
+
+    // Clean MongoDB collections
+    const [posts, verifs, grow, treasures, clues] = await Promise.all([
+      mongo.collection("community_posts").deleteMany({}),
+      mongo.collection("identity_verifications").deleteMany({}),
+      mongo.collection("grow_initiatives").deleteMany({}),
+      mongo.collection("treasure_drops").deleteMany({}),
+      mongo.collection("find_me_clues").deleteMany({}),
+    ]);
+
+    // Clean Prisma collections
     const notifications = await db.notification.deleteMany({});
     const messages = await db.message.deleteMany({});
     const conversations = await db.conversation.deleteMany({});
@@ -17,10 +30,15 @@ export async function POST() {
 
     return NextResponse.json({
       success: true,
-      message: "MongoDB user data cleaned successfully",
+      message: "All user data and associated collections cleaned successfully",
       stats: {
         users: users.count,
         profiles: profiles.count,
+        communityPosts: posts.deletedCount,
+        identityVerifications: verifs.deletedCount,
+        growInitiatives: grow.deletedCount,
+        treasureDrops: treasures.deletedCount,
+        findMeClues: clues.deletedCount,
         activities: activities.count,
         travelPlans: travelPlans.count,
         joinRequests: joinRequests.count,
@@ -31,9 +49,9 @@ export async function POST() {
       },
     });
   } catch (error: any) {
-    console.error("Failed to clean MongoDB user data:", error);
+    console.error("Failed to clean user data:", error);
     return NextResponse.json(
-      { success: false, error: error.message || "Failed to clean MongoDB users data" },
+      { success: false, error: error.message || "Failed to clean users data" },
       { status: 500 }
     );
   }

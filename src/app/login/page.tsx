@@ -33,6 +33,14 @@ const DEMO_ACCOUNTS = [
     city: "New Delhi",
     avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&auto=format&fit=crop&q=80",
   },
+  {
+    id: "kabir",
+    name: "Kabir Mehta",
+    email: "kabir@travally.app",
+    role: "Goa · Coastal & Surf",
+    city: "Goa",
+    avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80",
+  },
 ];
 
 function LoginForm() {
@@ -124,7 +132,7 @@ function LoginForm() {
             </span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             {DEMO_ACCOUNTS.map((acc) => {
               const isSelected = loggingInDemo === acc.id;
               return (

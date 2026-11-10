@@ -47,8 +47,8 @@ async function main() {
     interests: JSON.stringify(["Architecture", "Street Photography", "Sahyadri Treks", "Bandra Cafes", "Cycling"]),
     preferredActivities: JSON.stringify(["City Exploration", "Walking", "Food and Cafes", "Events"]),
     connectionPreferences: JSON.stringify({ friendship: true, activityPartner: true, dating: false, travel: true }),
-    isVerified: true,
-    verificationStatus: "VERIFIED",
+    isVerified: false,
+    verificationStatus: "UNVERIFIED",
     linkedinUrl: "https://linkedin.com/in/rohan-verma-travally",
     smoker: "NO",
     drinker: "YES",
@@ -79,7 +79,30 @@ async function main() {
     lifestyleVisible: true,
   };
 
-  const demoAccounts = [ananyaData, rohanData, priyaData];
+  // 4. KABIR MEHTA (Goa)
+  const kabirData = {
+    email: "kabir@travally.app",
+    displayName: "Kabir Mehta",
+    avatarUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&auto=format&fit=crop&q=80",
+    bio: "Coastal trail runner, sunset surfer, and indie music enthusiast. Exploring hidden beaches in South Goa, old Portuguese quarters, and flea markets. Looking for travel buddies for coastal road trips!",
+    birthDate: new Date("1996-08-19"),
+    age: 28,
+    gender: "MALE",
+    city: "Goa",
+    country: "India",
+    interests: JSON.stringify(["Surfing", "Coastal Trails", "Live Music", "Indie Cafes", "Road Trips"]),
+    preferredActivities: JSON.stringify(["City Exploration", "Food and Cafes", "Walking", "Events"]),
+    connectionPreferences: JSON.stringify({ friendship: true, activityPartner: true, dating: false, travel: true }),
+    isVerified: false,
+    verificationStatus: "UNVERIFIED",
+    linkedinUrl: "https://linkedin.com/in/kabir-mehta-travally",
+    smoker: "NO",
+    drinker: "OCCASIONALLY",
+    diet: "NON_VEGETARIAN",
+    lifestyleVisible: true,
+  };
+
+  const demoAccounts = [ananyaData, rohanData, priyaData, kabirData];
   const createdUsers = [];
 
   for (const account of demoAccounts) {
