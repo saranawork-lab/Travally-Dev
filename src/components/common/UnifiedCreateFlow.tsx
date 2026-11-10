@@ -22,7 +22,11 @@ import {
   Bike,
   Loader2,
   Info,
+  ShieldCheck,
+  Lock,
 } from "lucide-react";
+import { useIdentityVerification } from "@/hooks/useIdentityVerification";
+import { IdentityVerificationModal } from "@/components/verification/IdentityVerificationModal";
 import {
   IconMovies,
   IconFood,
@@ -259,6 +263,18 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
   const { currentUser } = useAuth();
   const searchParams = useSearchParams();
 
+  const {
+    isVerified,
+    verificationStatus,
+    isModalOpen,
+    intendedMode,
+    isMockMode,
+    verificationMode,
+    openVerification,
+    closeVerification,
+    handleVerificationSuccess,
+  } = useIdentityVerification();
+
   const [mode, setMode] = useState<CreateMode>(initialMode);
   const [step, setStep] = useState<1 | 2>(1);
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
@@ -273,6 +289,13 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
       setStep(1);
     }
   }, [searchParams]);
+
+  // Prompt verification if unverified user navigates directly to a protected creation category
+  useEffect(() => {
+    if (mode !== "instant" && !isVerified && verificationStatus !== "VERIFIED") {
+      openVerification(mode);
+    }
+  }, [mode, isVerified, verificationStatus, openVerification]);
 
   // 1. INSTANT FORM STATE
   const [instantData, setInstantData] = useState({
@@ -390,6 +413,27 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
     }
   };
 
+  const handleCategoryClick = (targetMode: CreateMode) => {
+    // 1. Post is completely exempt
+    if (targetMode === "instant") {
+      handleModeChange("instant");
+      return;
+    }
+
+    // 2. Protected categories require one-time account verification
+    if (isVerified && verificationStatus === "VERIFIED") {
+      handleModeChange(targetMode);
+    } else {
+      openVerification(targetMode);
+    }
+  };
+
+  const onVerificationModalSuccess = (unlockedMode?: CreateMode) => {
+    handleVerificationSuccess();
+    const nextMode = unlockedMode || intendedMode || (mode === "instant" ? "companion" : mode);
+    handleModeChange(nextMode);
+  };
+
   // Instant image upload handler
   const handleInstantImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     setInstantImageError(null);
@@ -490,7 +534,12 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create activity");
+      if (!res.ok) {
+        if (res.status === 403 || data.code === "IDENTITY_VERIFICATION_REQUIRED") {
+          openVerification("companion");
+        }
+        throw new Error(data.error || "Failed to create activity");
+      }
       window.location.href = `/activities/${data.activity.id}`;
     } catch (err: any) {
       setError(err.message || "Failed to create activity");
@@ -517,7 +566,12 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create travel plan");
+      if (!res.ok) {
+        if (res.status === 403 || data.code === "IDENTITY_VERIFICATION_REQUIRED") {
+          openVerification("travel");
+        }
+        throw new Error(data.error || "Failed to create travel plan");
+      }
       window.location.href = `/travel/${data.travelPlan.id}`;
     } catch (err: any) {
       setError(err.message || "Failed to create travel plan");
@@ -548,7 +602,12 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to create Grow initiative");
+      if (!res.ok) {
+        if (res.status === 403 || data.code === "IDENTITY_VERIFICATION_REQUIRED") {
+          openVerification("grow");
+        }
+        throw new Error(data.error || "Failed to create Grow initiative");
+      }
       window.location.href = "/?tab=grow";
     } catch (err: any) {
       setError(err.message || "Failed to create Grow initiative");
@@ -579,7 +638,12 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to hide treasure");
+      if (!res.ok) {
+        if (res.status === 403 || data.code === "IDENTITY_VERIFICATION_REQUIRED") {
+          openVerification("treasure");
+        }
+        throw new Error(data.error || "Failed to hide treasure");
+      }
       window.location.href = "/?tab=treasure";
     } catch (err: any) {
       setError(err.message || "Failed to hide treasure");
@@ -607,7 +671,12 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to drop clue");
+      if (!res.ok) {
+        if (res.status === 403 || data.code === "IDENTITY_VERIFICATION_REQUIRED") {
+          openVerification("find-me");
+        }
+        throw new Error(data.error || "Failed to drop clue");
+      }
       window.location.href = "/?tab=find-me";
     } catch (err: any) {
       setError(err.message || "Failed to drop clue");
@@ -641,7 +710,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
             {/* 1. Post */}
             <button
               type="button"
-              onClick={() => handleModeChange("instant")}
+              onClick={() => handleCategoryClick("instant")}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "instant"
                   ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 border-orange-500 font-black scale-[1.02]"
@@ -673,9 +742,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
             <button
               type="button"
               onClick={() => {
-                if (mode !== "companion" && mode !== "travel") {
-                  handleModeChange("companion");
-                }
+                handleCategoryClick(mode === "travel" ? "travel" : "companion");
               }}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "companion" || mode === "travel"
@@ -707,7 +774,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
             {/* 3. Humanity & Nature Grow */}
             <button
               type="button"
-              onClick={() => handleModeChange("grow")}
+              onClick={() => handleCategoryClick("grow")}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "grow"
                   ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-teal-600/20 border-teal-600 font-black scale-[1.02]"
@@ -739,9 +806,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
             <button
               type="button"
               onClick={() => {
-                if (mode !== "treasure" && mode !== "find-me") {
-                  handleModeChange("treasure");
-                }
+                handleCategoryClick(mode === "find-me" ? "find-me" : "treasure");
               }}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "treasure" || mode === "find-me"
@@ -777,7 +842,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               <div className="inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 gap-1 shadow-inner">
                 <button
                   type="button"
-                  onClick={() => handleModeChange("companion")}
+                  onClick={() => handleCategoryClick("companion")}
                   className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     mode === "companion"
                       ? "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm"
@@ -789,7 +854,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleModeChange("travel")}
+                  onClick={() => handleCategoryClick("travel")}
                   className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     mode === "travel"
                       ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
@@ -809,7 +874,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               <div className="inline-flex p-1 rounded-2xl bg-slate-100 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 gap-1 shadow-inner">
                 <button
                   type="button"
-                  onClick={() => handleModeChange("treasure")}
+                  onClick={() => handleCategoryClick("treasure")}
                   className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     mode === "treasure"
                       ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm"
@@ -821,7 +886,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 </button>
                 <button
                   type="button"
-                  onClick={() => handleModeChange("find-me")}
+                  onClick={() => handleCategoryClick("find-me")}
                   className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                     mode === "find-me"
                       ? "bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm"
@@ -991,6 +1056,49 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
           </form>
         )}
 
+        {/* ══════════════════════════════════════════════════════════════════════════════════ */}
+        {/* ONE-TIME IDENTITY VERIFICATION GATE (FOR PROTECTED CREATION CATEGORIES) */}
+        {/* ══════════════════════════════════════════════════════════════════════════════════ */}
+        {mode !== "instant" && !(isVerified && verificationStatus === "VERIFIED") ? (
+          <div className="text-center py-10 px-4 sm:px-6 rounded-3xl border border-dashed border-emerald-500/40 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-4 animate-fade-in my-2">
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-500/30 shadow-xs">
+              <ShieldCheck className="w-8 h-8" />
+            </div>
+            <div className="max-w-md mx-auto space-y-1.5">
+              <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60">
+                <Lock className="w-3 h-3 text-emerald-500" />
+                <span>One-Time Identity Verification Required</span>
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 dark:text-white">
+                Verify your identity to host {activeTypeConfig.label}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                To keep Travally genuine, trusted, and safe for all community members, organizing activities, expeditions, causes, or clue drops requires a quick ID document and live selfie check.
+              </p>
+              <div className="p-2.5 rounded-xl bg-white/70 dark:bg-black/30 border border-emerald-200/60 dark:border-emerald-900/40 text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                ✓ One-time verification permanently unlocks Activity & Travel, Nature & Humanity, and Treasure & Clue together.
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
+              <button
+                type="button"
+                onClick={() => handleModeChange("instant")}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-emerald-950 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto cursor-pointer"
+              >
+                Create a Free Post Instead
+              </button>
+              <button
+                type="button"
+                onClick={() => openVerification(mode)}
+                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all cursor-pointer w-full sm:w-auto flex items-center justify-center gap-2"
+              >
+                <ShieldCheck className="w-4 h-4" />
+                <span>Complete One-Time Verification</span>
+              </button>
+            </div>
+          </div>
+        ) : (
+          <>
         {/* ══════════════════════════════════════════════════════════════════════════════════ */}
         {/* MODE 2: COMPANION ACTIVITY (STEP 1: CATEGORIES, STEP 2: DETAILS) */}
         {/* ══════════════════════════════════════════════════════════════════════════════════ */}
@@ -1862,6 +1970,17 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
             </div>
           </form>
         )}
+          </>
+        )}
+
+        <IdentityVerificationModal
+          isOpen={isModalOpen}
+          onClose={closeVerification}
+          onSuccess={onVerificationModalSuccess}
+          intendedMode={intendedMode || mode}
+          isMockMode={isMockMode}
+          verificationMode={verificationMode}
+        />
       </div>
     </div>
   );

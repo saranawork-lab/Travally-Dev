@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/verificationGuard";
 import { getDb } from "@/lib/mongo";
 import { ObjectId } from "mongodb";
 
@@ -36,10 +37,11 @@ export async function GET(req: Request) {
 // POST /api/home/treasure
 export async function POST(req: Request) {
   try {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      return NextResponse.json({ error: "Authentication required to hide a treasure" }, { status: 401 });
+    const auth = await requireVerifiedUser();
+    if (auth.errorResponse) {
+      return auth.errorResponse;
     }
+    const currentUser = auth.user;
 
     const body = await req.json();
     const { title, hintRiddle, latitude, longitude, locationName, difficulty, clueImageUrl } = body;

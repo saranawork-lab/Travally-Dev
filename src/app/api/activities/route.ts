@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { requireVerifiedUser } from "@/lib/verificationGuard";
 
 export const dynamic = "force-dynamic";
 
@@ -230,10 +231,11 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const user = await getCurrentUser();
-    if (!user) {
-      return NextResponse.json({ error: "Authentication required to create an activity" }, { status: 401 });
+    const auth = await requireVerifiedUser();
+    if (auth.errorResponse) {
+      return auth.errorResponse;
     }
+    const user = auth.user;
 
     const body = await req.json();
     const {
