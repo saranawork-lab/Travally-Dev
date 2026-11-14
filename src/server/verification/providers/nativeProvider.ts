@@ -11,6 +11,7 @@ import {
   WebhookProcessingResult,
 } from "../types";
 import { getDb } from "@/lib/mongo";
+import db from "@/lib/db";
 
 export class NativeVerificationProvider implements IIdentityVerificationProvider {
   public readonly providerName = "native";
@@ -21,6 +22,24 @@ export class NativeVerificationProvider implements IIdentityVerificationProvider
     const sessionId = `sess_${crypto.randomUUID().replace(/-/g, "")}`;
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 60 * 60 * 1000); // 1 hour TTL
+
+    // Fetch user details for faster lookup in admin queue
+    let userName = params.displayName || "";
+    let userEmail = params.email || "";
+    let userAvatar: string | null = null;
+    try {
+      const profile = await db.profile.findUnique({
+        where: { userId: params.userId },
+        select: { displayName: true, avatarUrl: true, user: { select: { email: true } } },
+      });
+      if (profile) {
+        userName = profile.displayName || userName;
+        userAvatar = profile.avatarUrl || null;
+        userEmail = profile.user?.email || userEmail;
+      }
+    } catch (e) {
+      // Non-blocking
+    }
 
     return {
       sessionId,
@@ -72,12 +91,11 @@ export class NativeVerificationProvider implements IIdentityVerificationProvider
         { sessionId: params.sessionId },
         {
           $set: {
-            "tempStorage.cardImage": {
-              mimeType: mime,
-              sizeBytes: params.documentFile.sizeBytes,
-              fileName: params.documentFile.fileName || "id_card.jpg",
-            },
+            documentImage: params.documentFile.base64Data,
             documentType: params.documentType,
+            documentFileName: params.documentFile.fileName || "id_card.jpg",
+            documentMime: mime,
+            status: "SELFIE_PENDING",
             mode: "live",
             updatedAt: new Date().toISOString(),
           },
@@ -85,7 +103,7 @@ export class NativeVerificationProvider implements IIdentityVerificationProvider
         { upsert: true }
       );
     } catch (mongoErr) {
-      console.warn("[NativeVerificationProvider] Mongo update warning:", mongoErr);
+      console.warn("[NativeVerificationProvider] Mongo update warning on document:", mongoErr);
     }
 
     return {
@@ -132,17 +150,40 @@ export class NativeVerificationProvider implements IIdentityVerificationProvider
       };
     }
 
+    const now = new Date();
+
+    // Store selfie image and set status to REVIEW_PENDING for manual super-admin verification
+    try {
+      const mongo = await getDb();
+      await mongo.collection("identity_verifications").updateOne(
+        { sessionId: params.sessionId },
+        {
+          $set: {
+            selfieImage: params.selfieFile.base64Data,
+            selfieMime,
+            status: "REVIEW_PENDING",
+            submittedAt: now.toISOString(),
+            updatedAt: now.toISOString(),
+          },
+        },
+        { upsert: true }
+      );
+    } catch (mongoErr) {
+      console.warn("[NativeVerificationProvider] Mongo update warning on selfie:", mongoErr);
+    }
+
+    // Return REVIEW_PENDING so customer enters manual review queue (pending super admin approval)
     return {
       success: true,
-      status: "VERIFIED",
-      confidenceScore: 0.99,
+      status: "REVIEW_PENDING",
+      confidenceScore: 0.95,
       livenessPassed: true,
       faceMatchPassed: true,
-      verdict: "approved",
+      verdict: "pending_review",
       warnings: [],
       details: {
-        engine: "native",
-        verifiedAt: new Date().toISOString(),
+        engine: "manual_admin_review",
+        submittedAt: now.toISOString(),
       },
     };
   }

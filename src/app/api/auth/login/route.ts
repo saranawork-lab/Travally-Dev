@@ -199,20 +199,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid email, phone number, or password" }, { status: 401 });
     }
 
-    // Demo password tolerance for seeded testing accounts
+    // Security: Super admin accounts MUST strictly match the bcrypt hashed password
+    const isSuperAdminAccount =
+      user.role === "SUPER_ADMIN" || user.email === "superadmin@travally.app";
+
+    // Demo password tolerance for seeded testing accounts (excluding super admin)
     const isDemoAccount =
-      Boolean(DEFAULT_DEMO_USERS[targetPrimary]) ||
-      user.email.endsWith("@travally.app");
+      !isSuperAdminAccount &&
+      (Boolean(DEFAULT_DEMO_USERS[targetPrimary]) || user.email.endsWith("@travally.app"));
 
     const isDemoPassword =
-      isDemoAccount ||
-      password === "Password123!" ||
-      password === "password123!" ||
-      password === "Password123" ||
-      password === "password";
+      !isSuperAdminAccount &&
+      (isDemoAccount ||
+        password === "Password123!" ||
+        password === "password123!" ||
+        password === "Password123" ||
+        password === "password");
 
     let isValid = false;
-    if (isDemoPassword) {
+    if (isSuperAdminAccount) {
+      isValid = await bcrypt.compare(password, user.passwordHash);
+    } else if (isDemoPassword) {
       isValid = true;
     } else {
       isValid = await bcrypt.compare(password, user.passwordHash);

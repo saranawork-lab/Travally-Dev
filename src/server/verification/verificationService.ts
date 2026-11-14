@@ -273,22 +273,34 @@ export class VerificationService {
       invalidateSessionCache(params.userId);
 
       try {
+        const userProfile = await db.profile.findUnique({
+          where: { userId: params.userId },
+          select: { displayName: true, avatarUrl: true, user: { select: { email: true } } },
+        });
+
         await mongo.collection("identity_verifications").updateOne(
           { sessionId: params.sessionId },
           {
             $set: {
               status: "REVIEW_PENDING",
+              userId: params.userId,
+              userName: userProfile?.displayName || "Explorer",
+              userEmail: userProfile?.user?.email || "",
+              userAvatar: userProfile?.avatarUrl || null,
               mode: resolvedMode,
               reasonCode: result.errorCode || "MANUAL_REVIEW_REQUIRED",
               warnings: result.warnings || [],
               verdict: result.verdict || "review",
               details: result.details || null,
+              submittedAt: now.toISOString(),
               updatedAt: now.toISOString(),
             },
           },
           { upsert: true }
         );
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to update identity_verifications in mongo:", e);
+      }
     } else {
       // REJECTED
       await db.profile.update({

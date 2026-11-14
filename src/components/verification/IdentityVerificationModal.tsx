@@ -1157,11 +1157,13 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
         setTimeout(() => {
           onSuccess(intendedMode || undefined);
         }, 1800);
-      } else if (selfieData.status === "REVIEW_PENDING") {
+      } else if (selfieData.status === "REVIEW_PENDING" || selfieData.status === "PENDING") {
         setStep("result");
         setVerificationResult({
           status: "REVIEW_PENDING",
-          errorMessage: selfieData.message || "Your verification is undergoing standard review by our safety team.",
+          errorMessage:
+            selfieData.message ||
+            "Your verification documents have been received and are pending manual review by the administrator.",
         });
       } else {
         setStep("result");
