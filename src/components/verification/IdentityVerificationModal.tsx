@@ -476,8 +476,12 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
           rawName
         );
 
-      // A digital screenshot has screenshot naming OR high runs of identical flat UI pixels without camera capture or card name
-      const isScreenshot = isScreenshotName || (!isCameraCapture && !isCardName && flatRatio > 0.28);
+      // A digital screenshot that is NOT an ID card has high digital flat UI color runs (solid panels/dialogs > 35%) and no face found,
+      // or extreme solid flat screen ratio (> 55%). Authentic ID cards (even if saved as a screenshot image) have micro-textures and gradients (flatRatio < 0.20).
+      const isNonIdScreenshot =
+        !isCameraCapture &&
+        !faceFound &&
+        ((isScreenshotName && flatRatio > 0.35) || flatRatio > 0.55);
 
       // Check for explicit selfie file naming
       const isExplicitSelfieFile =
@@ -485,14 +489,14 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
         !isCardName;
 
       // A personal selfie is when a human face dominates > 48% of the entire picture
-      const isSelfie = !isScreenshot && ((faceFound && detectedFaceRatio > 0.48) || isExplicitSelfieFile);
+      const isSelfie = !isNonIdScreenshot && ((faceFound && detectedFaceRatio > 0.48) || isExplicitSelfieFile);
 
       let portraitCheck: { passed: boolean; label: string; detail: string };
-      if (isScreenshot) {
+      if (isNonIdScreenshot) {
         portraitCheck = {
           passed: false,
           label: "Document",
-          detail: "Screenshot detected. Upload physical ID card.",
+          detail: "No ID card detected. Upload physical ID card.",
         };
       } else if (isSelfie) {
         portraitCheck = {
@@ -511,7 +515,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
       // 2. CHECKPOINT: Text Clarity & Blur Detection
       const isSharp = sharpnessScore >= 6 && w >= 200 && h >= 120;
       let clarityCheck: { passed: boolean; label: string; detail: string };
-      if (isScreenshot) {
+      if (isNonIdScreenshot) {
         clarityCheck = {
           passed: true,
           label: "Clarity",
@@ -533,7 +537,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
 
       // 3. CHECKPOINT: Lighting & Glare
       let lightingCheck: { passed: boolean; label: string; detail: string };
-      if (isScreenshot) {
+      if (isNonIdScreenshot) {
         lightingCheck = {
           passed: true,
           label: "Lighting",
@@ -562,7 +566,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
       // 4. CHECKPOINT: Card Framing & Aspect Ratio
       const isHorizontal = ratio >= 0.88;
       let framingCheck: { passed: boolean; label: string; detail: string };
-      if (isScreenshot) {
+      if (isNonIdScreenshot) {
         framingCheck = {
           passed: true,
           label: "Framing",
