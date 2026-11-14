@@ -22,6 +22,8 @@ import {
   MapPin,
   ExternalLink,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   Filter,
 } from "lucide-react";
 
@@ -91,6 +93,29 @@ export default function SuperAdminVerificationsPage() {
 
   // Lightbox Zoom Modal
   const [previewImage, setPreviewImage] = useState<{ url: string; title: string; subtitle?: string } | null>(null);
+
+  // Dropdown state per verification card
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
+
+  const toggleExpand = (sessionId: string) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(sessionId)) {
+        next.delete(sessionId);
+      } else {
+        next.add(sessionId);
+      }
+      return next;
+    });
+  };
+
+  const handleExpandAll = () => {
+    setExpandedIds(new Set(filteredVerifications.map((v) => v.sessionId)));
+  };
+
+  const handleCollapseAll = () => {
+    setExpandedIds(new Set());
+  };
 
   // Success Toast
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -415,16 +440,38 @@ export default function SuperAdminVerificationsPage() {
             </button>
           </div>
 
-          {/* Search Input */}
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              placeholder="Search by customer name, email..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/40"
-            />
+          {/* Right Controls: Expand / Collapse All & Search Input */}
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={handleExpandAll}
+                className="px-2.5 py-2 rounded-xl text-[11px] font-bold bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-xs whitespace-nowrap cursor-pointer active:scale-95"
+                title="Expand all verification photo dropdowns"
+              >
+                Expand All
+              </button>
+              <button
+                type="button"
+                onClick={handleCollapseAll}
+                className="px-2.5 py-2 rounded-xl text-[11px] font-bold bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition shadow-xs whitespace-nowrap cursor-pointer active:scale-95"
+                title="Collapse all verification photo dropdowns"
+              >
+                Collapse All
+              </button>
+            </div>
+
+            {/* Search Input */}
+            <div className="relative flex-1 sm:w-64">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search customer, email..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-4 py-2 rounded-xl text-xs bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-emerald-500/40"
+              />
+            </div>
           </div>
         </div>
 
@@ -456,6 +503,7 @@ export default function SuperAdminVerificationsPage() {
               const isVerified = item.status === "VERIFIED";
               const isRejected = item.status === "REJECTED";
               const isProcessing = processingId === item.sessionId;
+              const isExpanded = expandedIds.has(item.sessionId);
 
               return (
                 <div
@@ -546,138 +594,238 @@ export default function SuperAdminVerificationsPage() {
                     </div>
                   </div>
 
-                  {/* Card Body: Side-by-Side Images (ID Document & Live Camera Selfie) */}
-                  <div className="p-4 sm:p-5">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                      {/* 1. Government ID Document */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                          <span className="flex items-center gap-1.5">
-                            <FileText className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>1. Official {docTitle}</span>
-                          </span>
-                          {item.documentImage && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setPreviewImage({
-                                  url: item.documentImage!,
-                                  title: `${item.user.displayName}'s ${docTitle}`,
-                                  subtitle: `Submitted by ${item.user.email}`,
-                                })
-                              }
-                              className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
-                            >
-                              <ZoomIn className="w-3.5 h-3.5" />
-                              <span>Enlarge Image</span>
-                            </button>
-                          )}
+                  {/* Dropdown Toggle Bar with Short/Medium Icons */}
+                  <div className="border-b border-slate-100 dark:border-emerald-950/60 bg-slate-50/70 dark:bg-[#141f19]/60">
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(item.sessionId)}
+                      className={`w-full px-4 sm:px-5 py-3 flex items-center justify-between gap-3 text-left transition-colors cursor-pointer group ${
+                        isExpanded
+                          ? "bg-emerald-50/50 dark:bg-emerald-950/20"
+                          : "hover:bg-slate-100/80 dark:hover:bg-[#18261e]"
+                      }`}
+                      aria-expanded={isExpanded}
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        {/* Two Short/Medium Preview Icons */}
+                        <div className="flex items-center gap-2 shrink-0">
+                          {/* 1. ID Document Thumbnail */}
+                          <div className="relative group/doc">
+                            <div className="w-13 h-9 rounded-xl overflow-hidden bg-slate-900 border-2 border-slate-200 dark:border-emerald-900/80 shadow-xs flex items-center justify-center">
+                              {item.documentImage ? (
+                                <img
+                                  src={item.documentImage}
+                                  alt={docTitle}
+                                  className="w-full h-full object-cover group-hover/doc:scale-110 transition-transform"
+                                />
+                              ) : (
+                                <FileText className="w-4 h-4 text-slate-500" />
+                              )}
+                            </div>
+                            <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-md text-[8px] font-black uppercase tracking-tight bg-emerald-600 text-white shadow-xs">
+                              ID
+                            </span>
+                          </div>
+
+                          {/* 2. Live Selfie Thumbnail */}
+                          <div className="relative group/selfie">
+                            <div className="w-9 h-9 rounded-xl overflow-hidden bg-slate-900 border-2 border-slate-200 dark:border-emerald-900/80 shadow-xs flex items-center justify-center">
+                              {item.selfieImage ? (
+                                <img
+                                  src={item.selfieImage}
+                                  alt="Live Selfie"
+                                  className="w-full h-full object-cover group-hover/selfie:scale-110 transition-transform"
+                                />
+                              ) : (
+                                <User className="w-4 h-4 text-slate-500" />
+                              )}
+                            </div>
+                            <span className="absolute -bottom-1 -right-1 px-1.5 py-0.2 rounded-md text-[8px] font-black uppercase tracking-tight bg-teal-600 text-white shadow-xs">
+                              Face
+                            </span>
+                          </div>
                         </div>
 
+                        {/* Dropdown description */}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+                              {isExpanded ? "Inspection Documents & Live Selfie" : "Click Dropdown to View Images"}
+                            </span>
+                            <span className="px-2 py-0.5 rounded-full text-[9.5px] font-bold bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300/60 dark:border-emerald-800/60">
+                              2 Photos
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                            {isExpanded
+                              ? "Click to collapse images"
+                              : `Preview ${docTitle} and live selfie comparison side-by-side`}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Dropdown Chevron Trigger */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hidden sm:inline">
+                          {isExpanded ? "Collapse" : "Open Dropdown"}
+                        </span>
                         <div
-                          onClick={() => {
-                            if (item.documentImage) {
-                              setPreviewImage({
-                                url: item.documentImage,
-                                title: `${item.user.displayName}'s ${docTitle}`,
-                                subtitle: `Submitted by ${item.user.email}`,
-                              });
-                            }
-                          }}
-                          className={`relative aspect-[1.58/1] rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-200 dark:border-emerald-950 flex items-center justify-center group ${
-                            item.documentImage ? "cursor-pointer hover:border-emerald-500 transition-colors" : ""
+                          className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform duration-200 shadow-xs ${
+                            isExpanded
+                              ? "bg-emerald-200 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rotate-180"
+                              : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 group-hover:border-emerald-500 group-hover:text-emerald-600"
                           }`}
                         >
-                          {item.documentImage ? (
-                            <>
-                              <img
-                                src={item.documentImage}
-                                alt="Submitted Document"
-                                className="w-full h-full object-contain"
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-2 text-xs font-bold backdrop-blur-xs">
-                                <ZoomIn className="w-4 h-4" />
-                                <span>Click to inspect details</span>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="text-center p-4 text-slate-500 text-xs">
-                              <AlertCircle className="w-6 h-6 mx-auto mb-1 text-slate-600" />
-                              <span>No document image recorded</span>
-                            </div>
-                          )}
+                          <ChevronDown className="w-4 h-4 stroke-[2.5]" />
                         </div>
                       </div>
-
-                      {/* 2. Live Camera Selfie */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                          <span className="flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-emerald-500" />
-                            <span>2. Live Camera Selfie</span>
-                          </span>
-                          {item.selfieImage && (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                setPreviewImage({
-                                  url: item.selfieImage!,
-                                  title: `${item.user.displayName}'s Live Selfie`,
-                                  subtitle: `Face comparison against ${docTitle}`,
-                                })
-                              }
-                              className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
-                            >
-                              <ZoomIn className="w-3.5 h-3.5" />
-                              <span>Enlarge Selfie</span>
-                            </button>
-                          )}
-                        </div>
-
-                        <div
-                          onClick={() => {
-                            if (item.selfieImage) {
-                              setPreviewImage({
-                                url: item.selfieImage,
-                                title: `${item.user.displayName}'s Live Selfie`,
-                                subtitle: `Face comparison against ${docTitle}`,
-                              });
-                            }
-                          }}
-                          className={`relative aspect-[1.58/1] rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-200 dark:border-emerald-950 flex items-center justify-center group ${
-                            item.selfieImage ? "cursor-pointer hover:border-emerald-500 transition-colors" : ""
-                          }`}
-                        >
-                          {item.selfieImage ? (
-                            <>
-                              <img
-                                src={item.selfieImage}
-                                alt="Live Selfie"
-                                className="w-full h-full object-contain"
-                              />
-                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-2 text-xs font-bold backdrop-blur-xs">
-                                <ZoomIn className="w-4 h-4" />
-                                <span>Click to compare facial match</span>
-                              </div>
-                            </>
-                          ) : (
-                            <div className="text-center p-4 text-slate-500 text-xs">
-                              <AlertCircle className="w-6 h-6 mx-auto mb-1 text-slate-600" />
-                              <span>No live selfie recorded</span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Rejection Note (if previously rejected) */}
-                    {isRejected && item.rejectionReason && (
-                      <div className="mt-4 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-300 space-y-1">
-                        <p className="font-bold">Rejection Reason Provided:</p>
-                        <p className="text-[11px]">{item.rejectionReason}</p>
-                      </div>
-                    )}
+                    </button>
                   </div>
+
+                  {/* Dropdown Expanded View: Side-by-Side Images (ID Document & Live Camera Selfie) */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.22, ease: "easeInOut" }}
+                        className="overflow-hidden"
+                      >
+                        <div className="p-4 sm:p-5 bg-white dark:bg-[#111815]">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                            {/* 1. Government ID Document */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                                <span className="flex items-center gap-1.5">
+                                  <FileText className="w-3.5 h-3.5 text-emerald-500" />
+                                  <span>1. Official {docTitle}</span>
+                                </span>
+                                {item.documentImage && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setPreviewImage({
+                                        url: item.documentImage!,
+                                        title: `${item.user.displayName}'s ${docTitle}`,
+                                        subtitle: `Submitted by ${item.user.email}`,
+                                      })
+                                    }
+                                    className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                                  >
+                                    <ZoomIn className="w-3.5 h-3.5" />
+                                    <span>Enlarge Image</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              <div
+                                onClick={() => {
+                                  if (item.documentImage) {
+                                    setPreviewImage({
+                                      url: item.documentImage,
+                                      title: `${item.user.displayName}'s ${docTitle}`,
+                                      subtitle: `Submitted by ${item.user.email}`,
+                                    });
+                                  }
+                                }}
+                                className={`relative aspect-[1.58/1] rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-200 dark:border-emerald-950 flex items-center justify-center group ${
+                                  item.documentImage ? "cursor-pointer hover:border-emerald-500 transition-colors" : ""
+                                }`}
+                              >
+                                {item.documentImage ? (
+                                  <>
+                                    <img
+                                      src={item.documentImage}
+                                      alt="Submitted Document"
+                                      className="w-full h-full object-contain"
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-2 text-xs font-bold backdrop-blur-xs">
+                                      <ZoomIn className="w-4 h-4" />
+                                      <span>Click to inspect details</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-center p-4 text-slate-500 text-xs">
+                                    <AlertCircle className="w-6 h-6 mx-auto mb-1 text-slate-600" />
+                                    <span>No document image recorded</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+
+                            {/* 2. Live Camera Selfie */}
+                            <div className="space-y-2">
+                              <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                                <span className="flex items-center gap-1.5">
+                                  <User className="w-3.5 h-3.5 text-emerald-500" />
+                                  <span>2. Live Camera Selfie</span>
+                                </span>
+                                {item.selfieImage && (
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setPreviewImage({
+                                        url: item.selfieImage!,
+                                        title: `${item.user.displayName}'s Live Selfie`,
+                                        subtitle: `Face comparison against ${docTitle}`,
+                                      })
+                                    }
+                                    className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold cursor-pointer"
+                                  >
+                                    <ZoomIn className="w-3.5 h-3.5" />
+                                    <span>Enlarge Selfie</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              <div
+                                onClick={() => {
+                                  if (item.selfieImage) {
+                                    setPreviewImage({
+                                      url: item.selfieImage,
+                                      title: `${item.user.displayName}'s Live Selfie`,
+                                      subtitle: `Face comparison against ${docTitle}`,
+                                    });
+                                  }
+                                }}
+                                className={`relative aspect-[1.58/1] rounded-2xl overflow-hidden bg-slate-950 border-2 border-slate-200 dark:border-emerald-950 flex items-center justify-center group ${
+                                  item.selfieImage ? "cursor-pointer hover:border-emerald-500 transition-colors" : ""
+                                }`}
+                              >
+                                {item.selfieImage ? (
+                                  <>
+                                    <img
+                                      src={item.selfieImage}
+                                      alt="Live Selfie"
+                                      className="w-full h-full object-contain"
+                                    />
+                                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white gap-2 text-xs font-bold backdrop-blur-xs">
+                                      <ZoomIn className="w-4 h-4" />
+                                      <span>Click to compare facial match</span>
+                                    </div>
+                                  </>
+                                ) : (
+                                  <div className="text-center p-4 text-slate-500 text-xs">
+                                    <AlertCircle className="w-6 h-6 mx-auto mb-1 text-slate-600" />
+                                    <span>No live selfie recorded</span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Rejection Note (if previously rejected) */}
+                          {isRejected && item.rejectionReason && (
+                            <div className="mt-4 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/60 text-xs text-rose-800 dark:text-rose-300 space-y-1">
+                              <p className="font-bold">Rejection Reason Provided:</p>
+                              <p className="text-[11px]">{item.rejectionReason}</p>
+                            </div>
+                          )}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
 
                   {/* Card Footer: Action Controls */}
                   <div className="p-4 sm:p-5 border-t border-slate-100 dark:border-emerald-950/60 bg-slate-50/70 dark:bg-[#141f19]/60 flex flex-wrap items-center justify-between gap-3">
