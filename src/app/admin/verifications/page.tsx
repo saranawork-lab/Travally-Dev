@@ -315,28 +315,19 @@ export default function SuperAdminVerificationsPage() {
   return (
     <div className="min-h-screen bg-slate-50/60 dark:bg-[#0c120f] py-6 sm:py-10 px-3 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
-        {/* Top Navigation & Breadcrumbs */}
-        <div className="flex items-center justify-between">
-          <Link
-            href="/admin"
-            className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span>Platform Admin</span>
-          </Link>
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-purple-500/10 via-emerald-500/10 to-teal-500/10 border border-purple-500/30 text-purple-700 dark:text-purple-300">
-            <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-            <span>SUPER ADMIN PORTAL</span>
-          </div>
-        </div>
-
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-slate-200 dark:border-emerald-950/60 pb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-              <span>Customer Verification Queue</span>
-            </h1>
-            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            <div className="flex flex-wrap items-center gap-2.5 sm:gap-3">
+              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                Customer Verification Queue
+              </h1>
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-gradient-to-r from-purple-500/15 via-emerald-500/10 to-teal-500/15 border border-purple-500/30 text-purple-700 dark:text-purple-300">
+                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                <span>SUPER ADMIN PORTAL</span>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-2xl leading-relaxed">
               Manually review submitted government ID documents and live camera selfies. Click the green tick mark to
               authoritatively verify customer accounts in the database.
             </p>
