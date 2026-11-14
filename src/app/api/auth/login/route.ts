@@ -107,6 +107,23 @@ const DEFAULT_DEMO_USERS: Record<string, any> = {
       verificationStatus: "VERIFIED",
     },
   },
+  "superadmin@travally.app": {
+    id: "6af7ee50884d26ffb50643e4",
+    email: "superadmin@travally.app",
+    role: "SUPER_ADMIN",
+    profile: {
+      displayName: "Super Administrator",
+      avatarUrl: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&auto=format&fit=crop&q=80",
+      bio: "Master administrator for Travally India ID verifications and manual safety approval.",
+      city: "Bengaluru",
+      country: "India",
+      interests: "[]",
+      preferredActivities: "[]",
+      connectionPreferences: "{}",
+      isVerified: true,
+      verificationStatus: "VERIFIED",
+    },
+  },
 };
 
 export async function POST(req: NextRequest) {
@@ -133,6 +150,7 @@ export async function POST(req: NextRequest) {
       "admin@travally.app": ["admin@travally.app", "admin", "safety", "safety@travally.app"],
       "kabir@travally.app": ["kabir@travally.app", "kabir"],
       "sneha@travally.app": ["sneha@travally.app", "sneha"],
+      "superadmin@travally.app": ["superadmin@travally.app", "superadmin", "super_admin", "super-admin"],
     };
 
     let targetPrimary = normalized;
@@ -173,7 +191,10 @@ export async function POST(req: NextRequest) {
     // If demo user is missing in MongoDB for any reason, auto-create it with full Indian profile
     if (!user && DEFAULT_DEMO_USERS[targetPrimary]) {
       const demoData = DEFAULT_DEMO_USERS[targetPrimary];
-      const defaultHash = await bcrypt.hash("Password123!", 10);
+      const defaultHash =
+        demoData.role === "SUPER_ADMIN"
+          ? await bcrypt.hash("Xk9#mP$2vL@8wQ!5zR&7tY*3jN", 10)
+          : await bcrypt.hash("Password123!", 10);
       try {
         user = await db.user.create({
           data: {
@@ -203,6 +224,10 @@ export async function POST(req: NextRequest) {
     const isSuperAdminAccount =
       user.role === "SUPER_ADMIN" || user.email === "superadmin@travally.app";
 
+    // Clean and sanitize incoming password to prevent trailing whitespace / unicode glitches
+    const rawPassword = typeof password === "string" ? password : "";
+    const cleanPassword = rawPassword.replace(/^[\s\u200B\uFEFF"']+|[\s\u200B\uFEFF"']+$/g, "");
+
     // Demo password tolerance for seeded testing accounts (excluding super admin)
     const isDemoAccount =
       !isSuperAdminAccount &&
@@ -211,18 +236,23 @@ export async function POST(req: NextRequest) {
     const isDemoPassword =
       !isSuperAdminAccount &&
       (isDemoAccount ||
-        password === "Password123!" ||
-        password === "password123!" ||
-        password === "Password123" ||
-        password === "password");
+        cleanPassword === "Password123!" ||
+        cleanPassword === "password123!" ||
+        cleanPassword === "Password123" ||
+        cleanPassword === "password");
 
     let isValid = false;
     if (isSuperAdminAccount) {
-      isValid = await bcrypt.compare(password, user.passwordHash);
+      isValid =
+        (await bcrypt.compare(cleanPassword, user.passwordHash)) ||
+        (await bcrypt.compare(rawPassword, user.passwordHash)) ||
+        (await bcrypt.compare(rawPassword.trim(), user.passwordHash));
     } else if (isDemoPassword) {
       isValid = true;
     } else {
-      isValid = await bcrypt.compare(password, user.passwordHash);
+      isValid =
+        (await bcrypt.compare(cleanPassword, user.passwordHash)) ||
+        (await bcrypt.compare(rawPassword, user.passwordHash));
     }
 
     if (!isValid) {
@@ -237,6 +267,13 @@ export async function POST(req: NextRequest) {
       sessionToken,
     });
 
+    const redirectUrl =
+      user.role === "SUPER_ADMIN"
+        ? "/admin/verifications"
+        : user.role === "ADMIN"
+        ? "/admin"
+        : "/discover";
+
     const response = NextResponse.json({
       success: true,
       user: {
@@ -248,7 +285,7 @@ export async function POST(req: NextRequest) {
         isVerified: user.profile?.isVerified,
         verificationStatus: user.profile?.verificationStatus,
       },
-      redirectUrl: user.role === "ADMIN" ? "/admin" : "/discover",
+      redirectUrl,
     });
 
     response.cookies.set({

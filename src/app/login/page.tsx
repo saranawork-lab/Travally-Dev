@@ -4,7 +4,7 @@ import React, { useState, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Logo } from "@/components/common/Logo";
-import { Mail, ArrowRight, Loader2, KeyRound, CheckCircle2 } from "lucide-react";
+import { Mail, ArrowRight, Loader2, KeyRound, CheckCircle2, ShieldCheck } from "lucide-react";
 import { SocialAuthButtons } from "@/components/auth/SocialAuthButtons";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 
@@ -70,11 +70,14 @@ function LoginForm() {
     setError(null);
     setSuccessNotice(null);
 
+    const cleanEmail = (loginEmail || "").trim();
+    const cleanPass = (loginPass || "").trim();
+
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: loginEmail, password: loginPass }),
+        body: JSON.stringify({ email: cleanEmail, password: cleanPass }),
       });
 
       const data = await res.json();
@@ -83,7 +86,13 @@ function LoginForm() {
       }
 
       // Hard redirect to ensure browser reloads session cookies cleanly
-      const targetUrl = data?.redirectUrl || (data?.user?.role === "ADMIN" ? "/admin" : "/discover");
+      const targetUrl =
+        data?.redirectUrl ||
+        (data?.user?.role === "SUPER_ADMIN"
+          ? "/admin/verifications"
+          : data?.user?.role === "ADMIN"
+          ? "/admin"
+          : "/discover");
       window.location.href = targetUrl;
     } catch (err: any) {
       setError(err.message || "Failed to log in");
@@ -96,6 +105,14 @@ function LoginForm() {
     setPassword("Password123!");
     setLoggingInDemo(acc.id);
     await performLogin(acc.email, "Password123!");
+    setLoggingInDemo(null);
+  };
+
+  const handleSuperAdminLogin = async () => {
+    setEmail("superadmin@travally.app");
+    setPassword("Xk9#mP$2vL@8wQ!5zR&7tY*3jN");
+    setLoggingInDemo("superadmin");
+    await performLogin("superadmin@travally.app", "Xk9#mP$2vL@8wQ!5zR&7tY*3jN");
     setLoggingInDemo(null);
   };
 
@@ -172,6 +189,38 @@ function LoginForm() {
           <p className="text-[10px] text-center text-slate-400">
             Password: <span className="font-mono text-slate-600 dark:text-slate-300 font-semibold">Password123!</span>
           </p>
+
+          {/* Super Admin Quick Access */}
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleSuperAdminLogin}
+              disabled={loading}
+              className="w-full p-2.5 rounded-2xl border border-purple-200 dark:border-purple-900/60 bg-gradient-to-r from-purple-50/90 to-indigo-50/90 dark:from-purple-950/40 dark:to-indigo-950/40 hover:from-purple-100 hover:to-indigo-100 dark:hover:from-purple-950/70 dark:hover:to-indigo-950/70 transition-all flex items-center justify-between group cursor-pointer text-left shadow-xs disabled:opacity-60"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-purple-600 text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                  {loggingInDemo === "superadmin" ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <ShieldCheck className="w-4 h-4" />
+                  )}
+                </div>
+                <div>
+                  <div className="text-xs font-bold text-slate-900 dark:text-slate-100 flex items-center gap-1.5">
+                    <span>Super Admin 1-Click Access</span>
+                    <span className="text-[9px] font-mono font-semibold px-1.5 py-0.2 bg-purple-200/80 dark:bg-purple-900/60 text-purple-800 dark:text-purple-200 rounded-md">
+                      Manual ID Review
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                    superadmin@travally.app · Instant access to review queue
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="w-4 h-4 text-purple-600 dark:text-purple-400 group-hover:translate-x-0.5 transition-transform shrink-0" />
+            </button>
+          </div>
         </div>
 
         <div className="relative flex py-0.5 items-center">
