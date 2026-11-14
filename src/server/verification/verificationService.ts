@@ -45,8 +45,7 @@ export class VerificationService {
     // If the backend is running in LIVE mode, a verification performed in TEST mode must NEVER
     // grant verified access or unlock production-protected creation features.
     if (activeMode === "live") {
-      const sessionMode =
-        latestSession?.mode || (latestSession?.provider === "neetix" && latestSession?.details?.mode);
+      const sessionMode = latestSession?.mode || latestSession?.details?.mode;
       if (sessionMode === "test") {
         isVerified = false;
         verificationStatus = "UNVERIFIED";

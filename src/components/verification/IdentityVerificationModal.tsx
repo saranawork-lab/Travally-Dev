@@ -2156,27 +2156,19 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
           )}
         </div>
 
-        {/* Neetix Engine Information Bar & Limitations Disclosure */}
+        {/* In-House Secure Identity Verification Footer */}
         <div className="p-2.5 sm:p-3 bg-slate-50 dark:bg-[#0c120f] border-t border-slate-200 dark:border-emerald-950/80 text-[10px] sm:text-[10.5px] text-slate-500 dark:text-slate-400 space-y-1 shrink-0">
           <div className="flex items-center justify-between font-semibold">
             <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
-              <span>Neetix Liveliness Engine</span>
+              <span>Travally Secure Identity Verification</span>
             </span>
-            {activeMode === "live" ? (
-              <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 font-mono text-[9.5px] font-bold border border-emerald-500/30">
-                LIVE MODE
-              </span>
-            ) : (
-              <span className="px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-950/70 text-amber-700 dark:text-amber-300 font-mono text-[9.5px] font-bold border border-amber-500/30">
-                TEST MODE
-              </span>
-            )}
+            <span className="px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 font-mono text-[9.5px] font-bold border border-emerald-500/30">
+              ENCRYPTED
+            </span>
           </div>
           <p className="text-[9.5px] text-slate-400 leading-normal">
-            {activeMode === "live"
-              ? "Live active anti-spoof liveness and 1:1 facial biometric cross-matching powered by Neetix. Production verified credentials."
-              : "Verifies ID image format, anti-spoof liveness, and 1:1 facial biometric cross-matching. Test environment credentials."}
+            Automated document inspection and live face alignment. Verification data remains private, encrypted, and secure.
           </p>
         </div>
       </div>
