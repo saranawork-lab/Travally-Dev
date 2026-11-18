@@ -78,7 +78,11 @@ export function RequestsView() {
       if (res.ok) {
         const data = await res.json();
         if (action === "ACCEPT") {
-          if (data.conversationId) {
+          if (data.activityId) {
+            router.push(`/activities/${data.activityId}?sos=onboard`);
+          } else if (data.travelPlanId) {
+            router.push(`/travel/${data.travelPlanId}?sos=onboard`);
+          } else if (data.conversationId) {
             router.push(`/chats/${data.conversationId}`);
           } else {
             router.push("/chats");

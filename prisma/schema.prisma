@@ -30,6 +30,7 @@ model User {
   blocksGiven           Block[]           @relation("BlocksGiven")
   blocksReceived        Block[]           @relation("BlocksReceived")
   reportsCreated        Report[]          @relation("ReportsCreated")
+  safetySessions        SafetySession[]
 }
 
 model Profile {
@@ -92,6 +93,7 @@ model Activity {
   requests               JoinRequest[]
   participants           Participant[]
   conversations          Conversation[]
+  safetySessions         SafetySession[]
 
   @@index([status])
   @@index([organizerId])
@@ -126,6 +128,7 @@ model TravelPlan {
   requests                JoinRequest[]
   participants            Participant[]
   conversations           Conversation[]
+  safetySessions          SafetySession[]
 
   @@index([status])
   @@index([organizerId])
@@ -246,4 +249,77 @@ model NewsletterSubscriber {
   subscribedAt DateTime  @default(now())
   isActive     Boolean   @default(true)
   metadata     String?
+}
+
+model SafetySession {
+  id                     String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId                 String          @db.ObjectId
+  user                   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  activityId             String?         @db.ObjectId
+  activity               Activity?       @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  travelPlanId           String?         @db.ObjectId
+  travelPlan             TravelPlan?     @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  status                 String          @default("ACTIVE") // ACTIVE, PAUSED, COMPLETED, CANCELLED
+  sosStatus              String          @default("NORMAL") // NORMAL, TRIGGERED, RESOLVED
+  contactName            String
+  contactPhone           String?
+  contactUserId          String?         @db.ObjectId
+  isContactAuthorized    Boolean         @default(true)
+  checkInIntervalMinutes Int             @default(30)
+  lastCheckInAt          DateTime?
+  nextCheckInAt          DateTime?
+  missedCheckInAt        DateTime?
+  isCheckInEscalated     Boolean         @default(false)
+  locationSharingEnabled Boolean         @default(false)
+  lastLatitude           Float?
+  lastLongitude          Float?
+  lastLocationAccuracy   Float?
+  lastLocationTimestamp  DateTime?
+  lastLocationAddress    String?
+  shareToken             String          @unique
+  shareExpiresAt         DateTime?
+  isLinkRevoked          Boolean         @default(false)
+  revokedAt              DateTime?
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  checkIns               SafetyCheckIn[]
+  incidents              SafetyIncident[]
+
+  @@index([userId, activityId])
+  @@index([userId, travelPlanId])
+  @@index([status])
+  @@index([nextCheckInAt])
+}
+
+model SafetyCheckIn {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId    String        @db.ObjectId
+  session      SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  status       String        // COMPLETED, MISSED, ACKNOWLEDGED_LATE
+  scheduledFor DateTime
+  respondedAt  DateTime?
+  latitude     Float?
+  longitude    Float?
+  accuracy     Float?
+  createdAt    DateTime      @default(now())
+
+  @@index([sessionId, scheduledFor])
+}
+
+model SafetyIncident {
+  id                      String        @id @default(auto()) @map("_id") @db.ObjectId
+  sessionId               String        @db.ObjectId
+  session                 SafetySession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  type                    String        // SOS_TRIGGERED, MISSED_CHECKIN_ESCALATED, SOS_CANCELLED, CHECKIN_RESOLVED
+  latitude                Float?
+  longitude               Float?
+  accuracy                Float?
+  locationAddress         String?
+  resolvedAt              DateTime?
+  notes                   String?
+  notificationsDispatched String        @default("[]") // JSON string of dispatched notifications
+  createdAt               DateTime      @default(now())
+
+  @@index([sessionId, type])
 }

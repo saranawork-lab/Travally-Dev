@@ -118,6 +118,11 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     return null;
   }
 
+  // 4. Never render dock inside emergency live tracking views
+  if (pathname?.startsWith("/safety/live")) {
+    return null;
+  }
+
   const combinedChatsBadge = (totalUnreadMessages > 0 ? totalUnreadMessages : unreadChatsCount) + pendingRequestsCount;
   const chatsBadgeDisplay =
     combinedChatsBadge > 0

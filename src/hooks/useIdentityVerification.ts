@@ -11,11 +11,17 @@ export function isCategoryProtected(mode: CreateMode): boolean {
   return mode !== "instant";
 }
 
+function checkVerified(userOrData?: any): boolean {
+  if (!userOrData) return false;
+  const status = (userOrData.verificationStatus || "").toString().trim().toLowerCase();
+  return status === "verified" || (userOrData.isVerified === true && status !== "unverified");
+}
+
 export function useIdentityVerification() {
   const { currentUser, refreshUser } = useAuth();
-  const [isVerified, setIsVerified] = useState<boolean>(Boolean(currentUser?.isVerified));
+  const [isVerified, setIsVerified] = useState<boolean>(checkVerified(currentUser));
   const [verificationStatus, setVerificationStatus] = useState<VerificationStatus>(
-    (currentUser?.verificationStatus as VerificationStatus) || "UNVERIFIED"
+    checkVerified(currentUser) ? "VERIFIED" : ((currentUser?.verificationStatus as VerificationStatus) || "UNVERIFIED")
   );
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
@@ -27,9 +33,9 @@ export function useIdentityVerification() {
   // Sync with auth user
   useEffect(() => {
     if (currentUser) {
-      const verified = Boolean(currentUser.isVerified && currentUser.verificationStatus === "VERIFIED");
+      const verified = checkVerified(currentUser);
       setIsVerified(verified);
-      setVerificationStatus((currentUser.verificationStatus as VerificationStatus) || (verified ? "VERIFIED" : "UNVERIFIED"));
+      setVerificationStatus(verified ? "VERIFIED" : "UNVERIFIED");
     }
   }, [currentUser]);
 
@@ -40,9 +46,9 @@ export function useIdentityVerification() {
       const res = await fetch("/api/verification/status");
       if (res.ok) {
         const data = await res.json();
-        const verified = Boolean(data.isVerified && data.verificationStatus === "VERIFIED");
+        const verified = checkVerified(data);
         setIsVerified(verified);
-        setVerificationStatus(data.verificationStatus || (verified ? "VERIFIED" : "UNVERIFIED"));
+        setVerificationStatus(verified ? "VERIFIED" : "UNVERIFIED");
         setIsMockMode(Boolean(data.isMockMode));
         if (data.mode) {
           setVerificationMode(data.mode);
@@ -86,7 +92,7 @@ export function useIdentityVerification() {
       }
 
       // 2. If user is verified, grant instant access
-      if (isVerified && verificationStatus === "VERIFIED") {
+      if (isVerified || (verificationStatus && verificationStatus.toLowerCase() === "verified")) {
         return true;
       }
 

@@ -144,24 +144,33 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       };
     }
 
+    const statusRaw = (user.profile?.verificationStatus || "").toString().trim().toLowerCase();
+    const isProfileVerified =
+      statusRaw === "verified" || (user.profile?.isVerified === true && statusRaw !== "unverified");
+    const normalizedStatus = isProfileVerified
+      ? "VERIFIED"
+      : statusRaw === "pending"
+      ? "PENDING"
+      : "UNVERIFIED";
+
     const sessionUser: SessionUser = {
       id: user.id,
       email: user.email,
       role: user.role,
       displayName: user.profile?.displayName || user.email.split("@")[0],
       avatarUrl: user.profile?.avatarUrl || null,
-      isVerified: user.profile?.isVerified || false,
-      verificationStatus: user.profile?.verificationStatus || "UNVERIFIED",
+      isVerified: isProfileVerified,
+      verificationStatus: normalizedStatus,
       city: user.profile?.city || null,
       joinRank: 365,
       membershipNumber:
         user.profile?.membershipNumber || `TRV-0365`,
     };
 
-    // Cache user session for 30 seconds to deliver instant < 1ms response times
+    // Cache user session briefly (1000ms) for burst deduplication, ensuring manual DB updates reflect immediately
     sessionCache.set(token, {
       user: sessionUser,
-      expiresAt: Date.now() + 30000,
+      expiresAt: Date.now() + 1000,
     });
 
     if (sessionCache.size > 2000) {

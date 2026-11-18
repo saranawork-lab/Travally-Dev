@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getCurrentUser, AuthService } from "@/lib/auth";
+import { getCurrentUser, AuthService, invalidateSessionCache } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
+    invalidateSessionCache();
     const user = await getCurrentUser();
     if (!user) {
       const response = NextResponse.json({ user: null }, { status: 200 });

@@ -165,12 +165,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           userId: joinRequest.applicantId,
           type: "REQUEST_ACCEPTED",
           title: "Request Accepted!",
-          body: `You are in! ${user.displayName} accepted your request for "${activity.title}". The private chat is now open.`,
-          actionUrl: `/chats/${conversation.id}`,
+          body: `You are in! ${user.displayName} accepted your request for "${activity.title}". The private chat and Safety SOS are now open.`,
+          actionUrl: `/activities/${activity.id}?sos=onboard`,
         },
       });
 
-      return NextResponse.json({ success: true, request: updated, conversationId: conversation.id });
+      return NextResponse.json({
+        success: true,
+        request: updated,
+        conversationId: conversation.id,
+        activityId: activity.id,
+        type: "ACTIVITY",
+      });
     }
 
     if (!isActivity && joinRequest.travelPlan) {
@@ -260,12 +266,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
           userId: joinRequest.applicantId,
           type: "REQUEST_ACCEPTED",
           title: "Travel Request Accepted!",
-          body: `Your request to join the trip to ${trip.destination} has been accepted! You can now join the planning chat.`,
-          actionUrl: `/chats/${conversation.id}`,
+          body: `Your request to join the trip to ${trip.destination} has been accepted! You can now join the planning chat and set up Safety SOS.`,
+          actionUrl: `/travel/${trip.id}?sos=onboard`,
         },
       });
 
-      return NextResponse.json({ success: true, request: updated, conversationId: conversation.id });
+      return NextResponse.json({
+        success: true,
+        request: updated,
+        conversationId: conversation.id,
+        travelPlanId: trip.id,
+        type: "TRAVEL",
+      });
     }
 
     return NextResponse.json({ error: "Failed to process request." }, { status: 400 });

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Calendar,
@@ -23,6 +23,9 @@ import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { SwipeToJoinButton } from "@/components/common/SwipeToJoinButton";
 import { ReportModal } from "@/components/common/ReportModal";
 import { TRAVEL_STYLE_CONFIG } from "@/constants/categories";
+import { SafetyCompanionCard } from "@/components/safety/SafetyCompanionCard";
+import { SafetyOnboardingPrompt } from "@/components/safety/SafetyOnboardingPrompt";
+import { SafetySetupModal } from "@/components/safety/SafetySetupModal";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function TravelPlanDetailPage() {
@@ -40,6 +43,34 @@ export default function TravelPlanDetailPage() {
   const [isReportOpen, setIsReportOpen] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [reopening, setReopening] = useState(false);
+
+  const searchParams = useSearchParams();
+  const [showSosOnboard, setShowSosOnboard] = useState(false);
+  const [showSosSetupDirect, setShowSosSetupDirect] = useState(false);
+
+  useEffect(() => {
+    if (trip && currentUser) {
+      const isParticipant =
+        isOrganizer ||
+        userRequest?.status === "ACCEPTED" ||
+        trip.participants?.some((p: any) => p.user?.id === currentUser?.id);
+
+      const dismissedKey = `travally_sos_dismissed_${trip.id}`;
+      const isDismissed = typeof window !== "undefined" ? localStorage.getItem(dismissedKey) : null;
+      const forceOnboard = searchParams?.get("sos") === "onboard";
+
+      if (isParticipant && (forceOnboard || !isDismissed)) {
+        fetch(`/api/safety/session?targetType=TRAVEL&targetId=${trip.id}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.eligibility?.eligible && !data?.session) {
+              setShowSosOnboard(true);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [trip, currentUser, isOrganizer, userRequest, searchParams]);
 
   const fetchTrip = async () => {
     try {
@@ -343,6 +374,19 @@ export default function TravelPlanDetailPage() {
           </div>
         )}
 
+        {/* Dedicated Safety SOS Section */}
+        {trip.status !== "CANCELLED" && (
+          <div className="pt-2 border-t border-slate-100 dark:border-emerald-950/60">
+            <SafetyCompanionCard
+              targetType="TRAVEL"
+              targetId={trip.id}
+              targetTitle={trip.destination}
+              isOrganizer={isOrganizer}
+              currentUser={currentUser}
+            />
+          </div>
+        )}
+
         {/* Actions */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 dark:border-emerald-950/60">
           <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed max-w-sm">
@@ -426,6 +470,38 @@ export default function TravelPlanDetailPage() {
         targetId={trip.id}
         targetName={trip.destination}
       />
+
+      {trip && (
+        <>
+          <SafetyOnboardingPrompt
+            isOpen={showSosOnboard}
+            targetType="TRAVEL"
+            targetId={trip.id}
+            targetTitle={trip.destination}
+            isCreator={isOrganizer}
+            onSetUp={() => {
+              setShowSosOnboard(false);
+              setShowSosSetupDirect(true);
+            }}
+            onDismiss={() => {
+              localStorage.setItem(`travally_sos_dismissed_${trip.id}`, "true");
+              setShowSosOnboard(false);
+            }}
+          />
+
+          <SafetySetupModal
+            isOpen={showSosSetupDirect}
+            onClose={() => setShowSosSetupDirect(false)}
+            targetType="TRAVEL"
+            targetId={trip.id}
+            targetTitle={trip.destination}
+            onSuccess={() => {
+              setShowSosSetupDirect(false);
+              fetchTrip();
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

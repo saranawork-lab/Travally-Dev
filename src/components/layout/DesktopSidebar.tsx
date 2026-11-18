@@ -113,6 +113,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
     pathname?.startsWith("/onboarding") ||
     pathname === "/login" ||
     pathname === "/register" ||
+    pathname?.startsWith("/safety/live") ||
     (pathname?.startsWith("/chats/") && pathname !== "/chats")
   ) {
     return null;

@@ -16,7 +16,8 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
   size = "md",
   showLabel = false,
 }) => {
-  const isActuallyVerified = isVerified || status === "VERIFIED";
+  const normStatus = (status || "").toString().trim().toLowerCase();
+  const isActuallyVerified = normStatus === "verified" || (isVerified === true && normStatus !== "unverified");
 
   if (isActuallyVerified) {
     return (
@@ -32,7 +33,7 @@ export const VerificationBadge: React.FC<VerificationBadgeProps> = ({
     );
   }
 
-  if (status === "PENDING") {
+  if (normStatus === "pending") {
     return (
       <span
         title="Verification Pending Review"

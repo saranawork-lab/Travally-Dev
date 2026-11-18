@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   Calendar,
@@ -25,6 +25,9 @@ import { JoinRequestModal } from "@/components/activities/JoinRequestModal";
 import { SwipeToJoinButton } from "@/components/common/SwipeToJoinButton";
 import { ReportModal } from "@/components/common/ReportModal";
 import { EditActivityModal } from "@/components/activities/EditActivityModal";
+import { SafetyCompanionCard } from "@/components/safety/SafetyCompanionCard";
+import { SafetyOnboardingPrompt } from "@/components/safety/SafetyOnboardingPrompt";
+import { SafetySetupModal } from "@/components/safety/SafetySetupModal";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function ActivityDetailPage() {
@@ -44,6 +47,34 @@ export default function ActivityDetailPage() {
   const [isCancelling, setIsCancelling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [reopening, setReopening] = useState(false);
+
+  const searchParams = useSearchParams();
+  const [showSosOnboard, setShowSosOnboard] = useState(false);
+  const [showSosSetupDirect, setShowSosSetupDirect] = useState(false);
+
+  useEffect(() => {
+    if (activity && currentUser) {
+      const isParticipant =
+        isOrganizer ||
+        userRequest?.status === "ACCEPTED" ||
+        activity.participants?.some((p: any) => p.user?.id === currentUser?.id);
+
+      const dismissedKey = `travally_sos_dismissed_${activity.id}`;
+      const isDismissed = typeof window !== "undefined" ? localStorage.getItem(dismissedKey) : null;
+      const forceOnboard = searchParams?.get("sos") === "onboard";
+
+      if (isParticipant && (forceOnboard || !isDismissed)) {
+        fetch(`/api/safety/session?targetType=ACTIVITY&targetId=${activity.id}`)
+          .then((res) => (res.ok ? res.json() : null))
+          .then((data) => {
+            if (data?.eligibility?.eligible && !data?.session) {
+              setShowSosOnboard(true);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [activity, currentUser, isOrganizer, userRequest, searchParams]);
 
   const fetchActivity = async () => {
     try {
@@ -367,6 +398,19 @@ export default function ActivityDetailPage() {
           </div>
         )}
 
+        {/* Dedicated Safety SOS Section */}
+        {activity.status !== "CANCELLED" && (
+          <div className="pt-2 border-t border-slate-100 dark:border-dark-border">
+            <SafetyCompanionCard
+              targetType="ACTIVITY"
+              targetId={activity.id}
+              targetTitle={activity.title}
+              isOrganizer={isOrganizer}
+              currentUser={currentUser}
+            />
+          </div>
+        )}
+
         {/* Action Button Section */}
         <div className="pt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-slate-100 dark:border-dark-border">
           <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
@@ -484,6 +528,38 @@ export default function ActivityDetailPage() {
         activity={activity}
         onSuccess={() => fetchActivity()}
       />
+
+      {activity && (
+        <>
+          <SafetyOnboardingPrompt
+            isOpen={showSosOnboard}
+            targetType="ACTIVITY"
+            targetId={activity.id}
+            targetTitle={activity.title}
+            isCreator={isOrganizer}
+            onSetUp={() => {
+              setShowSosOnboard(false);
+              setShowSosSetupDirect(true);
+            }}
+            onDismiss={() => {
+              localStorage.setItem(`travally_sos_dismissed_${activity.id}`, "true");
+              setShowSosOnboard(false);
+            }}
+          />
+
+          <SafetySetupModal
+            isOpen={showSosSetupDirect}
+            onClose={() => setShowSosSetupDirect(false)}
+            targetType="ACTIVITY"
+            targetId={activity.id}
+            targetTitle={activity.title}
+            onSuccess={() => {
+              setShowSosSetupDirect(false);
+              fetchActivity();
+            }}
+          />
+        </>
+      )}
     </div>
   );
 }

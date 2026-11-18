@@ -292,7 +292,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
 
   // Prompt verification if unverified user navigates directly to a protected creation category
   useEffect(() => {
-    if (mode !== "instant" && !isVerified && verificationStatus !== "VERIFIED") {
+    const isUserVerified = isVerified || (verificationStatus && verificationStatus.toLowerCase() === "verified");
+    if (mode !== "instant" && !isUserVerified) {
       openVerification(mode);
     }
   }, [mode, isVerified, verificationStatus, openVerification]);
@@ -421,7 +422,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
     }
 
     // 2. Protected categories require one-time account verification
-    if (isVerified && verificationStatus === "VERIFIED") {
+    const isUserVerified = isVerified || (verificationStatus && verificationStatus.toLowerCase() === "verified");
+    if (isUserVerified) {
       handleModeChange(targetMode);
     } else {
       openVerification(targetMode);
@@ -540,7 +542,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         }
         throw new Error(data.error || "Failed to create activity");
       }
-      window.location.href = `/activities/${data.activity.id}`;
+      window.location.href = `/activities/${data.activity.id}?sos=onboard`;
     } catch (err: any) {
       setError(err.message || "Failed to create activity");
       setIsSubmitting(false);
@@ -572,7 +574,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         }
         throw new Error(data.error || "Failed to create travel plan");
       }
-      window.location.href = `/travel/${data.travelPlan.id}`;
+      window.location.href = `/travel/${data.travelPlan.id}?sos=onboard`;
     } catch (err: any) {
       setError(err.message || "Failed to create travel plan");
       setIsSubmitting(false);

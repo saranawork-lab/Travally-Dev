@@ -209,6 +209,15 @@ export async function POST(req: NextRequest) {
       sessionToken,
     });
 
+    const statusRaw = (user.profile?.verificationStatus || "").toString().trim().toLowerCase();
+    const isProfileVerified =
+      statusRaw === "verified" || (user.profile?.isVerified === true && statusRaw !== "unverified");
+    const normalizedStatus = isProfileVerified
+      ? "VERIFIED"
+      : statusRaw === "pending"
+      ? "PENDING"
+      : "UNVERIFIED";
+
     const response = NextResponse.json({
       success: true,
       user: {
@@ -217,8 +226,8 @@ export async function POST(req: NextRequest) {
         role: user.role,
         displayName: user.profile?.displayName || user.email.split("@")[0],
         avatarUrl: user.profile?.avatarUrl,
-        isVerified: user.profile?.isVerified,
-        verificationStatus: user.profile?.verificationStatus,
+        isVerified: isProfileVerified,
+        verificationStatus: normalizedStatus,
       },
       redirectUrl: user.role === "ADMIN" ? "/admin" : "/discover",
     });

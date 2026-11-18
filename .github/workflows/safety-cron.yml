@@ -1,0 +1,22 @@
+name: Travally Safety Background Scheduler
+
+on:
+  schedule:
+    # Run every 5 minutes (standard GitHub Actions cron frequency)
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  evaluate-checkins:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Safety Check-in Evaluation
+        env:
+          APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL || 'https://travally.com' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "Triggering safety check-in evaluator at $APP_URL/api/cron/safety-checkins"
+          curl -f -s -X POST "$APP_URL/api/cron/safety-checkins" \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            -H "Content-Type: application/json" || echo "Warning: Cron execution returned non-zero status"
+

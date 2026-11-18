@@ -44,7 +44,8 @@ export function middleware(request: NextRequest) {
       pathname === "/login" ||
       pathname === "/register" ||
       pathname === "/discover" ||
-      pathname.startsWith("/safety") ||
+      pathname === "/safety" ||
+      pathname.startsWith("/safety/live/") ||
       pathname.startsWith("/categories") ||
       pathname.startsWith("/destinations");
 
@@ -62,7 +63,8 @@ export function middleware(request: NextRequest) {
     pathname === "/login" ||
     pathname === "/register" ||
     pathname === "/discover" ||
-    pathname.startsWith("/safety") ||
+    pathname === "/safety" ||
+    pathname.startsWith("/safety/live/") ||
     pathname.startsWith("/categories") ||
     pathname.startsWith("/destinations");
 

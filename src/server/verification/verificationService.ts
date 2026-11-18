@@ -37,19 +37,27 @@ export class VerificationService {
     const activeMode = (provider as any).mode || (provider.isDevelopmentOnly ? "test" : "live");
     const isMockMode = Boolean(provider.isDevelopmentOnly || activeMode === "test");
 
-    let isVerified = Boolean(profile?.isVerified && profile?.verificationStatus === "VERIFIED");
-    let verificationStatus = (profile?.verificationStatus as VerificationStatus) || "UNVERIFIED";
+    // Authoritative check based on Database Profile record
+    const statusRaw = (profile?.verificationStatus || "").toString().trim().toLowerCase();
+    const isProfileVerified =
+      statusRaw === "verified" || (profile?.isVerified === true && statusRaw !== "unverified");
+
+    let isVerified = isProfileVerified;
+    let verificationStatus: VerificationStatus = isProfileVerified
+      ? "VERIFIED"
+      : statusRaw === "pending"
+      ? "PENDING"
+      : "UNVERIFIED";
     let reasonCode = latestSession?.reasonCode || null;
 
-    // Security & Mode Isolation:
-    // If the backend is running in LIVE mode, a verification performed in TEST mode must NEVER
-    // grant verified access or unlock production-protected creation features.
-    if (activeMode === "live") {
+    // The database Profile verification status is authoritative.
+    // If the profile in the database is verified, the user is recognized as verified
+    // regardless of whether there is an external provider session or what mode it had.
+    // Secondary session flags must never override an authoritatively verified Profile.
+    if (!isVerified && activeMode === "live") {
       const sessionMode =
         latestSession?.mode || (latestSession?.provider === "neetix" && latestSession?.details?.mode);
       if (sessionMode === "test") {
-        isVerified = false;
-        verificationStatus = "UNVERIFIED";
         reasonCode = "TEST_VERIFICATION_INVALID_IN_LIVE_MODE";
       }
     }
@@ -80,7 +88,7 @@ export class VerificationService {
   }) {
     // 1. Authoritative check with mode isolation
     const currentStatus = await this.getVerificationStatus(params.userId);
-    if (currentStatus.isVerified && currentStatus.verificationStatus === "VERIFIED") {
+    if (currentStatus.isVerified) {
       return {
         alreadyVerified: true,
         status: "VERIFIED" as VerificationStatus,

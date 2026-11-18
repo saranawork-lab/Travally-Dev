@@ -10,7 +10,10 @@
     "db:push": "prisma db push",
     "db:seed": "node prisma/seed.js",
     "postinstall": "prisma generate",
-    "test:verification": "node scripts/test-verification.js"
+    "test:verification": "node scripts/test-verification.js",
+    "test:safety": "node scripts/test-safety-unit.js && node scripts/test-safety-integration.js",
+    "test:safety:unit": "node scripts/test-safety-unit.js",
+    "test:safety:integration": "node scripts/test-safety-integration.js"
   },
   "dependencies": {
     "@emailjs/browser": "^4.4.1",
