@@ -1,5 +1,6 @@
 export type VerificationStatus =
   | "UNVERIFIED"
+  | "PENDING"
   | "NOT_STARTED"
   | "ID_PENDING"
   | "ID_FAILED"
