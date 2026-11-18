@@ -48,6 +48,7 @@ import { MessageStatusBeacon, type MessageDeliveryStatus } from "@/components/ch
 import { E2EESecurityModal } from "@/components/chat/E2EESecurityModal";
 import { ChatsSidebar } from "@/components/chat/ChatsSidebar";
 import { GroupMembersDrawer } from "@/components/chat/GroupMembersDrawer";
+import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { encryptChatMessage, decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
@@ -214,8 +215,40 @@ export default function ActiveChatPage() {
   // Scroll and Typing States
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isTyping, setIsTyping] = useState(false);
-  const [typingUser, setTypingUser] = useState<string | null>(null);
+  const [typingUsers, setTypingUsers] = useState<
+    Array<{ userId: string; displayName: string; avatarUrl?: string }>
+  >([]);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastTypingSignalSentRef = useRef<number>(0);
+
+  const sendTypingStatus = (typing: boolean) => {
+    if (!conversationId) return;
+    fetch(`/api/chats/${conversationId}/typing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isTyping: typing }),
+    }).catch(() => {});
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const val = e.target.value;
+    setInputMessage(val);
+
+    if (val.trim()) {
+      const now = Date.now();
+      if (now - lastTypingSignalSentRef.current > 2500) {
+        lastTypingSignalSentRef.current = now;
+        sendTypingStatus(true);
+      }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      typingTimeoutRef.current = setTimeout(() => {
+        sendTypingStatus(false);
+      }, 3500);
+    } else {
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      sendTypingStatus(false);
+    }
+  };
 
   // WebRTC Voice Call States
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
@@ -402,6 +435,45 @@ export default function ActiveChatPage() {
     }
   }, [conversationId]);
 
+  // Poll for typing status every 2000ms
+  useEffect(() => {
+    if (!conversationId) return;
+
+    const fetchTyping = async () => {
+      if (typeof document !== "undefined" && document.hidden) return;
+      try {
+        const res = await fetch(`/api/chats/${conversationId}/typing`);
+        if (res.ok) {
+          const data = await res.json();
+          setTypingUsers(data.typingUsers || []);
+        }
+      } catch {
+        // network error
+      }
+    };
+
+    fetchTyping();
+    const interval = setInterval(fetchTyping, 2000);
+    return () => {
+      clearInterval(interval);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      sendTypingStatus(false);
+    };
+  }, [conversationId]);
+
+  // Auto-scroll when typing indicator appears and user is near bottom
+  useEffect(() => {
+    if (typingUsers.length > 0 && !showScrollBottom) {
+      const el = messagesContainerRef.current;
+      if (el) {
+        el.scrollTo({
+          top: el.scrollHeight,
+          behavior: "smooth",
+        });
+      }
+    }
+  }, [typingUsers.length, showScrollBottom]);
+
   // Poll for incoming WebRTC voice calls
   useEffect(() => {
     if (!conversationId || !currentUser) return;
@@ -529,6 +601,8 @@ export default function ActiveChatPage() {
     if (!customPayload) {
       setInputMessage("");
       setReplyingTo(null);
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+      sendTypingStatus(false);
     }
 
     const plaintextJson = JSON.stringify(payload);
@@ -1601,22 +1675,8 @@ export default function ActiveChatPage() {
           })
         )}
 
-        {/* ── LIVE TYPING INDICATOR (TELEGRAM STYLE) ── */}
-        {isTyping && (
-          <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 pt-2 animate-fade-in">
-            <div className="w-6 h-6 rounded-full bg-emerald-600/20 text-emerald-500 flex items-center justify-center text-[10px] font-bold">
-              {typingUser?.[0] || "A"}
-            </div>
-            <span className="font-semibold text-slate-700 dark:text-slate-300">
-              {typingUser || "Ananya"} is typing
-            </span>
-            <div className="flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-typing-dot-1" />
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-typing-dot-2" />
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-typing-dot-3" />
-            </div>
-          </div>
-        )}
+        {/* ── LIVE INSTAGRAM-STYLE TYPING INDICATOR ── */}
+        <TypingIndicator typingUsers={typingUsers} isGroupChat={!isDirectChat} />
 
         <div ref={messagesEndRef} className="h-4" />
       </main>
@@ -1723,7 +1783,8 @@ export default function ActiveChatPage() {
             <textarea
               ref={textareaRef}
               value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
+              onChange={handleInputChange}
+              onBlur={() => sendTypingStatus(false)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
