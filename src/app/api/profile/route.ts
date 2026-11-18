@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import bcrypt from "bcryptjs";
+import { deleteUserAndCascade } from "@/lib/userCleanup";
 
 export const dynamic = "force-dynamic";
 
@@ -216,23 +217,13 @@ export async function DELETE() {
 
     const userId = user.id;
 
-    // Remove user's data across all collections
-    await db.$transaction([
-      db.profile.deleteMany({ where: { userId } }),
-      db.participant.deleteMany({ where: { userId } }),
-      db.joinRequest.deleteMany({ where: { applicantId: userId } }),
-      db.message.deleteMany({ where: { senderId: userId } }),
-      db.notification.deleteMany({ where: { userId } }),
-      db.block.deleteMany({ where: { OR: [{ blockerId: userId }, { blockedId: userId }] } }),
-      db.report.deleteMany({ where: { reporterId: userId } }),
-      db.activity.deleteMany({ where: { organizerId: userId } }),
-      db.travelPlan.deleteMany({ where: { organizerId: userId } }),
-      db.user.delete({ where: { id: userId } }),
-    ]);
+    // Permanently cascade delete user and all associated data across all collections
+    await deleteUserAndCascade(userId);
 
     const response = NextResponse.json({ success: true, message: "Account and all data permanently deleted" });
     response.cookies.delete("travally_token");
     response.cookies.delete("token");
+    response.cookies.delete("travally_session");
     return response;
   } catch (error) {
     console.error("DELETE user error:", error);

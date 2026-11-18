@@ -100,10 +100,16 @@ export default function AdminModerationPage() {
         </div>
 
         <div className="flex items-center gap-2">
-
+          <Link
+            href="/admin/verifications"
+            className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all"
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>ID Verification Queue</span>
+          </Link>
           <button
             onClick={fetchReports}
-            className="p-2 rounded-xl border border-slate-200 dark:border-dark-border bg-white dark:bg-dark-card hover:bg-slate-100 dark:hover:bg-dark-elevated text-xs flex items-center gap-1 text-slate-600 dark:text-slate-300 transition shadow-xs"
+            className="p-2 rounded-xl border border-slate-200 dark:border-dark-border bg-white dark:bg-dark-card hover:bg-slate-100 dark:hover:bg-dark-elevated text-xs flex items-center gap-1 text-slate-600 dark:text-slate-300 transition shadow-xs cursor-pointer"
           >
             <RefreshCw className="w-3.5 h-3.5" /> Refresh
           </button>

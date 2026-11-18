@@ -8,7 +8,6 @@ import {
   MessageSquare,
   Award,
   Loader2,
-  Sparkles,
   Heart,
   Plane,
   Hash,
@@ -305,7 +304,7 @@ export const ProfileModal: React.FC<ProfileModalProps> = ({
             {/* ── Hosted Activity ── */}
             {detailedUser?.activitiesOrganized?.length > 0 && (
               <div className="mt-3 flex items-center gap-1.5 text-[11px] bg-emerald-50/80 dark:bg-emerald-950/30 rounded-xl px-3 py-1.5 border border-emerald-100 dark:border-emerald-900/40 text-left">
-                <Sparkles className="w-3 h-3 text-emerald-500 shrink-0" />
+                <Award className="w-3 h-3 text-emerald-500 shrink-0" />
                 <span className="text-emerald-700 dark:text-emerald-300 truncate">
                   <strong>Hosted:</strong> {detailedUser.activitiesOrganized[0].title}
                 </span>

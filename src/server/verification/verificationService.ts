@@ -50,18 +50,23 @@ export class VerificationService {
       : "UNVERIFIED";
     let reasonCode = latestSession?.reasonCode || null;
 
-    // The database Profile verification status is authoritative.
-    // If the profile in the database is verified, the user is recognized as verified
-    // regardless of whether there is an external provider session or what mode it had.
-    // Secondary session flags must never override an authoritatively verified Profile.
-    if (!isVerified && activeMode === "live") {
-      const sessionMode =
-        latestSession?.mode || (latestSession?.provider === "neetix" && latestSession?.details?.mode);
-      if (sessionMode === "test") {
-        reasonCode = "TEST_VERIFICATION_INVALID_IN_LIVE_MODE";
-      }
-    }
 
+// Preserve database Profile verification status while enforcing
+// security isolation between TEST and LIVE verification modes.
+if (activeMode === "live") {
+  const sessionMode =
+    latestSession?.mode || latestSession?.details?.mode;
+
+  if (sessionMode === "test") {
+    reasonCode = "TEST_VERIFICATION_INVALID_IN_LIVE_MODE";
+
+    // A test verification must not grant production access.
+    if (isVerified) {
+      isVerified = false;
+      verificationStatus = "UNVERIFIED";
+    }
+  }
+}
     return {
       isVerified,
       verificationStatus,
@@ -282,22 +287,34 @@ export class VerificationService {
       invalidateSessionCache(params.userId);
 
       try {
+        const userProfile = await db.profile.findUnique({
+          where: { userId: params.userId },
+          select: { displayName: true, avatarUrl: true, user: { select: { email: true } } },
+        });
+
         await mongo.collection("identity_verifications").updateOne(
           { sessionId: params.sessionId },
           {
             $set: {
               status: "REVIEW_PENDING",
+              userId: params.userId,
+              userName: userProfile?.displayName || "Explorer",
+              userEmail: userProfile?.user?.email || "",
+              userAvatar: userProfile?.avatarUrl || null,
               mode: resolvedMode,
               reasonCode: result.errorCode || "MANUAL_REVIEW_REQUIRED",
               warnings: result.warnings || [],
               verdict: result.verdict || "review",
               details: result.details || null,
+              submittedAt: now.toISOString(),
               updatedAt: now.toISOString(),
             },
           },
           { upsert: true }
         );
-      } catch (e) {}
+      } catch (e) {
+        console.error("Failed to update identity_verifications in mongo:", e);
+      }
     } else {
       // REJECTED
       await db.profile.update({

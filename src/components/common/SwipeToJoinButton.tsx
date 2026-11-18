@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, useMotionValue, useTransform, animate } from "framer-motion";
-import { Navigation, Check, Loader2, Sparkles, ChevronsRight } from "lucide-react";
+import { Navigation, Check, Loader2, ChevronsRight } from "lucide-react";
 
 interface SwipeToJoinButtonProps {
   onJoin: () => void | Promise<void>;
@@ -238,7 +238,7 @@ export const SwipeToJoinButton: React.FC<SwipeToJoinButtonProps> = ({
           transition={{ type: "spring", stiffness: 500, damping: 25 }}
           className="absolute inset-0 bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 flex items-center justify-center pointer-events-none z-10 gap-1.5 shadow-[0_0_30px_rgba(16,185,129,0.7)]"
         >
-          <Sparkles className="w-3.5 h-3.5 text-white animate-spin" style={{ animationDuration: "3s" }} />
+          <Check className="w-3.5 h-3.5 text-white stroke-[3]" />
           <span className="text-xs font-black tracking-wider text-white drop-shadow-md uppercase">
             Request Sent
           </span>

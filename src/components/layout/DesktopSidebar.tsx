@@ -9,6 +9,7 @@ import {
   PlusCircle,
   MessageSquare,
   Shield,
+  ShieldCheck,
 } from "lucide-react";
 import { useBadges } from "@/hooks/useBadges";
 import { useAuth } from "@/context/AuthContext";
@@ -173,6 +174,19 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
       badge: 0,
       badgeColor: "bg-emerald-500",
     },
+    ...(currentUser?.role === "SUPER_ADMIN"
+      ? [
+          {
+            id: "verifications",
+            label: "Verifications",
+            href: "/admin/verifications",
+            icon: ShieldCheck,
+            isActive: pathname.startsWith("/admin/verifications"),
+            badge: 0,
+            badgeColor: "bg-purple-600 text-white",
+          },
+        ]
+      : []),
   ];
 
   return (

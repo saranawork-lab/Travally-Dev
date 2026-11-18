@@ -1,0 +1,9 @@
+# Project UI Rules
+
+- **Do NOT use the Sparkles icon (`Sparkles` from `lucide-react`) or any sparkle symbols anywhere in the project.**
+- Use clean, semantic icons instead:
+  - For verification/safety/security: use `ShieldCheck` or `Shield`.
+  - For success/completion: use `Check` or `CheckCircle2`.
+  - For achievements/hosted activities: use `Award`.
+  - For info: use `Info`.
+

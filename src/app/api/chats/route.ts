@@ -118,7 +118,7 @@ export async function GET(req: NextRequest) {
       .sort({ updatedAt: -1 })
       .toArray();
 
-    const directConversations = await Promise.all(
+    const rawDirectConversations = await Promise.all(
       directDocs.map(async (doc) => {
         const otherUserId = (doc.participantIds || []).find((uid: string) => uid !== user.id);
         let otherUser = null;
@@ -127,6 +127,13 @@ export async function GET(req: NextRequest) {
             where: { id: otherUserId },
             include: { profile: true },
           });
+        }
+
+        // Cascade purge direct chat if other user account has been deleted
+        if (!otherUser) {
+          mongo.collection("Message").deleteMany({ conversationId: doc._id }).catch(() => {});
+          mongo.collection("Conversation").deleteOne({ _id: doc._id }).catch(() => {});
+          return null;
         }
 
         const lastMsg = await mongo
@@ -140,9 +147,9 @@ export async function GET(req: NextRequest) {
 
         return {
           id: doc._id.toString(),
-          title: otherUser?.profile?.displayName || "Companion",
+          title: otherUser.profile?.displayName || "Companion",
           type: "DIRECT",
-          otherUser: otherUser?.profile
+          otherUser: otherUser.profile
             ? {
                 id: otherUser.id,
                 displayName: otherUser.profile.displayName,
@@ -169,11 +176,11 @@ export async function GET(req: NextRequest) {
                       displayName:
                         latest.senderId?.toString() === user.id
                           ? user.displayName
-                          : otherUser?.profile?.displayName || "Companion",
+                          : otherUser.profile?.displayName || "Companion",
                       avatarUrl:
                         latest.senderId?.toString() === user.id
                           ? user.avatarUrl
-                          : otherUser?.profile?.avatarUrl,
+                          : otherUser.profile?.avatarUrl,
                     },
                   },
                 },
@@ -183,8 +190,19 @@ export async function GET(req: NextRequest) {
       })
     );
 
+    const directConversations = rawDirectConversations.filter(
+      (c): c is NonNullable<typeof c> => c !== null
+    );
+
+    // Filter group conversations whose parent activity or trip was deleted
+    const validGroupConversations = conversations.filter((c) => {
+      if (c.type === "ACTIVITY" && !c.activity) return false;
+      if (c.type === "TRAVEL" && !c.travelPlan) return false;
+      return true;
+    });
+
     // Merge and decorate with 7-day retention details
-    const allConvs = [...conversations, ...directConversations];
+    const allConvs = [...validGroupConversations, ...directConversations];
     allConvs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
 
     const decorated = allConvs.map((conv) => ({
