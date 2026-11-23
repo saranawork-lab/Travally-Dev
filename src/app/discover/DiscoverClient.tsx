@@ -201,6 +201,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
 
   // ── Pull-to-Refresh & Navigation Refresh States ──
   const [pullDistance, setPullDistance] = useState(0);
+  const pullDistanceRef = useRef(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
@@ -288,6 +289,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
 
       // Rubber-band resistance just like Chrome and Instagram
       const distance = Math.min(Math.pow(diffY, 0.8) * 1.6, 80);
+      pullDistanceRef.current = distance;
       setPullDistance(distance);
     };
 
@@ -296,12 +298,13 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
       isPullingRef.current = false;
 
       // Only refresh if user deliberately pulled down past threshold (>= 65px)
-      if (pullDistance >= 65 && !isRefreshing && window.scrollY === 0) {
+      if (pullDistanceRef.current >= 65 && !isRefreshing && window.scrollY === 0) {
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(30);
         }
         handleRefresh();
       } else {
+        pullDistanceRef.current = 0;
         setPullDistance(0);
       }
     };
@@ -315,7 +318,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [pullDistance, isRefreshing, handleRefresh]);
+  }, [isRefreshing, handleRefresh]);
 
   // Fetch companion activities and prefetch travel plans in background
   useEffect(() => {

@@ -370,6 +370,7 @@ export default function HomeClient() {
 
   // ── Pull-to-Refresh & Navigation Refresh States ──
   const [pullDistance, setPullDistance] = useState(0);
+  const pullDistanceRef = useRef(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
@@ -490,6 +491,7 @@ export default function HomeClient() {
 
       // Rubber-band resistance just like Chrome and Instagram
       const distance = Math.min(Math.pow(diffY, 0.8) * 1.6, 80);
+      pullDistanceRef.current = distance;
       setPullDistance(distance);
     };
 
@@ -498,12 +500,13 @@ export default function HomeClient() {
       isPullingRef.current = false;
 
       // Only refresh if user deliberately pulled down past the full threshold (>= 65px)
-      if (pullDistance >= 65 && !isRefreshing && window.scrollY === 0) {
+      if (pullDistanceRef.current >= 65 && !isRefreshing && window.scrollY === 0) {
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(30);
         }
         handleRefresh();
       } else {
+        pullDistanceRef.current = 0;
         setPullDistance(0);
       }
     };
@@ -517,7 +520,7 @@ export default function HomeClient() {
       window.removeEventListener("touchmove", handleTouchMove);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [pullDistance, isRefreshing, handleRefresh, activeTab]);
+  }, [isRefreshing, handleRefresh, activeTab]);
 
   // Require auth or show prompt
   const requireAuth = (action: () => void) => {

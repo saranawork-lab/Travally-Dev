@@ -48,13 +48,24 @@ async function doFetchBadges(force = false) {
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
+        const unreadChats = data.unreadChatsCount || 0;
+        const pendingReqs = data.pendingRequestsCount || 0;
+        const totalMsgs = data.totalUnreadMessages || 0;
+
+        const hasChanged =
+          globalBadges.unreadChatsCount !== unreadChats ||
+          globalBadges.pendingRequestsCount !== pendingReqs ||
+          globalBadges.totalUnreadMessages !== totalMsgs;
+
         globalBadges = {
-          unreadChatsCount: data.unreadChatsCount || 0,
-          pendingRequestsCount: data.pendingRequestsCount || 0,
-          totalUnreadMessages: data.totalUnreadMessages || 0,
+          unreadChatsCount: unreadChats,
+          pendingRequestsCount: pendingReqs,
+          totalUnreadMessages: totalMsgs,
         };
         lastFetchTime = Date.now();
-        notifySubscribers();
+        if (hasChanged) {
+          notifySubscribers();
+        }
       }
     } catch (_) {
       // ignore network errors

@@ -92,7 +92,22 @@ export const AuthProvider: React.FC<{
             return null;
           });
         } else {
-          setCurrentUser(data.user);
+          setCurrentUser((prev) => {
+            if (
+              prev &&
+              prev.id === data.user.id &&
+              prev.email === data.user.email &&
+              prev.role === data.user.role &&
+              prev.displayName === data.user.displayName &&
+              prev.avatarUrl === data.user.avatarUrl &&
+              prev.isVerified === data.user.isVerified &&
+              prev.verificationStatus === data.user.verificationStatus &&
+              prev.city === data.user.city
+            ) {
+              return prev; // Same instance -> ZERO re-renders across the app!
+            }
+            return data.user;
+          });
           if (typeof window !== "undefined") {
             try {
               localStorage.setItem("travally_auth_user", JSON.stringify(data.user));
@@ -152,13 +167,14 @@ export const AuthProvider: React.FC<{
     };
   }, [initialUser, refreshUser]);
 
-  // Periodic Single Active Session Verification (Polls every 6 seconds when logged in)
+  // Periodic Single Active Session Verification (Throttled with visibility check to save CPU/battery)
   useEffect(() => {
     if (!currentUser) return;
 
     const intervalId = setInterval(() => {
+      if (typeof document !== "undefined" && document.hidden) return;
       refreshUser();
-    }, 6000);
+    }, 12000);
 
     const handleFocus = () => {
       refreshUser();

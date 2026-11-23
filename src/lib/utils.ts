@@ -68,3 +68,56 @@ export function safeJsonParse<T>(jsonString: string | null | undefined, fallback
     return fallback;
   }
 }
+
+export function formatLastSeen(lastSeenAt: string | Date | null | undefined): string {
+  if (!lastSeenAt) return "Offline";
+
+  const date = typeof lastSeenAt === "string" ? new Date(lastSeenAt) : lastSeenAt;
+  const timeMs = date.getTime();
+  if (isNaN(timeMs)) return "Offline";
+
+  const nowMs = Date.now();
+  const diffMs = Math.max(0, nowMs - timeMs);
+  const diffSecs = Math.floor(diffMs / 1000);
+  const diffMins = Math.floor(diffSecs / 60);
+
+  const timeStr = date.toLocaleTimeString([], {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+
+  if (diffSecs < 60) {
+    return "Active just now";
+  }
+
+  if (diffMins < 60) {
+    return `Last seen ${diffMins}m ago`;
+  }
+
+  const nowDate = new Date(nowMs);
+  const isToday =
+    nowDate.getDate() === date.getDate() &&
+    nowDate.getMonth() === date.getMonth() &&
+    nowDate.getFullYear() === date.getFullYear();
+
+  if (isToday) {
+    return `Last seen today at ${timeStr}`;
+  }
+
+  const yesterdayDate = new Date(nowMs - 86400000);
+  const isYesterday =
+    yesterdayDate.getDate() === date.getDate() &&
+    yesterdayDate.getMonth() === date.getMonth() &&
+    yesterdayDate.getFullYear() === date.getFullYear();
+
+  if (isYesterday) {
+    return `Last seen yesterday at ${timeStr}`;
+  }
+
+  const dateStr = date.toLocaleDateString([], {
+    month: "short",
+    day: "numeric",
+  });
+  return `Last seen ${dateStr} at ${timeStr}`;
+}

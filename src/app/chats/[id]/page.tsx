@@ -46,7 +46,7 @@ import {
   PinOff,
   CheckSquare,
 } from "lucide-react";
-import { formatTimeAgo, formatMessageTime, formatDate } from "@/lib/utils";
+import { formatTimeAgo, formatMessageTime, formatDate, formatLastSeen } from "@/lib/utils";
 import { ReportModal } from "@/components/common/ReportModal";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { RealisticEmoji } from "@/components/chat/RealisticEmoji";
@@ -66,7 +66,6 @@ import { encryptChatMessage, decryptChatMessage, isE2EEMessage } from "@/lib/cry
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { getTripImage, getActivityImage } from "@/lib/images";
-import { formatLastSeen } from "@/lib/presence";
 
 // Quick reactions shown on the floating pill
 const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "🔥", "👍"];
