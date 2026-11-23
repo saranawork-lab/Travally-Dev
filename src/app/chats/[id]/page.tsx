@@ -5,6 +5,8 @@ import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Send,
+  Play,
+  Pause,
   ArrowLeft,
   Users,
   Compass,
@@ -479,6 +481,18 @@ export default function ActiveChatPage() {
   );
   const [recordingTooltip, setRecordingTooltip] = useState<string | null>(null);
 
+  // WhatsApp-style Staged Voice Note Preview States (in type box)
+  const [stagedVoiceNote, setStagedVoiceNote] = useState<{
+    audioUrl: string;
+    duration: number;
+    waveform: number[];
+  } | null>(null);
+  const [isPlayingPreview, setIsPlayingPreview] = useState(false);
+  const [previewCurrentTime, setPreviewCurrentTime] = useState(0);
+  const [previewTotalDuration, setPreviewTotalDuration] = useState(0);
+  const previewAudioRef = useRef<HTMLAudioElement | null>(null);
+  const previewObjectUrlRef = useRef<string | null>(null);
+
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioStreamRef = useRef<MediaStream | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -767,7 +781,7 @@ export default function ActiveChatPage() {
 
         // Accidental brief tap protection (< 500ms)
         if (elapsedMs < 500) {
-          showInstructionToast("Hold to record voice message, release to send");
+          showInstructionToast("Hold to record voice message • Double-tap to voice type");
           audioChunksRef.current = [];
           return;
         }
@@ -782,22 +796,22 @@ export default function ActiveChatPage() {
         }
 
         const reader = new FileReader();
-        reader.onloadend = async () => {
+        reader.onloadend = () => {
           const base64Audio = reader.result as string;
           const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
-          const waveform =
-            sampledWaveformRef.current.length >= 8
-              ? sampledWaveformRef.current
-              : undefined;
+          let waveform = sampledWaveformRef.current;
+          if (!waveform || waveform.length < 8) {
+            waveform = [
+              25, 45, 60, 35, 80, 65, 40, 90, 75, 50, 85, 95, 60, 45, 75, 55, 35,
+              65, 80, 50, 30, 60,
+            ];
+          }
 
-          await handleSendMessage({
-            text: "🎤 Voice message",
-            mediaType: "AUDIO",
-            mediaData: {
-              audioUrl: base64Audio,
-              duration: durationSeconds,
-              waveform,
-            },
+          // WhatsApp-style: Stage into type box for preview, review & approval before sending
+          setStagedVoiceNote({
+            audioUrl: base64Audio,
+            duration: durationSeconds,
+            waveform,
           });
         };
         reader.readAsDataURL(audioBlob);
@@ -878,10 +892,163 @@ export default function ActiveChatPage() {
   };
 
   const formatRecordingTimer = (secs: number) => {
-    const m = Math.floor(secs / 60);
-    const s = Math.floor(secs % 60);
+    const valid = isNaN(secs) || !isFinite(secs) ? 0 : Math.max(0, secs);
+    const m = Math.floor(valid / 60);
+    const s = Math.floor(valid % 60);
     return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
+
+  // WhatsApp-style Voice Preview Audio Player Lifecycle & Controls
+  useEffect(() => {
+    if (!stagedVoiceNote) {
+      if (previewAudioRef.current) {
+        previewAudioRef.current.pause();
+        previewAudioRef.current = null;
+      }
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+        previewObjectUrlRef.current = null;
+      }
+      setIsPlayingPreview(false);
+      setPreviewCurrentTime(0);
+      setPreviewTotalDuration(0);
+      return;
+    }
+
+    let objectUrl: string | null = null;
+    let effectiveUrl = stagedVoiceNote.audioUrl;
+
+    if (stagedVoiceNote.audioUrl.startsWith("data:audio/")) {
+      try {
+        const commaIdx = stagedVoiceNote.audioUrl.indexOf(",");
+        if (commaIdx !== -1) {
+          const header = stagedVoiceNote.audioUrl.slice(0, commaIdx);
+          const base64Data = stagedVoiceNote.audioUrl.slice(commaIdx + 1);
+          const mimeMatch = header.match(/data:([^;]+)/);
+          const rawMime = mimeMatch ? mimeMatch[1] : "audio/webm";
+          const mimeType = rawMime.split(";")[0];
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: mimeType });
+          objectUrl = URL.createObjectURL(blob);
+          previewObjectUrlRef.current = objectUrl;
+          effectiveUrl = objectUrl;
+        }
+      } catch (err) {
+        effectiveUrl = stagedVoiceNote.audioUrl.replace(/;codecs=[^;]+/, "");
+      }
+    }
+
+    const audio = new Audio(effectiveUrl);
+    audio.preload = "auto";
+    previewAudioRef.current = audio;
+
+    audio.onloadedmetadata = () => {
+      if (audio.duration && !isNaN(audio.duration) && isFinite(audio.duration)) {
+        setPreviewTotalDuration(audio.duration);
+      } else {
+        setPreviewTotalDuration(stagedVoiceNote.duration);
+      }
+    };
+
+    audio.ontimeupdate = () => {
+      setPreviewCurrentTime(audio.currentTime);
+    };
+
+    audio.onended = () => {
+      setIsPlayingPreview(false);
+      setPreviewCurrentTime(0);
+    };
+
+    audio.onerror = () => {
+      setIsPlayingPreview(false);
+    };
+
+    return () => {
+      audio.pause();
+      audio.src = "";
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        previewObjectUrlRef.current = null;
+      }
+    };
+  }, [stagedVoiceNote]);
+
+  const togglePlayPreview = () => {
+    const audio = previewAudioRef.current;
+    if (!audio) return;
+    if (isPlayingPreview) {
+      audio.pause();
+      setIsPlayingPreview(false);
+    } else {
+      audio
+        .play()
+        .then(() => {
+          setIsPlayingPreview(true);
+        })
+        .catch(() => {
+          setIsPlayingPreview(false);
+        });
+    }
+  };
+
+  const handleSeekPreview = (e: React.MouseEvent<HTMLDivElement>) => {
+    const audio = previewAudioRef.current;
+    if (!audio) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const fraction = Math.max(0, Math.min(1, clickX / rect.width));
+    const targetDur = previewTotalDuration || stagedVoiceNote?.duration || 1;
+    const seekTime = fraction * targetDur;
+    audio.currentTime = seekTime;
+    setPreviewCurrentTime(seekTime);
+  };
+
+  const handleDeleteStagedVoice = () => {
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+    }
+    setStagedVoiceNote(null);
+    setIsPlayingPreview(false);
+    setPreviewCurrentTime(0);
+  };
+
+  const handleSendStagedVoice = async () => {
+    if (!stagedVoiceNote) return;
+    const note = stagedVoiceNote;
+    if (previewAudioRef.current) {
+      previewAudioRef.current.pause();
+    }
+    setStagedVoiceNote(null);
+    setIsPlayingPreview(false);
+    setPreviewCurrentTime(0);
+
+    const messageText = inputMessage.trim() || "🎤 Voice message";
+    setInputMessage("");
+
+    await handleSendMessage({
+      text: messageText,
+      mediaType: "AUDIO",
+      mediaData: {
+        audioUrl: note.audioUrl,
+        duration: note.duration,
+        waveform: note.waveform,
+      },
+    });
+  };
+
+  const previewProgress =
+    (previewTotalDuration || stagedVoiceNote?.duration || 0) > 0
+      ? Math.min(
+          1,
+          previewCurrentTime /
+            (previewTotalDuration || stagedVoiceNote?.duration || 1)
+        )
+      : 0;
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -3354,9 +3521,72 @@ export default function ActiveChatPage() {
                 })}
               </div>
 
-              {/* Release to Send Note */}
+              {/* Release to Review Note */}
               <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 select-none hidden md:block shrink-0">
-                Release to send
+                Release to review
+              </div>
+            </div>
+          ) : stagedVoiceNote ? (
+            /* WhatsApp-style Voice Preview Staged in the Type Box */
+            <div className="flex-1 bg-white dark:bg-[#16201b] rounded-2xl border border-emerald-300/80 dark:border-emerald-800/80 shadow-xs flex items-center justify-between px-2.5 py-1.5 min-h-[46px] animate-in fade-in duration-150">
+              {/* Delete / Discard Button */}
+              <button
+                type="button"
+                onClick={handleDeleteStagedVoice}
+                className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 transition active:scale-90 cursor-pointer shrink-0"
+                title="Delete voice message"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+
+              {/* Play / Pause Preview Button */}
+              <button
+                type="button"
+                onClick={togglePlayPreview}
+                className="w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center shrink-0 shadow-xs active:scale-95 transition-all cursor-pointer ml-1"
+                title={isPlayingPreview ? "Pause" : "Play preview"}
+              >
+                {isPlayingPreview ? (
+                  <Pause className="w-4 h-4 fill-current" />
+                ) : (
+                  <Play className="w-4 h-4 ml-0.5 fill-current" />
+                )}
+              </button>
+
+              {/* Waveform Rhythm Bars (Clickable Scrubber) */}
+              <div
+                className="flex-1 flex items-center gap-[2.5px] h-7 px-2.5 overflow-hidden cursor-pointer justify-center"
+                onClick={handleSeekPreview}
+                title="Tap to scrub voice rhythm"
+              >
+                {stagedVoiceNote.waveform.map((val, idx) => {
+                  const frac = idx / stagedVoiceNote.waveform.length;
+                  const isPlayed = frac <= previewProgress;
+                  const heightPx = Math.max(
+                    4,
+                    Math.min(26, Math.round((val / 100) * 26))
+                  );
+                  return (
+                    <div
+                      key={idx}
+                      style={{ height: `${heightPx}px` }}
+                      className={`w-1 rounded-full transition-all duration-75 ${
+                        isPlayed
+                          ? "bg-emerald-600 dark:bg-emerald-400"
+                          : "bg-slate-300 dark:bg-slate-600"
+                      }`}
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Duration Timer */}
+              <div className="text-xs font-semibold text-slate-500 dark:text-slate-400 tabular-nums shrink-0 pr-1.5 select-none">
+                {formatRecordingTimer(
+                  isPlayingPreview
+                    ? Math.round(previewCurrentTime)
+                    : stagedVoiceNote.duration
+                )}
               </div>
             </div>
           ) : (
@@ -3468,8 +3698,18 @@ export default function ActiveChatPage() {
             </>
           )}
 
-          {/* Dynamic Action Button: Send message when text exists, or WhatsApp-style Hold-to-Record / Double-Tap Voice Button */}
-          {inputMessage.trim() && !isRecordingVoice ? (
+          {/* Dynamic Action Button: Send message when text exists or voice note is staged, or WhatsApp-style Hold-to-Record / Double-Tap Voice Button */}
+          {stagedVoiceNote ? (
+            <button
+              type="button"
+              onClick={handleSendStagedVoice}
+              disabled={sending}
+              className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-xs flex items-center justify-center shrink-0 transition-transform active:scale-95 disabled:opacity-50 cursor-pointer"
+              title="Send voice message"
+            >
+              <Send className="w-5 h-5 ml-0.5" />
+            </button>
+          ) : inputMessage.trim() && !isRecordingVoice ? (
             <button
               type="button"
               onClick={() => handleSendMessage()}
