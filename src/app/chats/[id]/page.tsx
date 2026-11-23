@@ -1287,7 +1287,7 @@ export default function ActiveChatPage() {
 
   const directAvatarUrl = conversation?.otherUser?.avatarUrl || otherParticipants[0]?.avatarUrl;
   const isDirectVerified = Boolean(conversation?.otherUser?.isVerified);
-  const isGroupRoom = !isDirectChat && otherParticipants.length > 1;
+  const isGroupRoom = !isDirectChat;
 
   const handleCallEnded = (durationSecs: number, participantNames: string[]) => {
     if (durationSecs > 0) {
@@ -1622,8 +1622,8 @@ export default function ActiveChatPage() {
                     isMe ? "flex-row-reverse" : "flex-row"
                   } ${contextMenuMsg?.msg?.id === msg.id ? "z-50" : "z-1"}`}
                 >
-                  {/* Sender Avatar for Received messages */}
-                  {!isMe && (
+                  {/* Sender Avatar for Received messages — ONLY shown in group chats */}
+                  {!isMe && !isDirectChat && (
                     <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30 shrink-0 mb-1 shadow-sm overflow-hidden">
                       {senderAvatarUrl ? (
                         <img
@@ -1638,7 +1638,7 @@ export default function ActiveChatPage() {
                   )}
 
                   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} min-w-0`}>
-                    {!isMe && isGroupRoom && (
+                    {!isMe && !isDirectChat && (
                       <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-2 mb-0.5">
                         {senderName}
                       </span>
