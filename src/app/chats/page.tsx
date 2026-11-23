@@ -235,7 +235,7 @@ function ChatsContent() {
           ) : (
             <div className="space-y-2">
               {filtered.map((conv) => {
-                const isDirect = conv.type === "DIRECT";
+                const isDirect = conv.type === "DIRECT" || Boolean(conv.otherUser);
                 const isActivity = conv.type === "ACTIVITY";
                 const lastMsg = conv.messages && conv.messages.length > 0 ? conv.messages[0] : null;
                 const senderDisplayName = lastMsg?.sender?.profile?.displayName || lastMsg?.sender?.email?.split("@")[0];
@@ -294,7 +294,7 @@ function ChatsContent() {
 
                         {/* Divider & Snippet */}
                         <span className="text-slate-500 dark:text-slate-400 truncate min-w-0">
-                          • {senderDisplayName ? `${senderDisplayName}: ` : ""}{snippet}
+                          • {!isDirect && senderDisplayName ? `${senderDisplayName}: ` : ""}{snippet}
                         </span>
                       </div>
                     </div>

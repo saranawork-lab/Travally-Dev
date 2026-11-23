@@ -291,7 +291,7 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
 
                   <div className="flex items-center text-[11px] text-slate-500 dark:text-slate-400 truncate">
                     <span className="truncate">
-                      {senderDisplayName ? `${senderDisplayName}: ` : ""}
+                      {!isDirect && senderDisplayName ? `${senderDisplayName}: ` : ""}
                       {snippet}
                     </span>
                   </div>
