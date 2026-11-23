@@ -15,6 +15,8 @@ import {
   Image as ImageIcon,
   Phone,
   PhoneOff,
+  PhoneMissed,
+  PhoneCall,
   Video,
   Smile,
   Keyboard,
@@ -125,6 +127,72 @@ const parseMessageContent = (raw: string): MessagePayload => {
     // raw plain text
   }
   return { text: raw };
+};
+
+interface CallLogInfo {
+  type: "declined" | "missed" | "ended" | "call";
+  title: string;
+  subtitle: string;
+  actionText: string;
+  isMissed: boolean;
+}
+
+const isCallMessage = (text: string): boolean => {
+  if (!text) return false;
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+  return (
+    trimmed.startsWith("📞") ||
+    lower.includes("voice call") ||
+    lower.includes("missed call") ||
+    lower.includes("declined call")
+  );
+};
+
+const parseCallLog = (rawText: string): CallLogInfo => {
+  const text = (rawText || "").replace(/^📞\s*/, "").trim();
+  const lower = text.toLowerCase();
+
+  if (lower.startsWith("declined voice call") || lower.startsWith("declined call")) {
+    const fromPart = text.replace(/^declined (voice )?call\s*(from\s*)?/i, "").trim();
+    return {
+      type: "declined",
+      title: "Declined Voice Call",
+      subtitle: fromPart ? `from ${fromPart}` : "Call was declined",
+      actionText: "Call Back",
+      isMissed: true,
+    };
+  }
+
+  if (lower.startsWith("missed voice call") || lower.startsWith("missed call")) {
+    const fromPart = text.replace(/^missed (voice )?call\s*(from\s*)?/i, "").trim();
+    return {
+      type: "missed",
+      title: "Missed Voice Call",
+      subtitle: fromPart ? `from ${fromPart}` : "You missed this call",
+      actionText: "Call Back",
+      isMissed: true,
+    };
+  }
+
+  if (lower.startsWith("voice call ended") || lower.startsWith("call ended")) {
+    const details = text.replace(/^(voice )?call ended\s*[•\-–]?\s*/i, "").trim();
+    return {
+      type: "ended",
+      title: "Voice Call Ended",
+      subtitle: details || "Call ended",
+      actionText: "Call Again",
+      isMissed: false,
+    };
+  }
+
+  return {
+    type: "call",
+    title: "Voice Call",
+    subtitle: text || "Voice call",
+    actionText: "Call Back",
+    isMissed: lower.includes("missed") || lower.includes("declined"),
+  };
 };
 
 // Fast in-memory cache maps for instantaneous chat room opening
@@ -680,6 +748,13 @@ export default function ActiveChatPage() {
       body: JSON.stringify({ action: "DECLINE" }),
     }).catch(() => {});
     setIncomingCall(null);
+  };
+
+  const handleStartVoiceCall = () => {
+    setActiveCallId(null);
+    setIsIncomingCall(false);
+    setIncomingCallOffer(null);
+    setIsCallModalOpen(true);
   };
 
   const prevMessagesCountRef = useRef<number>(0);
@@ -1572,12 +1647,7 @@ export default function ActiveChatPage() {
             {/* Voice Call Button (Compact icon on mobile, with text on desktop) */}
             <button
               type="button"
-              onClick={() => {
-                setActiveCallId(null);
-                setIsIncomingCall(false);
-                setIncomingCallOffer(null);
-                setIsCallModalOpen(true);
-              }}
+              onClick={handleStartVoiceCall}
               className="w-8 h-8 sm:w-auto sm:px-3 sm:py-1.5 rounded-full bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-900 dark:text-emerald-200 border border-emerald-300/80 dark:border-emerald-700/60 text-xs font-bold transition hover:from-emerald-200 hover:to-teal-100 shadow-xs active:scale-95 flex items-center justify-center gap-1.5 shrink-0"
               title="Start Voice Call"
             >
@@ -1751,6 +1821,7 @@ export default function ActiveChatPage() {
 
             const parsed = parseMessageContent(msg.content);
             const isEmojiOnly = isStandaloneEmoji(parsed.text) && !parsed.mediaType && !parsed.replyTo;
+            const isCallLog = !parsed.isDeleted && !parsed.mediaType && isCallMessage(parsed.text);
             const reactions = parsed.reactions || {};
             const reactionKeys = Object.keys(reactions);
 
@@ -2070,8 +2141,8 @@ export default function ActiveChatPage() {
                               : "ring-2 ring-emerald-500/50 scale-[1.01]"
                             : ""
                         } ${
-                        isEmojiOnly
-                          ? "bg-transparent p-0.5 shadow-none"
+                        isEmojiOnly || isCallLog
+                          ? "bg-transparent p-0 shadow-none border-0"
                           : isMe
                           ? isTravel
                             ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/70 dark:to-amber-950/60 text-slate-800 dark:text-slate-100 border border-orange-200/90 dark:border-orange-800/60 shadow-xs rounded-br-[4px] px-3 pt-1.5 pb-1 min-w-[70px]"
@@ -2103,7 +2174,7 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* Standalone Telegram Animated Moving Emoji or Text or Deleted Message */}
+                      {/* Standalone Telegram Animated Moving Emoji or Call Event Card or Text or Deleted Message */}
                       {parsed.isDeleted ? (
                         <div className="flex items-center gap-1.5 py-1 px-1 text-slate-400 dark:text-slate-500 italic text-xs select-none">
                           <Ban className="w-3.5 h-3.5 text-slate-400 shrink-0" />
@@ -2123,6 +2194,76 @@ export default function ActiveChatPage() {
                             />
                           ))}
                         </div>
+                      ) : isCallLog ? (
+                        (() => {
+                          const callInfo = parseCallLog(parsed.text);
+                          return (
+                            <div className={`w-full min-w-[240px] max-w-[310px] rounded-[20px] p-3 border transition-all shadow-xs ${
+                              callInfo.isMissed
+                                ? isMe
+                                  ? "bg-gradient-to-br from-rose-50/95 via-rose-50/60 to-amber-50/50 dark:from-[#251519] dark:via-[#1e171a] dark:to-[#1a1719] border-rose-200/90 dark:border-rose-900/60"
+                                  : "bg-white dark:bg-[#1a1719] border-rose-200/80 dark:border-rose-900/50"
+                                : isMe
+                                  ? "bg-gradient-to-br from-emerald-50/95 via-teal-50/60 to-emerald-50/50 dark:from-[#12231b] dark:via-[#15201b] dark:to-[#12231b] border-emerald-200/90 dark:border-emerald-900/60"
+                                  : "bg-white dark:bg-[#15201b] border-emerald-200/80 dark:border-emerald-900/50"
+                            }`}>
+                              <div className="flex items-center gap-3">
+                                <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 shadow-xs ${
+                                  callInfo.isMissed
+                                    ? "bg-rose-100 dark:bg-rose-950/80 text-rose-600 dark:text-rose-400 border border-rose-200/80 dark:border-rose-900/60"
+                                    : "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-600 dark:text-emerald-400 border border-emerald-200/80 dark:border-emerald-900/60"
+                                }`}>
+                                  {callInfo.isMissed ? (
+                                    <PhoneMissed className="w-5 h-5 shrink-0" />
+                                  ) : (
+                                    <PhoneCall className="w-5 h-5 shrink-0" />
+                                  )}
+                                </div>
+
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="text-[13px] font-bold text-slate-800 dark:text-slate-100 leading-tight truncate">
+                                    {callInfo.title}
+                                  </h4>
+                                  <p className="text-[11.5px] text-slate-500 dark:text-slate-400 font-medium truncate mt-0.5 leading-normal">
+                                    {callInfo.subtitle}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between pt-2.5 mt-2.5 border-t border-slate-200/60 dark:border-slate-800/80">
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleStartVoiceCall();
+                                  }}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11.5px] font-semibold transition shadow-xs active:scale-95 cursor-pointer hover:brightness-105 ${
+                                    callInfo.isMissed
+                                      ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20"
+                                      : "bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-emerald-500/20"
+                                  }`}
+                                >
+                                  <Phone className="w-3 h-3 shrink-0" />
+                                  <span>{callInfo.actionText}</span>
+                                </button>
+
+                                <div className="inline-flex items-center gap-1 text-[9px] font-medium text-slate-400 dark:text-slate-500 select-none">
+                                  <span title={formatTimeAgo(msg.createdAt)}>
+                                    {formatMessageTime(msg.createdAt)}
+                                  </span>
+                                  {isMe && (
+                                    <MessageStatusBeacon
+                                      status={deliveryStatus}
+                                      size={12}
+                                      recipientName={otherParticipantName}
+                                      timestamp={formatMessageTime(msg.createdAt)}
+                                    />
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()
                       ) : (
                         <div className="flex items-end justify-between gap-x-2 min-w-0">
                           <span className="whitespace-pre-wrap text-[13px] sm:text-[13.5px] leading-snug font-normal break-words select-text">
