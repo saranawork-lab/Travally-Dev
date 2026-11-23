@@ -209,6 +209,10 @@ export default function ActiveChatPage() {
   const conversationId = params?.id as string;
 
   const [conversation, setConversation] = useState<any>(null);
+  const conversationRef = useRef<any>(null);
+  useEffect(() => {
+    conversationRef.current = conversation;
+  }, [conversation]);
   const [messages, setMessages] = useState<any[]>([]);
   const { currentUser: authUser } = useAuth();
   const [currentUser, setCurrentUser] = useState<any>(authUser || null);
@@ -1016,7 +1020,7 @@ export default function ActiveChatPage() {
     const fetchTyping = async () => {
       if (typeof document !== "undefined" && document.hidden) return;
       try {
-        const targetUserId = conversation?.otherUser?.id || otherParticipants[0]?.id;
+        const targetUserId = conversationRef.current?.otherUser?.id || conversation?.otherUser?.id || otherParticipants[0]?.id;
         const url = targetUserId && targetUserId !== "partner-1"
           ? `/api/chats/${conversationId}/typing?otherUserId=${encodeURIComponent(targetUserId)}`
           : `/api/chats/${conversationId}/typing`;
