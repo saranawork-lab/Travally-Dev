@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import React, { useState, useEffect, Suspense } from "react";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import {
   User,
@@ -21,9 +21,11 @@ import { UserProfileTabs } from "@/components/profile/UserProfileTabs";
 import { LifestyleBadges } from "@/components/profile/LifestyleBadges";
 import { safeJsonParse } from "@/lib/utils";
 
-export default function PublicProfilePage() {
+function PublicProfileContent() {
   const params = useParams();
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const fromUrl = searchParams?.get("from");
   const id = params?.id as string;
 
   const [user, setUser] = useState<any>(null);
@@ -47,6 +49,28 @@ export default function PublicProfilePage() {
   useEffect(() => {
     if (id) fetchProfile();
   }, [id]);
+
+  const handleBack = () => {
+    if (fromUrl) {
+      router.push(fromUrl);
+      return;
+    }
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back();
+      return;
+    }
+    router.push("/discover");
+  };
+
+  const backLabel = fromUrl
+    ? fromUrl.startsWith("/chats")
+      ? "Back to Chat"
+      : fromUrl.startsWith("/travel")
+      ? "Back to Trip"
+      : fromUrl.startsWith("/activities")
+      ? "Back to Activity"
+      : "Back"
+    : "Back to Discover";
 
   const handleBlockUser = async () => {
     if (!confirm(`Are you sure you want to block ${user?.profile?.displayName}? You will no longer see each other's content.`)) return;
@@ -75,9 +99,13 @@ export default function PublicProfilePage() {
       <div className="max-w-md mx-auto py-20 text-center space-y-4">
         <h2 className="text-xl font-bold text-slate-900 dark:text-white">Profile Unavailable</h2>
         <p className="text-xs text-slate-500">This member profile does not exist or has been restricted.</p>
-        <Link href="/discover" className="inline-flex px-4 py-2 rounded-xl text-xs font-semibold text-white bg-brand-600 hover:bg-brand-500 transition shadow-sm">
-          Back to Discover
-        </Link>
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex px-4 py-2 rounded-xl text-xs font-semibold text-white bg-brand-600 hover:bg-brand-500 transition shadow-sm cursor-pointer"
+        >
+          {backLabel}
+        </button>
       </div>
     );
   }
@@ -95,13 +123,14 @@ export default function PublicProfilePage() {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-24">
       <div>
-        <Link
-          href="/discover"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition"
+        <button
+          type="button"
+          onClick={handleBack}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Discover</span>
-        </Link>
+          <span>{backLabel}</span>
+        </button>
       </div>
 
       {/* Main Profile Card */}
@@ -180,5 +209,13 @@ export default function PublicProfilePage() {
         targetType="USER"
       />
     </div>
+  );
+}
+
+export default function PublicProfilePage() {
+  return (
+    <Suspense fallback={<div className="py-20 text-center text-xs text-slate-400">Loading member profile...</div>}>
+      <PublicProfileContent />
+    </Suspense>
   );
 }

@@ -11,6 +11,7 @@ import {
   Trash2,
   X,
   Loader2,
+  ArrowLeft,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
 import { safeJsonParse } from "@/lib/utils";
@@ -38,6 +39,14 @@ export default function MyProfilePage() {
   const [city, setCity] = useState("");
   const [linkedinUrl, setLinkedinUrl] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
+  const [fromUrl, setFromUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      setFromUrl(params.get("from"));
+    }
+  }, []);
 
   const fetchProfile = async () => {
     try {
@@ -128,6 +137,18 @@ export default function MyProfilePage() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-28">
+      {fromUrl && (
+        <div>
+          <Link
+            href={fromUrl}
+            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white transition cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>{fromUrl.startsWith("/chats") ? "Back to Chat" : "Back"}</span>
+          </Link>
+        </div>
+      )}
+
       {/* ── PROFILE HEADER CARD (Read-only on profile, edited in settings) ── */}
       <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/80 p-6 sm:p-8 shadow-sm flex flex-col gap-6 relative">
         <div className="flex flex-col items-center justify-center gap-4 text-center">

@@ -230,7 +230,7 @@ export default function TravelPlanDetailPage() {
         {/* Organizer Header */}
         <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/60 dark:border-emerald-950/60">
           <Link
-            href={`/profile/${trip.organizer.id}`}
+            href={`/profile/${trip.organizer.id}?from=/travel/${trip.id}`}
             className="flex items-center gap-3 hover:opacity-90 transition min-w-0"
           >
             <div className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-950/80 border border-orange-300 dark:border-orange-700/60 flex items-center justify-center font-black text-sm text-orange-800 dark:text-orange-300 ring-2 ring-orange-500/25 shrink-0 shadow-sm">
@@ -255,7 +255,7 @@ export default function TravelPlanDetailPage() {
           </Link>
 
           <Link
-            href={`/profile/${trip.organizer.id}`}
+            href={`/profile/${trip.organizer.id}?from=/travel/${trip.id}`}
             className="hidden sm:inline-flex text-xs font-semibold text-orange-600 dark:text-orange-400 hover:underline"
           >
             View Profile
@@ -356,7 +356,7 @@ export default function TravelPlanDetailPage() {
               {trip.participants.map((p: any) => (
                 <Link
                   key={p.id}
-                  href={`/profile/${p.user.id}`}
+                  href={`/profile/${p.user.id}?from=/travel/${trip.id}`}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#16201b] hover:bg-slate-200 dark:hover:bg-[#1c2822] transition text-xs"
                 >
                   <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 shrink-0">

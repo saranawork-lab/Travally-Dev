@@ -1977,7 +1977,7 @@ export default function ActiveChatPage() {
                 if (isDirectChat) {
                   const targetId = conversation?.otherUser?.id || otherParticipants[0]?.id;
                   if (targetId && targetId !== "partner-1") {
-                    router.push(`/profile/${targetId}`);
+                    router.push(`/profile/${targetId}?from=/chats/${conversationId}`);
                   }
                 } else {
                   setIsMembersDrawerOpen(true);
@@ -2281,7 +2281,7 @@ export default function ActiveChatPage() {
                   {/* Sender Avatar for Received messages — ONLY shown in group chats (links to profile) */}
                   {!isMe && !isDirectChat && (
                     <Link
-                      href={`/profile/${msg.senderId || msg.sender?.id}`}
+                      href={`/profile/${msg.senderId || msg.sender?.id}?from=/chats/${conversationId}`}
                       className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30 shrink-0 mb-1 shadow-sm overflow-hidden hover:opacity-80 transition cursor-pointer"
                       title={`View ${senderName}'s profile`}
                     >
@@ -2300,7 +2300,7 @@ export default function ActiveChatPage() {
                   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} min-w-0`}>
                     {!isMe && !isDirectChat && (
                       <Link
-                        href={`/profile/${msg.senderId || msg.sender?.id}`}
+                        href={`/profile/${msg.senderId || msg.sender?.id}?from=/chats/${conversationId}`}
                         className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-2 mb-0.5 hover:underline cursor-pointer"
                         title={`View ${senderName}'s profile`}
                       >

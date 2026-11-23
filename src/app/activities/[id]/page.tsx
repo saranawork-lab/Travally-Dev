@@ -270,7 +270,7 @@ export default function ActivityDetailPage() {
         {/* Organizer Header */}
         <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 dark:bg-dark-elevated border border-slate-200/60 dark:border-dark-border">
           <Link
-            href={`/profile/${activity.organizer.id}`}
+            href={`/profile/${activity.organizer.id}?from=/activities/${activity.id}`}
             className="flex items-center gap-3 hover:opacity-90 transition min-w-0"
           >
             <div className="w-12 h-12 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center font-black text-sm text-emerald-800 dark:text-emerald-300 ring-2 ring-emerald-500/20 shrink-0 shadow-sm">
@@ -295,7 +295,7 @@ export default function ActivityDetailPage() {
           </Link>
 
           <Link
-            href={`/profile/${activity.organizer.id}`}
+            href={`/profile/${activity.organizer.id}?from=/activities/${activity.id}`}
             className="hidden sm:inline-flex text-xs font-semibold text-brand-600 dark:text-brand-400 hover:underline"
           >
             View Profile
@@ -380,7 +380,7 @@ export default function ActivityDetailPage() {
               {activity.participants.map((p: any) => (
                 <Link
                   key={p.id}
-                  href={`/profile/${p.user.id}`}
+                  href={`/profile/${p.user.id}?from=/activities/${activity.id}`}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-dark-elevated hover:bg-slate-200 dark:hover:bg-slate-700 transition text-xs"
                 >
                   <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 shrink-0">

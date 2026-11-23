@@ -569,7 +569,11 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
                         >
                           {/* Avatar & User Info (Links directly to profile page) */}
                           <Link
-                            href={isMe ? "/profile" : `/profile/${member.id}`}
+                            href={
+                              isMe
+                                ? `/profile?from=/chats/${conversation?.id}`
+                                : `/profile/${member.id}?from=/chats/${conversation?.id}`
+                            }
                             className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-85 transition cursor-pointer"
                             title={isMe ? "View your profile" : `View ${member.displayName}'s profile`}
                           >
