@@ -728,14 +728,14 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               onClick={() => handleCategoryClick("instant")}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "instant"
-                  ? "bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20 border-orange-500 font-black scale-[1.02]"
+                  ? "bg-gradient-to-r from-amber-100/90 via-orange-50 to-amber-100/90 dark:from-amber-950/60 dark:via-orange-950/40 dark:to-amber-950/60 border-amber-300/80 dark:border-amber-700/60 text-slate-900 dark:text-amber-100 shadow-sm shadow-amber-200/50 font-bold scale-[1.02]"
                   : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
                   mode === "instant"
-                    ? "bg-white/20 text-white"
+                    ? "bg-white dark:bg-[#1c1a16] text-amber-600 dark:text-amber-400 shadow-2xs border border-amber-200/60 dark:border-amber-800/40"
                     : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
                 }`}
               >
@@ -745,8 +745,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 Post
               </span>
               <span
-                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-80 ${
-                  mode === "instant" ? "text-white/90" : "text-slate-400"
+                className={`text-[9.5px] hidden sm:block truncate max-w-full ${
+                  mode === "instant" ? "text-slate-600 dark:text-amber-300/80" : "text-slate-400"
                 }`}
               >
                 Photo / Moment
@@ -761,14 +761,14 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               }}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "companion" || mode === "travel"
-                  ? "bg-gradient-to-r from-orange-400 via-amber-300 to-emerald-400 text-white shadow-md shadow-orange-400/25 border-transparent font-black scale-[1.02]"
+                  ? "bg-gradient-to-r from-orange-100/90 via-amber-50 to-emerald-100/90 dark:from-orange-950/60 dark:via-amber-950/40 dark:to-emerald-950/60 border-amber-300/80 dark:border-amber-700/60 text-slate-900 dark:text-amber-100 shadow-sm shadow-amber-200/50 font-bold scale-[1.02]"
                   : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
                   mode === "companion" || mode === "travel"
-                    ? "bg-white/25 text-white shadow-xs"
+                    ? "bg-white dark:bg-[#1c1a16] text-amber-600 dark:text-amber-400 shadow-2xs border border-amber-200/60 dark:border-amber-800/40"
                     : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
                 }`}
               >
@@ -778,8 +778,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 Activity & Travel
               </span>
               <span
-                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-90 ${
-                  mode === "companion" || mode === "travel" ? "text-white" : "text-slate-400"
+                className={`text-[9.5px] hidden sm:block truncate max-w-full ${
+                  mode === "companion" || mode === "travel" ? "text-slate-600 dark:text-amber-300/80" : "text-slate-400"
                 }`}
               >
                 {mode === "travel" ? "Travel Trip" : "Companion Activity"}
@@ -792,14 +792,14 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               onClick={() => handleCategoryClick("grow")}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "grow"
-                  ? "bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 text-white shadow-md shadow-emerald-400/25 border-transparent font-black scale-[1.02]"
+                  ? "bg-gradient-to-r from-emerald-100/90 via-teal-50 to-sky-100/90 dark:from-emerald-950/60 dark:via-teal-950/40 dark:to-sky-950/60 border-emerald-300/80 dark:border-emerald-700/60 text-slate-900 dark:text-emerald-100 shadow-sm shadow-emerald-200/50 font-bold scale-[1.02]"
                   : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
                   mode === "grow"
-                    ? "bg-white/25 text-white shadow-xs"
+                    ? "bg-white dark:bg-[#141e19] text-emerald-600 dark:text-emerald-400 shadow-2xs border border-emerald-200/60 dark:border-emerald-800/40"
                     : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
                 }`}
               >
@@ -809,8 +809,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 Nature & Humanity
               </span>
               <span
-                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-90 ${
-                  mode === "grow" ? "text-white" : "text-slate-400"
+                className={`text-[9.5px] hidden sm:block truncate max-w-full ${
+                  mode === "grow" ? "text-slate-600 dark:text-emerald-300/80" : "text-slate-400"
                 }`}
               >
                 Grow Cause
@@ -825,14 +825,14 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               }}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "treasure" || mode === "find-me"
-                  ? "bg-gradient-to-r from-sky-400 via-indigo-300 to-pink-400 text-white shadow-md shadow-pink-400/25 border-transparent font-black scale-[1.02]"
+                  ? "bg-gradient-to-r from-sky-100/90 via-indigo-50 to-pink-100/90 dark:from-sky-950/60 dark:via-indigo-950/40 dark:to-pink-950/60 border-pink-300/80 dark:border-pink-700/60 text-slate-900 dark:text-pink-100 shadow-sm shadow-pink-200/50 font-bold scale-[1.02]"
                   : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
                   mode === "treasure" || mode === "find-me"
-                    ? "bg-white/25 text-white shadow-xs"
+                    ? "bg-white dark:bg-[#181d28] text-pink-600 dark:text-pink-400 shadow-2xs border border-pink-200/60 dark:border-pink-800/40"
                     : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
                 }`}
               >
@@ -842,8 +842,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 Treasure & Clue
               </span>
               <span
-                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-90 ${
-                  mode === "treasure" || mode === "find-me" ? "text-white" : "text-slate-400"
+                className={`text-[9.5px] hidden sm:block truncate max-w-full ${
+                  mode === "treasure" || mode === "find-me" ? "text-slate-600 dark:text-pink-300/80" : "text-slate-400"
                 }`}
               >
                 {mode === "find-me" ? "Find Me Clue" : "Treasure Quest"}
@@ -1895,10 +1895,10 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-rose-950 dark:text-rose-200">
-                    Match Based on Story, Not Selfies to Swipe
+                    Match on Story, Not Selfies
                   </h3>
                   <p className="text-[11px] text-rose-700/80 dark:text-rose-300/80">
-                    Drop an authentic story and hangout clue. When the beacon expires, it automatically deletes from all profiles completely!
+                    Share your vibe & hangout clue. Auto-deletes when expired.
                   </p>
                 </div>
               </div>
