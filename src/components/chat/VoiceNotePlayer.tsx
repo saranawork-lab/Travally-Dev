@@ -33,7 +33,38 @@ export function VoiceNotePlayer({
 
   useEffect(() => {
     if (!audioUrl) return;
-    const audio = new Audio(audioUrl);
+
+    let objectUrl: string | null = null;
+    let effectiveUrl = audioUrl;
+
+    // Convert data:audio base64 URLs to Blob URLs to avoid browser codec & length playback errors
+    if (audioUrl.startsWith("data:audio/")) {
+      try {
+        const commaIdx = audioUrl.indexOf(",");
+        if (commaIdx !== -1) {
+          const header = audioUrl.slice(0, commaIdx);
+          const base64Data = audioUrl.slice(commaIdx + 1);
+          const mimeMatch = header.match(/data:([^;]+)/);
+          const rawMime = mimeMatch ? mimeMatch[1] : "audio/webm";
+          const mimeType = rawMime.split(";")[0]; // Clean MIME type e.g. "audio/webm"
+
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: mimeType });
+          objectUrl = URL.createObjectURL(blob);
+          effectiveUrl = objectUrl;
+        }
+      } catch (err) {
+        effectiveUrl = audioUrl.replace(/;codecs=[^;]+/, "");
+      }
+    }
+
+    const audio = new Audio(effectiveUrl);
+    audio.preload = "auto";
     audioRef.current = audio;
 
     audio.onloadedmetadata = () => {
@@ -55,13 +86,17 @@ export function VoiceNotePlayer({
       setCurrentTime(0);
     };
 
-    audio.onerror = () => {
+    audio.onerror = (e) => {
+      console.warn("Audio element error on URL:", effectiveUrl?.slice(0, 60), e);
       setIsPlaying(false);
     };
 
     return () => {
       audio.pause();
       audio.src = "";
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
     };
   }, [audioUrl]);
 
@@ -73,6 +108,9 @@ export function VoiceNotePlayer({
       setIsPlaying(false);
     } else {
       audioRef.current.playbackRate = playbackRate;
+      if (audioRef.current.ended || audioRef.current.currentTime >= (totalDuration || 1)) {
+        audioRef.current.currentTime = 0;
+      }
       audioRef.current
         .play()
         .then(() => {

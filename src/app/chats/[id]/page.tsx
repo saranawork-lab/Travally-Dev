@@ -528,9 +528,17 @@ export default function ActiveChatPage() {
 
       const initialBase = inputMessage;
 
+      // Instant UI & haptic feedback upon double-tap trigger
+      setIsTranscribing(true);
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        try {
+          navigator.vibrate([40, 50, 40]);
+        } catch {}
+      }
+      showInstructionToast("🎙️ Voice typing active — Speak now! Tap mic to stop.");
+
       recognition.onstart = () => {
         setIsTranscribing(true);
-        showInstructionToast("🎙️ Listening... speak now. Then edit or send.");
       };
 
       recognition.onresult = (event: any) => {
@@ -752,7 +760,8 @@ export default function ActiveChatPage() {
           return;
         }
 
-        const mimeType = mediaRecorder.mimeType || "audio/webm";
+        const rawMime = mediaRecorder.mimeType || "audio/webm";
+        const mimeType = rawMime.split(";")[0]; // Clean MIME without codecs parameter
         const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
 
         if (audioBlob.size < 500) {
@@ -801,8 +810,8 @@ export default function ActiveChatPage() {
     const now = Date.now();
     const timeSinceLastTap = now - lastTapTimeRef.current;
 
-    // Double-tap check (< 350ms)
-    if (timeSinceLastTap < 350 && tapCountRef.current === 1) {
+    // Double-tap check (< 400ms)
+    if (timeSinceLastTap < 400 && tapCountRef.current >= 1) {
       if (micLongPressTimerRef.current) {
         clearTimeout(micLongPressTimerRef.current);
         micLongPressTimerRef.current = null;
@@ -813,14 +822,15 @@ export default function ActiveChatPage() {
       return;
     }
 
-    // First tap or start of long press
+    // First tap: set tap count and start long-press timer
     tapCountRef.current = 1;
     lastTapTimeRef.current = now;
 
+    // Long-press threshold: 350ms ensures natural double-taps are not prematurely cut off
     micLongPressTimerRef.current = setTimeout(() => {
       tapCountRef.current = 0;
       startVoiceRecording();
-    }, 180);
+    }, 350);
   };
 
   const handleMicPointerUp = () => {
@@ -833,14 +843,15 @@ export default function ActiveChatPage() {
       // Released long-press: automatically send the voice message!
       stopVoiceRecording(false);
     } else {
-      // Single tap: give helpful guide note after delay
+      // Single tap timeout after double-tap window expires
       setTimeout(() => {
         if (tapCountRef.current === 1 && !isTranscribing && !isRecordingVoice) {
+          tapCountRef.current = 0;
           showInstructionToast(
             "Hold to record voice message • Double-tap to voice type"
           );
         }
-      }, 360);
+      }, 420);
     }
   };
 
@@ -3335,62 +3346,81 @@ export default function ActiveChatPage() {
               <div
                 className={`flex-1 bg-white dark:bg-[#16201b] rounded-2xl border ${
                   isTranscribing
-                    ? "border-emerald-500 ring-2 ring-emerald-500/30"
+                    ? "border-emerald-500 ring-2 ring-emerald-500/50 shadow-md"
                     : "border-slate-200/90 dark:border-emerald-950/80"
                 } shadow-sm focus-within:ring-2 ${
                   isTravel
                     ? "focus-within:ring-orange-500/30 focus-within:border-orange-500"
                     : "focus-within:ring-emerald-500/30 focus-within:border-emerald-500"
-                } transition-all flex items-end px-3 py-1.5 min-h-[46px]`}
+                } transition-all flex flex-col justify-end px-3 py-1.5 min-h-[46px] overflow-hidden`}
               >
-                <textarea
-                  ref={textareaRef}
-                  value={inputMessage}
-                  onChange={handleInputChange}
-                  onBlur={() => sendTypingStatus(false)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder={
-                    isTranscribing
-                      ? "🎙️ Listening... speak now. Edit or send anytime."
-                      : t.tapToMessage
-                  }
-                  className="flex-1 max-h-32 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none leading-relaxed py-1.5"
-                  rows={1}
-                />
+                {/* Visual Listening Banner when voice typing is active */}
+                {isTranscribing && (
+                  <div className="w-full flex items-center justify-between pb-1.5 mb-1 border-b border-emerald-200 dark:border-emerald-800/60 text-[11px] font-bold text-emerald-700 dark:text-emerald-300 animate-in fade-in duration-150">
+                    <div className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
+                      <span>🎙️ Listening... Speak now!</span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => startSpeechRecognition()}
+                      className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-200 font-bold hover:bg-emerald-200 transition cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+                )}
 
-                {/* Emoji / Keyboard Toggle inside bar */}
-                <button
-                  type="button"
-                  data-emoji-toggle="true"
-                  onClick={() => {
-                    if (isEmojiPickerOpen) {
-                      setIsEmojiPickerOpen(false);
-                      textareaRef.current?.focus();
-                    } else {
-                      setIsEmojiPickerOpen(true);
-                      setIsAttachmentOpen(false);
+                <div className="w-full flex items-end">
+                  <textarea
+                    ref={textareaRef}
+                    value={inputMessage}
+                    onChange={handleInputChange}
+                    onBlur={() => sendTypingStatus(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder={
+                      isTranscribing
+                        ? "Speak now, words will appear here..."
+                        : t.tapToMessage
                     }
-                  }}
-                  className={`p-1.5 rounded-xl transition-all shrink-0 active:scale-90 ${
-                    isEmojiPickerOpen
-                      ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60"
-                      : isTravel
-                      ? "text-slate-400 hover:text-orange-500"
-                      : "text-slate-400 hover:text-emerald-500"
-                  }`}
-                  title={isEmojiPickerOpen ? "Switch to keyboard" : "Emoji picker"}
-                >
-                  {isEmojiPickerOpen ? (
-                    <Keyboard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                  ) : (
-                    <Smile className="w-5 h-5" />
-                  )}
-                </button>
+                    className="flex-1 max-h-32 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none leading-relaxed py-1.5"
+                    rows={1}
+                  />
+
+                  {/* Emoji / Keyboard Toggle inside bar */}
+                  <button
+                    type="button"
+                    data-emoji-toggle="true"
+                    onClick={() => {
+                      if (isEmojiPickerOpen) {
+                        setIsEmojiPickerOpen(false);
+                        textareaRef.current?.focus();
+                      } else {
+                        setIsEmojiPickerOpen(true);
+                        setIsAttachmentOpen(false);
+                      }
+                    }}
+                    className={`p-1.5 rounded-xl transition-all shrink-0 active:scale-90 ${
+                      isEmojiPickerOpen
+                        ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60"
+                        : isTravel
+                        ? "text-slate-400 hover:text-orange-500"
+                        : "text-slate-400 hover:text-emerald-500"
+                    }`}
+                    title={isEmojiPickerOpen ? "Switch to keyboard" : "Emoji picker"}
+                  >
+                    {isEmojiPickerOpen ? (
+                      <Keyboard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                    ) : (
+                      <Smile className="w-5 h-5" />
+                    )}
+                  </button>
+                </div>
               </div>
             </>
           )}
@@ -3427,6 +3457,15 @@ export default function ActiveChatPage() {
                 onPointerDown={handleMicPointerDown}
                 onPointerUp={handleMicPointerUp}
                 onPointerLeave={handleMicPointerCancel}
+                onDoubleClick={(e) => {
+                  e.preventDefault();
+                  if (micLongPressTimerRef.current) {
+                    clearTimeout(micLongPressTimerRef.current);
+                    micLongPressTimerRef.current = null;
+                  }
+                  tapCountRef.current = 0;
+                  startSpeechRecognition();
+                }}
                 onContextMenu={(e) => e.preventDefault()}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all select-none cursor-pointer ${
                   isRecordingVoice
