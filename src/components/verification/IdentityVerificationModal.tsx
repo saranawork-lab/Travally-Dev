@@ -1303,19 +1303,19 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                 <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
                   What you will need:
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 flex items-center gap-2.5">
-                    <FileText className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">Accepted Photo ID</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Passport, DL, PAN, or Voter ID</p>
+                <div className="grid grid-cols-2 gap-2 sm:gap-2.5">
+                  <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 flex items-center gap-2 sm:gap-2.5 min-w-0">
+                    <FileText className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] sm:text-xs font-bold text-slate-900 dark:text-white truncate">Accepted Photo ID</p>
+                      <p className="text-[9.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 truncate">Passport, DL, PAN, or Voter ID</p>
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 flex items-center gap-2.5">
-                    <Camera className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                    <div>
-                      <p className="text-xs font-bold text-slate-900 dark:text-white">Live Camera Selfie</p>
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400">Quick 3D liveness match</p>
+                  <div className="p-2.5 sm:p-3 rounded-xl bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 flex items-center gap-2 sm:gap-2.5 min-w-0">
+                    <Camera className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[11px] sm:text-xs font-bold text-slate-900 dark:text-white truncate">Live Camera Selfie</p>
+                      <p className="text-[9.5px] sm:text-[10px] text-slate-500 dark:text-slate-400 truncate">Quick 3D liveness match</p>
                     </div>
                   </div>
                 </div>
