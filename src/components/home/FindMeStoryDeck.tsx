@@ -643,7 +643,7 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
 
               {/* TACTILE ACTION BUTTONS DOCKED UNDER CARD */}
               {topCard && (
-                <div className="flex items-center justify-center gap-6 pt-2 select-none">
+                <div className="flex items-center justify-center gap-8 pt-2 select-none">
                   {/* Reject / Pass button */}
                   <button
                     type="button"
@@ -652,26 +652,6 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
                     title="Pass (Swipe Left)"
                   >
                     <X className="w-6 h-6 stroke-[2.5] group-hover:scale-110 transition-transform" />
-                  </button>
-
-                  {/* Reply / Guess Message Button */}
-                  <button
-                    type="button"
-                    onClick={() => setReplyingCard(topCard)}
-                    className="w-11 h-11 rounded-full bg-white dark:bg-[#16201b] border border-slate-300 dark:border-emerald-950/80 text-slate-600 dark:text-slate-300 hover:text-emerald-600 hover:border-emerald-400 shadow-sm transition-all active:scale-90 flex items-center justify-center"
-                    title="Send a message with your connection"
-                  >
-                    <MessageCircle className="w-5 h-5" />
-                  </button>
-
-                  {/* Drop Clue / Post (+) Button Down Below */}
-                  <button
-                    type="button"
-                    onClick={() => requireAuth(() => onOpenCreate && onOpenCreate())}
-                    className="w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 hover:border-emerald-400 shadow-sm transition-all active:scale-90 flex items-center justify-center"
-                    title="Post a Beacon (+)"
-                  >
-                    <Plus className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
                   {/* Accept / Connect Button */}
