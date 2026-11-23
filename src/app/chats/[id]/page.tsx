@@ -34,6 +34,11 @@ import {
   Share2,
   Ban,
   ShieldCheck,
+  Info,
+  Reply,
+  Forward,
+  Pin,
+  CheckSquare,
 } from "lucide-react";
 import { formatTimeAgo, formatMessageTime } from "@/lib/utils";
 import { ReportModal } from "@/components/common/ReportModal";
@@ -210,6 +215,34 @@ export default function ActiveChatPage() {
   const [activeLiveModalData, setActiveLiveModalData] = useState<any | null>(null);
   const liveLocationWatchIdRef = useRef<number | null>(null);
   const lastLiveBroadcastRef = useRef<number>(0);
+
+  // WhatsApp-style message hover actions, reactions bar, context menu, pinned message & select mode
+  const [reactionBarMsgId, setReactionBarMsgId] = useState<string | null>(null);
+  const [contextMenuMsg, setContextMenuMsg] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
+  const [messageInfoTarget, setMessageInfoTarget] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
+  const [pinnedMessage, setPinnedMessage] = useState<{ id: string; text: string; senderName: string } | null>(null);
+  const [deleteTargetMsg, setDeleteTargetMsg] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
+  const [selectedMsgIds, setSelectedMsgIds] = useState<Set<string>>(new Set());
+
+  // Click outside to dismiss floating reaction bar and context menu
+  useEffect(() => {
+    if (!reactionBarMsgId && !contextMenuMsg) return;
+
+    const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && target.closest && target.closest("[data-chat-actions]")) return;
+      setReactionBarMsgId(null);
+      setContextMenuMsg(null);
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
+  }, [reactionBarMsgId, contextMenuMsg]);
 
   // Safety & E2EE modals
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
@@ -824,7 +857,46 @@ export default function ActiveChatPage() {
   const handleContextMenu = (msg: any, parsed: MessagePayload, e: React.MouseEvent) => {
     e.preventDefault();
     if (parsed.isDeleted) return;
-    setSelectedMessage({ msg, parsed });
+    setContextMenuMsg({ msg, parsed });
+    setReactionBarMsgId(null);
+  };
+
+  const handleForwardMessage = (text: string) => {
+    if (typeof navigator !== "undefined" && navigator.share) {
+      navigator.share({ title: "Travally message", text }).catch(() => {});
+    } else {
+      setInputMessage(text);
+      textareaRef.current?.focus();
+    }
+  };
+
+  const handleBatchCopySelected = () => {
+    const texts = messages
+      .filter((m) => selectedMsgIds.has(m.id))
+      .map((m) => {
+        try {
+          return parseMessageContent(m.content).text || "";
+        } catch {
+          return m.content;
+        }
+      })
+      .filter(Boolean)
+      .join("\n\n");
+    if (texts) {
+      navigator.clipboard?.writeText(texts);
+    }
+    setSelectedMsgIds(new Set());
+    setIsSelectMode(false);
+  };
+
+  const handleBatchDeleteSelected = async () => {
+    const ids = Array.from(selectedMsgIds);
+    if (ids.length === 0) return;
+    for (const id of ids) {
+      await handleDeleteMessage(id, "me");
+    }
+    setSelectedMsgIds(new Set());
+    setIsSelectMode(false);
   };
 
   const handleCopyText = (text?: string, msgId?: string) => {
@@ -1408,6 +1480,33 @@ export default function ActiveChatPage() {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-2 relative"
       >
+        {/* ── WHATSAPP-STYLE PINNED MESSAGE BANNER ── */}
+        {pinnedMessage && (
+          <div
+            onClick={() => {
+              const el = document.getElementById(`msg-${pinnedMessage.id}`);
+              el?.scrollIntoView({ behavior: "smooth", block: "center" });
+            }}
+            className="sticky top-0 z-30 mb-2 px-3.5 py-2 rounded-2xl bg-white/95 dark:bg-[#15221c]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-950/80 shadow-sm flex items-center justify-between gap-3 text-xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2b23] transition-colors"
+          >
+            <div className="flex items-center gap-2 truncate">
+              <Pin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <strong className="text-slate-800 dark:text-slate-200 shrink-0">{pinnedMessage.senderName}:</strong>
+              <span className="text-slate-500 dark:text-slate-400 truncate">{pinnedMessage.text}</span>
+            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setPinnedMessage(null);
+              }}
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+              title="Unpin message"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
         {/* ── WHATSAPP-STYLE IN-CHAT ENCRYPTION & 7-DAY RETENTION VALIDITY BANNER ── */}
         <div className="flex flex-col items-center gap-1.5 pt-1 pb-3 px-3 max-w-sm sm:max-w-md mx-auto text-center select-none animate-fade-in">
           {/* WhatsApp-style End-to-End Encrypted pill */}
@@ -1555,12 +1654,35 @@ export default function ActiveChatPage() {
 
                     {/* ── BUBBLE CONTAINER (TOUCH LONG-PRESS / RIGHT-CLICK TO SELECT + SWIPE TO REPLY) ── */}
                     <div
-                      className="relative flex items-center"
+                      className="relative flex items-center group/bubble"
                       style={{
                         transform: swipingMsgId === msg.id ? `translateX(${swipeOffset}px)` : "translateX(0px)",
                         transition: swipingMsgId === msg.id ? "none" : "transform 0.22s cubic-bezier(0.2, 0, 0, 1)",
                       }}
                     >
+                      {/* Selection Checkbox in Select Mode */}
+                      {isSelectMode && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedMsgIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(msg.id)) next.delete(msg.id);
+                              else next.add(msg.id);
+                              return next;
+                            });
+                          }}
+                          className={`mr-2.5 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors cursor-pointer shrink-0 ${
+                            selectedMsgIds.has(msg.id)
+                              ? "bg-emerald-600 border-emerald-600 text-white"
+                              : "border-slate-300 dark:border-slate-600 bg-transparent"
+                          }`}
+                        >
+                          {selectedMsgIds.has(msg.id) && <Check className="w-3 h-3 stroke-[3]" />}
+                        </button>
+                      )}
+
                       {/* Swipe reply indicator popping on left */}
                       {swipingMsgId === msg.id && swipeOffset > 8 && (
                         <div
@@ -1571,6 +1693,206 @@ export default function ActiveChatPage() {
                           }}
                         >
                           <CornerDownRight className="w-4 h-4" />
+                        </div>
+                      )}
+
+                      {/* ── WHATSAPP HOVER ACTIONS CAPSULE (SMILE + DROPDOWN ARROW) ── */}
+                      {!isSelectMode && !parsed.isDeleted && (
+                        <div
+                          data-chat-actions="true"
+                          className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity z-20 ${
+                            isMe ? "-left-16" : "-right-16"
+                          }`}
+                        >
+                          {/* ☺ Smile Emoji Reaction Trigger */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReactionBarMsgId(reactionBarMsgId === msg.id ? null : msg.id);
+                              setContextMenuMsg(null);
+                            }}
+                            className="w-7 h-7 rounded-full bg-white dark:bg-[#1c2722] shadow-md border border-slate-200/80 dark:border-emerald-950/80 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                            title="React"
+                          >
+                            <Smile className="w-4 h-4" />
+                          </button>
+
+                          {/* ⌵ Context Menu Trigger */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
+                              setReactionBarMsgId(null);
+                            }}
+                            className="w-7 h-7 rounded-full bg-white dark:bg-[#1c2722] shadow-md border border-slate-200/80 dark:border-emerald-950/80 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
+                            title="More options"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ── WHATSAPP FLOATING REACTION BAR ── */}
+                      {reactionBarMsgId === msg.id && (
+                        <div
+                          data-chat-actions="true"
+                          className="absolute -top-11 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1c2722] dark:bg-[#0f1713] text-white shadow-2xl border border-emerald-900/40 backdrop-blur-md animate-scale-up select-none"
+                          style={{
+                            [isMe ? "right" : "left"]: "0px",
+                          }}
+                        >
+                          {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                            <button
+                              key={emoji}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleReaction(msg.id, emoji);
+                                setReactionBarMsgId(null);
+                              }}
+                              className="w-7 h-7 rounded-full hover:scale-130 active:scale-95 transition-transform flex items-center justify-center text-base cursor-pointer"
+                              title={`React ${emoji}`}
+                            >
+                              <RealisticEmoji emoji={emoji} size={20} />
+                            </button>
+                          ))}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setReactionBarMsgId(null);
+                              setIsEmojiPickerOpen(true);
+                            }}
+                            className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all hover:scale-110 ml-0.5 cursor-pointer"
+                            title="More reactions"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* ── WHATSAPP CONTEXT MENU DROPDOWN ── */}
+                      {contextMenuMsg?.msg?.id === msg.id && (
+                        <div
+                          data-chat-actions="true"
+                          className="absolute z-50 min-w-[195px] py-1.5 rounded-2xl bg-[#1c2722] text-white shadow-2xl border border-emerald-950/80 backdrop-blur-md animate-scale-up text-xs select-none"
+                          style={{
+                            top: "100%",
+                            [isMe ? "right" : "left"]: "0px",
+                            marginTop: "4px",
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {/* 1. Message info */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setMessageInfoTarget({ msg, parsed });
+                              setContextMenuMsg(null);
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                          >
+                            <Info className="w-4 h-4 text-slate-400" />
+                            <span className="text-[13px] font-medium">Message info</span>
+                          </button>
+
+                          {/* 2. Reply */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setReplyingTo({
+                                id: msg.id,
+                                senderName: isMe ? "You" : senderName,
+                                text: parsed.text || parsed.mediaType || "Message",
+                              });
+                              setContextMenuMsg(null);
+                              textareaRef.current?.focus();
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                          >
+                            <Reply className="w-4 h-4 text-slate-400" />
+                            <span className="text-[13px] font-medium">Reply</span>
+                          </button>
+
+                          {/* 3. Copy */}
+                          {parsed.text && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                handleCopyText(parsed.text, msg.id);
+                                setContextMenuMsg(null);
+                              }}
+                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                            >
+                              <Copy className="w-4 h-4 text-slate-400" />
+                              <span className="text-[13px] font-medium">Copy</span>
+                            </button>
+                          )}
+
+                          {/* 4. Forward */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleForwardMessage(parsed.text || parsed.mediaType || "Shared message");
+                              setContextMenuMsg(null);
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                          >
+                            <Forward className="w-4 h-4 text-slate-400" />
+                            <span className="text-[13px] font-medium">Forward</span>
+                          </button>
+
+                          {/* 5. Pin */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setPinnedMessage({
+                                id: msg.id,
+                                text: parsed.text || parsed.mediaType || "Message",
+                                senderName: isMe ? "You" : senderName,
+                              });
+                              setContextMenuMsg(null);
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                          >
+                            <Pin className="w-4 h-4 text-slate-400" />
+                            <span className="text-[13px] font-medium">Pin</span>
+                          </button>
+
+                          {/* Divider */}
+                          <div className="h-px bg-white/10 my-1 mx-2" />
+
+                          {/* 6. Select */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsSelectMode(true);
+                              setSelectedMsgIds(new Set([msg.id]));
+                              setContextMenuMsg(null);
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                          >
+                            <CheckSquare className="w-4 h-4 text-slate-400" />
+                            <span className="text-[13px] font-medium">Select</span>
+                          </button>
+
+                          {/* Divider */}
+                          <div className="h-px bg-white/10 my-1 mx-2" />
+
+                          {/* 7. Delete */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDeleteTargetMsg({ msg, parsed });
+                              setContextMenuMsg(null);
+                            }}
+                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer text-left"
+                          >
+                            <Trash2 className="w-4 h-4 text-rose-500" />
+                            <span className="text-[13px] font-medium text-rose-400">Delete</span>
+                          </button>
                         </div>
                       )}
 
@@ -2104,167 +2426,197 @@ export default function ActiveChatPage() {
       </footer>
       </div>
 
-      {/* ── LONG-PRESS / RIGHT-CLICK MESSAGE ACTIONS MODAL ── */}
-      {selectedMessage && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
-          onClick={() => setSelectedMessage(null)}
-        >
+      {/* ── WHATSAPP-STYLE MESSAGE INFO MODAL ── */}
+      {messageInfoTarget && (() => {
+        const msg = messageInfoTarget.msg;
+        const parsed = messageInfoTarget.parsed;
+
+        return (
           <div
-            className="w-full max-w-[230px] rounded-2xl bg-white dark:bg-[#15201b] border border-slate-200 dark:border-emerald-950/80 shadow-2xl p-2.5 flex flex-col gap-2 animate-in zoom-in-95 duration-150"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 select-none"
+            onClick={() => setMessageInfoTarget(null)}
           >
-            {/* Quick Reactions Row */}
-            <div className="flex items-center justify-between px-1.5 py-1 rounded-xl bg-slate-50 dark:bg-[#1a2822] border border-slate-100 dark:border-emerald-900/40">
-              {QUICK_REACTIONS.map((emoji) => (
+            <div
+              className="w-full max-w-sm rounded-3xl bg-white dark:bg-[#121c17] border border-slate-200 dark:border-emerald-950/80 shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-emerald-950/60 pb-3">
+                <div className="flex items-center gap-2">
+                  <Info className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Message info
+                  </h3>
+                </div>
                 <button
-                  key={emoji}
                   type="button"
-                  onClick={() => {
-                    handleToggleReaction(selectedMessage.msg.id, emoji);
-                    setSelectedMessage(null);
-                  }}
-                  className="w-7 h-7 rounded-full hover:scale-125 transition-transform flex items-center justify-center text-base active:scale-90"
-                  title={`React ${emoji}`}
+                  onClick={() => setMessageInfoTarget(null)}
+                  className="w-8 h-8 rounded-full bg-slate-100 dark:bg-[#1b2621] text-slate-500 hover:text-slate-800 dark:hover:text-white flex items-center justify-center transition-colors cursor-pointer"
                 >
-                  <RealisticEmoji emoji={emoji} size={20} />
+                  <X className="w-4 h-4" />
                 </button>
-              ))}
+              </div>
+
+              {/* Message snippet preview */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-[#18241e] border border-slate-200/80 dark:border-emerald-950/80 text-xs text-slate-800 dark:text-slate-200">
+                <p className="line-clamp-3 font-medium">{parsed.text || parsed.mediaType || "Attachment"}</p>
+                <span className="text-[10px] text-slate-400 mt-1.5 block">
+                  {new Date(msg.createdAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" })}
+                </span>
+              </div>
+
+              {/* Delivery / Read Status Breakdown */}
+              <div className="space-y-3 pt-1">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 flex items-center justify-center shrink-0">
+                    <CheckCheck className="w-4 h-4" />
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block">Read</span>
+                    <span className="text-[11px] text-slate-400">
+                      {formatTimeAgo(msg.createdAt)}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-[#18241e] text-slate-500 flex items-center justify-center shrink-0">
+                    <CheckCheck className="w-4 h-4 text-slate-400" />
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-slate-800 dark:text-slate-200 block">Delivered</span>
+                    <span className="text-[11px] text-slate-400">
+                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* End to end encryption notice */}
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/25 flex items-center gap-2 text-[11px] text-amber-900 dark:text-amber-200">
+                <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span>Messages are end-to-end encrypted with 256-bit AES-GCM.</span>
+              </div>
             </div>
+          </div>
+        );
+      })()}
 
-            {/* Actions Menu */}
-            <div className="flex flex-col gap-0.5">
-              {/* Reply */}
-              <button
-                type="button"
-                onClick={() => {
-                  const isMe =
-                    selectedMessage.msg.senderId === currentUser?.id ||
-                    selectedMessage.msg.sender?.id === currentUser?.id ||
-                    selectedMessage.msg.sender?.email === currentUser?.email;
-                  const senderName = isMe
-                    ? "You"
-                    : selectedMessage.msg.sender?.displayName ||
-                      selectedMessage.msg.sender?.name ||
-                      selectedMessage.msg.sender?.email?.split("@")[0] ||
-                      "Traveler";
-                  setReplyingTo({
-                    id: selectedMessage.msg.id,
-                    senderName,
-                    text: selectedMessage.parsed.text || selectedMessage.parsed.mediaType || "Message",
-                  });
-                  setSelectedMessage(null);
-                }}
-                className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1f2e27] text-slate-700 dark:text-slate-200 font-medium text-xs transition text-left"
-              >
-                <CornerDownRight className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                <span>Reply</span>
-              </button>
+      {/* ── WHATSAPP-STYLE DELETE MESSAGE CONFIRMATION MODAL ── */}
+      {deleteTargetMsg && (() => {
+        const isMe = Boolean(
+          currentUser?.id &&
+          (deleteTargetMsg.msg.senderId === currentUser.id || deleteTargetMsg.msg.sender?.id === currentUser.id)
+        );
+        const msgCreatedAt = deleteTargetMsg.msg.createdAt
+          ? new Date(deleteTargetMsg.msg.createdAt).getTime()
+          : Date.now();
+        const ageMinutes = (Date.now() - msgCreatedAt) / (1000 * 60);
+        const canDeleteForEveryone = isMe && ageMinutes <= 15;
+        const remainingMinutes = Math.max(1, Math.round(15 - ageMinutes));
 
-              {/* Copy */}
-              {selectedMessage.parsed.text && (
+        return (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200 select-none"
+            onClick={() => setDeleteTargetMsg(null)}
+          >
+            <div
+              className="w-full max-w-sm rounded-3xl bg-white dark:bg-[#121c17] border border-slate-200 dark:border-emerald-950/80 shadow-2xl p-5 space-y-4 animate-in zoom-in-95 duration-150"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white">
+                    Delete message?
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-snug">
+                    {canDeleteForEveryone
+                      ? `You can delete for everyone (${remainingMinutes}m remaining) or just for yourself.`
+                      : "You can delete this message for yourself."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-1">
+                {canDeleteForEveryone && (
+                  <button
+                    type="button"
+                    disabled={isDeletingMsg}
+                    onClick={async () => {
+                      await handleDeleteMessage(deleteTargetMsg.msg.id, "everyone");
+                      setDeleteTargetMsg(null);
+                    }}
+                    className="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-md transition-colors cursor-pointer"
+                  >
+                    Delete for everyone
+                  </button>
+                )}
+
                 <button
                   type="button"
-                  onClick={() => handleCopyText(selectedMessage.parsed.text, selectedMessage.msg.id)}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1f2e27] text-slate-700 dark:text-slate-200 font-medium text-xs transition text-left"
-                >
-                  <Copy className="w-3.5 h-3.5 text-blue-500" />
-                  <span>{copiedMsgId === selectedMessage.msg.id ? "Copied!" : "Copy"}</span>
-                </button>
-              )}
-
-              {/* Share */}
-              {selectedMessage.parsed.text && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (typeof navigator !== "undefined" && navigator.share) {
-                      navigator
-                        .share({
-                          title: "Message from Travally",
-                          text: selectedMessage.parsed.text,
-                        })
-                        .catch(() => {});
-                    } else {
-                      handleCopyText(selectedMessage.parsed.text, selectedMessage.msg.id);
-                    }
-                    setSelectedMessage(null);
+                  disabled={isDeletingMsg}
+                  onClick={async () => {
+                    await handleDeleteMessage(deleteTargetMsg.msg.id, "me");
+                    setDeleteTargetMsg(null);
                   }}
-                  className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#1f2e27] text-slate-700 dark:text-slate-200 font-medium text-xs transition text-left"
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#1c2923] dark:hover:bg-[#25372f] text-slate-700 dark:text-slate-200 font-bold text-xs transition-colors cursor-pointer"
                 >
-                  <Share2 className="w-3.5 h-3.5 text-emerald-500" />
-                  <span>Share</span>
+                  Delete for me
                 </button>
-              )}
 
-              {/* Delete Options */}
-              {(() => {
-                const isMe =
-                  selectedMessage.msg.senderId === currentUser?.id ||
-                  selectedMessage.msg.sender?.id === currentUser?.id ||
-                  selectedMessage.msg.sender?.email === currentUser?.email;
-
-                const msgCreatedAt = selectedMessage.msg.createdAt
-                  ? new Date(selectedMessage.msg.createdAt).getTime()
-                  : Date.now();
-                const ageMinutes = (Date.now() - msgCreatedAt) / (1000 * 60);
-                const canDeleteForEveryone = isMe && ageMinutes <= 15;
-                const remainingMinutes = Math.max(1, Math.round(15 - ageMinutes));
-
-                return (
-                  <>
-                    {/* Delete for Everyone */}
-                    {isMe && (
-                      <button
-                        type="button"
-                        disabled={!canDeleteForEveryone || isDeletingMsg}
-                        onClick={() => handleDeleteMessage(selectedMessage.msg.id, "everyone")}
-                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg font-medium text-xs transition text-left ${
-                          canDeleteForEveryone
-                            ? "hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400"
-                            : "opacity-40 cursor-not-allowed text-slate-400 dark:text-slate-600"
-                        }`}
-                      >
-                        <div className="flex items-center gap-2.5">
-                          <Trash2 className="w-3.5 h-3.5" />
-                          <span>Delete for everyone</span>
-                        </div>
-                        {canDeleteForEveryone ? (
-                          <span className="text-[10px] font-normal text-rose-500/80">
-                            {remainingMinutes}m
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-normal text-slate-400">
-                            &gt;15m
-                          </span>
-                        )}
-                      </button>
-                    )}
-
-                    {/* Delete for Me */}
-                    <button
-                      type="button"
-                      disabled={isDeletingMsg}
-                      onClick={() => handleDeleteMessage(selectedMessage.msg.id, "me")}
-                      className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 font-medium text-xs transition text-left"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Delete for me</span>
-                      </div>
-                    </button>
-                  </>
-                );
-              })()}
+                <button
+                  type="button"
+                  onClick={() => setDeleteTargetMsg(null)}
+                  className="w-full py-2 px-4 rounded-xl text-slate-500 hover:text-slate-800 dark:hover:text-white font-semibold text-xs transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
+          </div>
+        );
+      })()}
 
-            {/* Cancel Button */}
+      {/* ── WHATSAPP-STYLE MULTI-SELECT BOTTOM ACTION BAR ── */}
+      {isSelectMode && (
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-white/95 dark:bg-[#111815]/95 backdrop-blur-xl border-t border-slate-200 dark:border-emerald-950/80 p-3 sm:p-4 shadow-2xl flex items-center justify-between max-w-4xl mx-auto animate-slide-up select-none">
+          <div className="flex items-center gap-3">
+            <span className="text-xs sm:text-sm font-extrabold text-slate-800 dark:text-white">
+              {selectedMsgIds.size} selected
+            </span>
             <button
               type="button"
-              onClick={() => setSelectedMessage(null)}
-              className="mt-0.5 w-full py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-[#1a2822] dark:hover:bg-[#22352d] text-slate-600 dark:text-slate-300 font-medium text-[11px] transition text-center"
+              onClick={() => {
+                setIsSelectMode(false);
+                setSelectedMsgIds(new Set());
+              }}
+              className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white hover:underline cursor-pointer"
             >
               Cancel
+            </button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleBatchCopySelected}
+              disabled={selectedMsgIds.size === 0}
+              className="px-3 py-2 rounded-xl border border-slate-200 dark:border-emerald-950 bg-white dark:bg-[#16201b] text-xs font-bold text-slate-700 dark:text-slate-300 hover:bg-slate-100 disabled:opacity-40 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Copy className="w-3.5 h-3.5" />
+              <span>Copy</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleBatchDeleteSelected}
+              disabled={selectedMsgIds.size === 0}
+              className="px-3.5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-40 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete</span>
             </button>
           </div>
         </div>
