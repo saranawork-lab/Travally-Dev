@@ -9,9 +9,7 @@ import {
   Users,
   Compass,
   ShieldAlert,
-  Flag,
   UserX,
-  MoreVertical,
   Check,
   CheckCheck,
   Image as ImageIcon,
@@ -215,7 +213,6 @@ export default function ActiveChatPage() {
 
   // Safety & E2EE modals
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
-  const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [reportModalOpen, setReportModalOpen] = useState(false);
   const [reportTarget, setReportTarget] = useState({ id: "", name: "" });
 
@@ -1870,36 +1867,6 @@ export default function ActiveChatPage() {
                               recipientName={otherParticipantName}
                               timestamp={formatMessageTime(msg.createdAt)}
                             />
-                          )}
-                        </div>
-                      )}
-
-                      {/* Dropdown Menu for non-me messages (Report message) */}
-                      {!isMe && (
-                        <div className="absolute top-1/2 -translate-y-1/2 -right-8 opacity-0 group-hover/msg:opacity-100 transition-opacity">
-                          <button
-                            type="button"
-                            onClick={() => setMenuOpen(menuOpen === msg.id ? null : msg.id)}
-                            className="w-7 h-7 rounded-full bg-white dark:bg-[#1a2620] shadow-md flex items-center justify-center text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 border border-slate-200/60 dark:border-emerald-950/60"
-                            title="Message options"
-                          >
-                            <MoreVertical className="w-3.5 h-3.5" />
-                          </button>
-
-                          {menuOpen === msg.id && (
-                            <div className="absolute right-0 mt-1 w-28 bg-white dark:bg-[#131c18] rounded-2xl shadow-xl border border-slate-200 dark:border-emerald-950/80 py-1.5 z-50 text-xs">
-                              <button
-                                onClick={() => {
-                                  setMenuOpen(null);
-                                  setReportTarget({ id: msg.senderId, name: senderName });
-                                  setReportModalOpen(true);
-                                }}
-                                className="w-full px-3 py-1.5 text-left text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#1b2721] flex items-center gap-1.5"
-                              >
-                                <Flag className="w-3 h-3 text-rose-500" />
-                                <span>Report</span>
-                              </button>
-                            </div>
                           )}
                         </div>
                       )}
