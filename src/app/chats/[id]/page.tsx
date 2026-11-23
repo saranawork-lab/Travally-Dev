@@ -1332,15 +1332,26 @@ export default function ActiveChatPage() {
 
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     longPressTimerRef.current = setTimeout(() => {
-      const spaceBelow = window.innerHeight - clientY;
-      const direction: "down" | "up" = spaceBelow < 320 && clientY > 300 ? "up" : "down";
-      setContextMenuMsg({ msg, parsed, direction });
+      // Long-press on mobile: enter multi-select mode and select this message directly
+      setIsSelectMode(true);
+      setSelectedMsgIds((prev) => {
+        const next = new Set(prev);
+        if (next.has(msg.id)) {
+          next.delete(msg.id);
+          if (next.size === 0) setIsSelectMode(false);
+        } else {
+          next.add(msg.id);
+        }
+        return next;
+      });
+      setContextMenuMsg(null);
+      setActiveReactionMsgId(null);
       setSwipingMsgId(null);
       setSwipeOffset(0);
       if (typeof navigator !== "undefined" && navigator.vibrate) {
-        navigator.vibrate(40);
+        navigator.vibrate(50);
       }
-    }, 450);
+    }, 420);
   };
 
   const handleTouchMove = (msg: any, parsed: MessagePayload, e: React.TouchEvent) => {
@@ -2577,13 +2588,36 @@ export default function ActiveChatPage() {
                       )}
 
                       <div
-                        onDoubleClick={(e) => handleDoubleTap(msg.id, e)}
+                        onClick={(e) => {
+                          if (isSelectMode) {
+                            e.stopPropagation();
+                            setSelectedMsgIds((prev) => {
+                              const next = new Set(prev);
+                              if (next.has(msg.id)) {
+                                next.delete(msg.id);
+                                if (next.size === 0) setIsSelectMode(false);
+                              } else {
+                                next.add(msg.id);
+                              }
+                              return next;
+                            });
+                          }
+                        }}
+                        onDoubleClick={(e) => {
+                          if (!isSelectMode) handleDoubleTap(msg.id, e);
+                        }}
                         onTouchStart={(e) => handleTouchStart(msg, parsed, e)}
                         onTouchMove={(e) => handleTouchMove(msg, parsed, e)}
                         onTouchEnd={(e) => handleTouchEnd(msg, parsed, e)}
-                        onContextMenu={(e) => handleContextMenu(msg, parsed, e)}
+                        onContextMenu={(e) => {
+                          if (!isSelectMode) handleContextMenu(msg, parsed, e);
+                        }}
                         className={`relative group rounded-[20px] transition-all select-text cursor-pointer ${
-                          selectedMessage?.msg?.id === msg.id
+                          isSelectMode && selectedMsgIds.has(msg.id)
+                            ? isTravel
+                              ? "ring-2 ring-orange-500 bg-orange-500/15 dark:bg-orange-500/25 scale-[1.01]"
+                              : "ring-2 ring-emerald-500 bg-emerald-500/15 dark:bg-emerald-500/25 scale-[1.01]"
+                            : selectedMessage?.msg?.id === msg.id
                             ? isTravel
                               ? "ring-2 ring-orange-500/50 scale-[1.01]"
                               : "ring-2 ring-emerald-500/50 scale-[1.01]"
@@ -2746,7 +2780,7 @@ export default function ActiveChatPage() {
                             )}
                           </div>
                         </div>
-                      ) : (
+                      ) : !parsed.mediaType ? (
                         <div className="flex items-end justify-between gap-x-2 min-w-0">
                           <span className="whitespace-pre-wrap text-[13px] sm:text-[13.5px] leading-snug font-normal break-words select-text">
                             {parsed.text}
@@ -2776,7 +2810,7 @@ export default function ActiveChatPage() {
                             )}
                           </span>
                         </div>
-                      )}
+                      ) : null}
 
                       {/* Media Container: Photo (WhatsApp-style layout supporting up to 3 photos) */}
                       {!parsed.isDeleted && parsed.mediaType === "PHOTO" && (parsed.mediaData?.urls?.length || parsed.mediaData?.url) && (() => {
