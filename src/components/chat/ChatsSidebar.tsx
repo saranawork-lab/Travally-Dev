@@ -49,27 +49,11 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
   onCloseMobileDrawer,
 }) => {
   const router = useRouter();
-  const [conversations, setConversations] = useState<any[]>(() => {
-    if (cachedSidebarConversations && cachedSidebarConversations.length > 0) return cachedSidebarConversations;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("travally_chats_inbox_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            cachedSidebarConversations = parsed;
-            return parsed;
-          }
-        }
-      } catch {}
-    }
-    return [];
-  });
+  const [conversations, setConversations] = useState<any[]>([]);
   const [filterType, setFilterType] = useState<"ALL" | "ACTIVITY" | "TRAVEL">("ALL");
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState<boolean>(() => {
-    return !(cachedSidebarConversations && cachedSidebarConversations.length > 0);
-  });
+  const [loading, setLoading] = useState<boolean>(true);
+  const [mounted, setMounted] = useState<boolean>(false);
 
   const fetchChats = async () => {
     try {
@@ -91,11 +75,30 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
   };
 
   useEffect(() => {
+    setMounted(true);
+    // Instant cache hydration on client mount
+    if (cachedSidebarConversations && cachedSidebarConversations.length > 0) {
+      setConversations(cachedSidebarConversations);
+      setLoading(false);
+    } else {
+      try {
+        const cached = sessionStorage.getItem("travally_chats_inbox_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedSidebarConversations = parsed;
+            setConversations(parsed);
+            setLoading(false);
+          }
+        }
+      } catch {}
+    }
+
     fetchChats();
     const interval = setInterval(() => {
       if (typeof document !== "undefined" && document.hidden) return;
       fetchChats();
-    }, 15000);
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -122,8 +125,11 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
           >
             Chats
           </Link>
-          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
-            {conversations.length}
+          <span
+            suppressHydrationWarning
+            className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+          >
+            {mounted ? conversations.length : 0}
           </span>
         </div>
 

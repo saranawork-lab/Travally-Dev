@@ -29,6 +29,11 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const { t } = useLanguage();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
 
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   // State: whether user is hovering over the sidebar
   const [isHovered, setIsHovered] = useState(false);
   // State: when an option is clicked, force sidebar to shrink immediately
@@ -122,11 +127,11 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
 
   const combinedChatsBadge = (totalUnreadMessages > 0 ? totalUnreadMessages : unreadChatsCount) + pendingRequestsCount;
   const chatsBadgeDisplay =
-    combinedChatsBadge > 0
+    mounted && combinedChatsBadge > 0
       ? combinedChatsBadge > 9
         ? "9+"
         : combinedChatsBadge
-      : 0;
+      : null;
 
   const navItems = [
     {
@@ -227,8 +232,9 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
                   />
 
                   {/* Badge in collapsed mode: Compact pill docked on top-right of the 52px icon slot */}
-                  {!isExpanded && item.badge && item.badge !== 0 ? (
+                  {!isExpanded && item.badge ? (
                     <span
+                      suppressHydrationWarning
                       className={`absolute top-1.5 right-2 min-w-[15px] h-3.5 px-1 rounded-full text-[8px] font-bold inline-flex items-center justify-center ${item.badgeColor
                         } ${item.id === "requests" ? "animate-pulse" : ""}`}
                     >
@@ -254,8 +260,9 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
                   </span>
 
                   <div className="flex items-center gap-1.5 shrink-0 ml-1.5">
-                    {item.badge && item.badge !== 0 ? (
+                    {item.badge ? (
                       <span
+                        suppressHydrationWarning
                         className={`min-w-[18px] h-4.5 px-1.5 rounded-full text-[10px] font-bold inline-flex items-center justify-center ${item.badgeColor
                           } ${item.id === "requests" ? "animate-pulse" : ""}`}
                       >

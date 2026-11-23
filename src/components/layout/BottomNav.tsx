@@ -34,7 +34,12 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   const { t } = useLanguage();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 });
+  const [mounted, setMounted] = useState(false);
   const navRef = React.useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const userRank = currentUser?.joinRank || parseRankFromMembership(currentUser?.membershipNumber);
   const userBadge = getBadgeForRank(userRank);
@@ -125,11 +130,11 @@ const BottomNav: React.FC<BottomNavProps> = () => {
 
   const combinedChatsBadge = (totalUnreadMessages > 0 ? totalUnreadMessages : unreadChatsCount) + pendingRequestsCount;
   const chatsBadgeDisplay =
-    combinedChatsBadge > 0
+    mounted && combinedChatsBadge > 0
       ? combinedChatsBadge > 9
         ? "9+"
         : combinedChatsBadge
-      : 0;
+      : null;
 
   const navItems = [
     {
@@ -236,6 +241,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
                   {/* Badge */}
                   {!!item.badge ? (
                     <span 
+                      suppressHydrationWarning
                       className={`transition-all duration-300 absolute -top-1.5 -right-2 min-w-[15px] h-3.5 px-1 rounded-full text-[8px] font-bold inline-flex items-center justify-center ${isActive ? "opacity-0 scale-50" : `opacity-100 scale-100 ${item.badgeColor} ${item.id === "requests" ? "animate-pulse" : ""}`}`}
                     >
                       {item.badge}
@@ -249,7 +255,10 @@ const BottomNav: React.FC<BottomNavProps> = () => {
                       {renderGradientLabel(item.label)}
                     </span>
                     {!!item.badge && (
-                      <span className="ml-1.5 min-w-[16px] h-4 px-1 rounded-full bg-emerald-300/90 dark:bg-emerald-800 text-emerald-950 dark:text-emerald-100 text-[9px] font-black inline-flex items-center justify-center border border-emerald-400 dark:border-emerald-600 shadow-2xs shrink-0">
+                      <span
+                        suppressHydrationWarning
+                        className="ml-1.5 min-w-[16px] h-4 px-1 rounded-full bg-emerald-300/90 dark:bg-emerald-800 text-emerald-950 dark:text-emerald-100 text-[9px] font-black inline-flex items-center justify-center border border-emerald-400 dark:border-emerald-600 shadow-2xs shrink-0"
+                      >
                         {item.badge}
                       </span>
                     )}
