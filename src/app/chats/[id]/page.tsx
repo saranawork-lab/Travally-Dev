@@ -17,6 +17,7 @@ import {
   PhoneOff,
   Video,
   Smile,
+  Keyboard,
   Plus,
   Mic,
   MapPin,
@@ -2529,17 +2530,6 @@ export default function ActiveChatPage() {
         )}
 
         <div className="max-w-4xl mx-auto flex items-end gap-2 relative">
-          {/* Emoji / Sticker Popover */}
-          <EmojiPickerPopover
-            isOpen={isEmojiPickerOpen}
-            onClose={() => setIsEmojiPickerOpen(false)}
-            onSelectEmoji={(emoji) => {
-              setInputMessage((prev) => prev + emoji);
-              setIsEmojiPickerOpen(false);
-              textareaRef.current?.focus();
-            }}
-          />
-
           {/* Hidden multi-image file input for WhatsApp-style photo sending */}
           <input
             type="file"
@@ -2601,20 +2591,33 @@ export default function ActiveChatPage() {
               rows={1}
             />
 
-            {/* Emoji Toggle inside bar */}
+            {/* Emoji / Keyboard Toggle inside bar */}
             <button
               type="button"
               data-emoji-toggle="true"
               onClick={() => {
-                setIsEmojiPickerOpen(!isEmojiPickerOpen);
-                setIsAttachmentOpen(false);
+                if (isEmojiPickerOpen) {
+                  setIsEmojiPickerOpen(false);
+                  textareaRef.current?.focus();
+                } else {
+                  setIsEmojiPickerOpen(true);
+                  setIsAttachmentOpen(false);
+                }
               }}
-              className={`p-1.5 rounded-xl text-slate-400 ${
-                isTravel ? "hover:text-orange-500" : "hover:text-emerald-500"
-              } transition-colors shrink-0`}
-              title="Emoji picker"
+              className={`p-1.5 rounded-xl transition-all shrink-0 active:scale-90 ${
+                isEmojiPickerOpen
+                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60"
+                  : isTravel
+                  ? "text-slate-400 hover:text-orange-500"
+                  : "text-slate-400 hover:text-emerald-500"
+              }`}
+              title={isEmojiPickerOpen ? "Switch to keyboard" : "Emoji picker"}
             >
-              <Smile className="w-5 h-5" />
+              {isEmojiPickerOpen ? (
+                <Keyboard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              ) : (
+                <Smile className="w-5 h-5" />
+              )}
             </button>
           </div>
 
@@ -2648,6 +2651,22 @@ export default function ActiveChatPage() {
             </button>
           )}
         </div>
+
+        {/* Emoji Keyboard Section: docked at bottom replacing keyboard space */}
+        {isEmojiPickerOpen && (
+          <div className="w-full mt-2 animate-in slide-in-from-bottom-2 duration-200">
+            <EmojiPickerPopover
+              isOpen={isEmojiPickerOpen}
+              onClose={() => {
+                setIsEmojiPickerOpen(false);
+                textareaRef.current?.focus();
+              }}
+              onSelectEmoji={(emoji) => {
+                setInputMessage((prev) => prev + emoji);
+              }}
+            />
+          </div>
+        )}
       </footer>
       </div>
 
