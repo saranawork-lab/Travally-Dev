@@ -506,33 +506,38 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
         </div>
       )}
 
-      {/* ── SUB-TABS (Deck, Saved Matches, My Beacons) ── */}
-      <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-emerald-950/60 pb-2">
+      {/* ── TOP HEADER / CONTROLS ── */}
+      <div className="flex items-center justify-between pb-2">
+        <div>
+          {tab === "saved" || tab === "mine" ? (
+            <button
+              type="button"
+              onClick={() => setTab("deck")}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/80 border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 transition cursor-pointer"
+            >
+              <span>← Back to Cards</span>
+            </button>
+          ) : null}
+        </div>
+
         <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => setTab("deck")}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              tab === "deck"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16221c]"
-            }`}
-          >
-            <span>🎴 Discover & Swipe</span>
-            {deckClues.length > 0 && (
-              <span className="min-w-[18px] h-4 px-1 rounded-full text-[9px] font-black inline-flex items-center justify-center bg-white/20 text-white">
-                {deckClues.length}
-              </span>
-            )}
-          </button>
+          {tab === "deck" && deckClues.length > 0 && (
+            <button
+              type="button"
+              onClick={loadDeck}
+              className="text-xs text-slate-500 hover:text-emerald-600 font-medium cursor-pointer"
+            >
+              Refresh Deck
+            </button>
+          )}
 
           <button
             type="button"
-            onClick={() => setTab("saved")}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+            onClick={() => setTab(tab === "saved" ? "deck" : "saved")}
+            className={`px-3.5 py-1.5 rounded-full text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
               tab === "saved"
                 ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16221c]"
+                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-[#16221c] border border-slate-200 dark:border-emerald-950"
             }`}
           >
             <span>💚 Saved Matches</span>
@@ -542,23 +547,12 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
               </span>
             )}
           </button>
-        </div>
 
-        <div className="flex items-center gap-2">
-          {tab === "deck" && deckClues.length > 0 && (
-            <button
-              type="button"
-              onClick={loadDeck}
-              className="text-xs text-slate-500 hover:text-emerald-600 font-medium hidden sm:inline-block cursor-pointer"
-            >
-              Refresh Deck
-            </button>
-          )}
           {myClues.length > 0 && (
             <button
               type="button"
               onClick={() => setTab(tab === "mine" ? "deck" : "mine")}
-              className={`text-xs font-semibold px-2.5 py-1 rounded-xl transition ${
+              className={`text-xs font-semibold px-2.5 py-1 rounded-xl transition cursor-pointer ${
                 tab === "mine"
                   ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold"
                   : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
