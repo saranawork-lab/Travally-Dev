@@ -1094,14 +1094,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 ✓ One-time verification permanently unlocks Activity & Travel, Nature & Humanity, and Treasure & Clue together.
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
-              <button
-                type="button"
-                onClick={() => handleModeChange("instant")}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-emerald-950 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto cursor-pointer"
-              >
-                Create a Free Post Instead
-              </button>
+            <div className="flex items-center justify-center pt-2">
               <button
                 type="button"
                 onClick={() => openVerification(mode)}
