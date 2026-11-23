@@ -12,6 +12,7 @@ import {
   X
 } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
+import { decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
 
 interface ChatsSidebarProps {
   activeConversationId: string;
@@ -25,16 +26,16 @@ const parseLastMessageSnippet = (content?: string): string => {
   if (!content) return "No messages yet";
   try {
     const parsed = JSON.parse(content);
-    if (parsed.e2ee || parsed.ciphertext || parsed.iv) return "🔒 Encrypted message";
-    if (parsed.mediaType === "PHOTO") return "📷 Photo";
+    if (parsed.mediaType === "PHOTO") return parsed.text ? `📷 ${parsed.text}` : "📷 Photo";
     if (parsed.mediaType === "LOCATION") return "📍 Meetup point";
     if (parsed.mediaType === "TRIP") return "🎒 Trip itinerary";
     if (parsed.text) return parsed.text;
+    if (parsed.message) return parsed.message;
   } catch {
     // plain text
   }
-  if (content.startsWith("{") && content.includes('"e2ee"')) {
-    return "🔒 Encrypted message";
+  if (content.startsWith("{") && (content.includes('"e2ee"') || content.includes('"ciphertext"') || content.includes('"ct"'))) {
+    return "New message";
   }
   return content;
 };
@@ -61,10 +62,20 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
       if (res.ok) {
         const data = await res.json();
         const list = data.conversations || [];
-        setConversations(list);
-        cachedSidebarConversations = list;
+        const decryptedList = await Promise.all(
+          list.map(async (conv: any) => {
+            if (conv.messages && conv.messages[0]?.content && isE2EEMessage(conv.messages[0].content)) {
+              try {
+                conv.messages[0].content = await decryptChatMessage(conv.messages[0].content, conv.id);
+              } catch {}
+            }
+            return conv;
+          })
+        );
+        setConversations(decryptedList);
+        cachedSidebarConversations = decryptedList;
         try {
-          sessionStorage.setItem("travally_chats_inbox_cache", JSON.stringify(list));
+          sessionStorage.setItem("travally_chats_inbox_cache", JSON.stringify(decryptedList));
         } catch {}
       }
     } catch (e) {

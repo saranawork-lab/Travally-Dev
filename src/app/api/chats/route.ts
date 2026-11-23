@@ -4,12 +4,13 @@ import { getCurrentUser } from "@/lib/auth";
 import { cleanupExpiredConversations, getChatRetentionInfo } from "@/lib/chatRetention";
 import { getDb } from "@/lib/mongo";
 import { ObjectId } from "mongodb";
+import { decryptChatMessage } from "@/lib/crypto";
 
 export const dynamic = "force-dynamic";
 
 // Fast in-memory user chats cache to avoid repeat MongoDB aggregation hits
 const userChatsCache = new Map<string, { data: any; timestamp: number }>();
-const CHATS_CACHE_TTL_MS = 10000; // 10 seconds
+const CHATS_CACHE_TTL_MS = 2000; // 2 seconds
 
 export async function GET(req: NextRequest) {
   try {
@@ -216,6 +217,19 @@ export async function GET(req: NextRequest) {
     // Merge and decorate with 7-day retention details
     const allConvs = [...validGroupConversations, ...directConversations];
     allConvs.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+
+    // Decrypt latest message content for each conversation so clients immediately display the actual snippet
+    await Promise.all(
+      allConvs.map(async (conv) => {
+        if (conv.messages && conv.messages[0]?.content) {
+          try {
+            conv.messages[0].content = await decryptChatMessage(conv.messages[0].content, conv.id);
+          } catch (err) {
+            console.warn("Failed to decrypt latest message for conv:", conv.id, err);
+          }
+        }
+      })
+    );
 
     const decorated = allConvs.map((conv) => ({
       ...conv,
