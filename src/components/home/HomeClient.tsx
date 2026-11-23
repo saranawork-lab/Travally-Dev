@@ -928,32 +928,24 @@ export default function HomeClient() {
       label: "Posts",
       shortLabel: "Posts",
       icon: Camera,
-      color: "from-amber-400 to-orange-500",
-      activeBg: "bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/80 dark:to-amber-900/60 text-orange-900 dark:text-orange-200 border-orange-300/80 dark:border-orange-700/60",
     },
     {
       id: "grow" as const,
-      label: "Humanity and Nature Grow",
-      shortLabel: "Humanity & Nature",
+      label: "Humanity & Nature",
+      shortLabel: "Grow",
       icon: Sprout,
-      color: "from-emerald-400 to-teal-500",
-      activeBg: "bg-gradient-to-r from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-900 dark:text-emerald-200 border-emerald-300/80 dark:border-emerald-700/60",
     },
     {
       id: "treasure" as const,
       label: "Treasure Quest",
       shortLabel: "Treasure",
       icon: Gem,
-      color: "from-blue-400 to-indigo-500",
-      activeBg: "bg-gradient-to-r from-blue-100 via-indigo-50 to-blue-100 dark:from-blue-950/80 dark:to-indigo-900/60 text-blue-900 dark:text-blue-200 border-blue-300/80 dark:border-blue-700/60",
     },
     {
       id: "find-me" as const,
-      label: "Find Me",
+      label: "Find Me Beacons",
       shortLabel: "Find Me",
       icon: Flame,
-      color: "from-pink-400 to-rose-500",
-      activeBg: "bg-gradient-to-r from-rose-100 via-pink-50 to-rose-100 dark:from-rose-950/80 dark:to-pink-900/60 text-rose-900 dark:text-rose-200 border-rose-300/80 dark:border-rose-700/60",
     },
   ];
 
@@ -961,61 +953,64 @@ export default function HomeClient() {
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d0b] text-slate-900 dark:text-slate-100 relative overflow-hidden pb-24 font-sans select-none">
       {/* Background Glows */}
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
-      <div className="absolute top-[25%] left-[-10%] w-[45%] h-[45%] bg-orange-500/10 dark:bg-orange-500/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-[25%] left-[-10%] w-[45%] h-[45%] bg-teal-500/10 dark:bg-teal-500/5 blur-[120px] rounded-full pointer-events-none" />
 
-      <div className="max-w-5xl mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-12 relative z-10 space-y-4 sm:space-y-6">
+      <div className="max-w-4xl mx-auto px-3.5 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-12 relative z-10 space-y-4 sm:space-y-5">
         
-        {/* Top Community Subheader & Action Button */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 border-b border-slate-200/80 dark:border-emerald-950/60 pb-3.5 sm:pb-5">
-          <div className="min-w-0">
-            <h1 className="text-xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+        {/* Top Header */}
+        <div className="flex items-center justify-between gap-3 pt-1">
+          <div>
+            <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
               Explore What&apos;s Happening
             </h1>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+              Live explorer stories, community causes, and geo quests
+            </p>
           </div>
 
-          {/* Quick Create Action linking directly to Unified Create Hub */}
-          <div className="shrink-0">
+          <div className="shrink-0 hidden sm:block">
             {activeTab === "instants" && (
-              <Link
-                href="/activities/create?type=instant"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95"
+              <button
+                type="button"
+                onClick={() => setIsCreateInstantOpen(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer"
               >
-                <Camera className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>Create Post</span>
-              </Link>
+                <Plus className="w-3.5 h-3.5" />
+                <span>New Post</span>
+              </button>
             )}
             {activeTab === "grow" && (
               <Link
                 href="/activities/create?type=grow"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition active:scale-95"
               >
-                <Sprout className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>Start Humanity & Nature Grow</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Start Initiative</span>
               </Link>
             )}
             {activeTab === "treasure" && (
               <Link
                 href="/activities/create?type=treasure"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition active:scale-95"
               >
-                <Gem className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>Hide a Treasure</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Hide Treasure</span>
               </Link>
             )}
             {activeTab === "find-me" && (
               <Link
                 href="/activities/create?type=find-me"
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 px-4 sm:px-5 py-2 sm:py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all active:scale-95"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition active:scale-95"
               >
-                <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span>Drop a Clue</span>
+                <Plus className="w-3.5 h-3.5" />
+                <span>Drop Clue</span>
               </Link>
             )}
           </div>
         </div>
 
-        {/* 4 Feature Segments - Perfectly Responsive 4-Column Grid */}
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-2.5">
+        {/* 4 Feature Segments - Modern Segmented Glass Controller */}
+        <div className="p-1 rounded-2xl bg-slate-200/70 dark:bg-[#111a14] border border-slate-300/60 dark:border-emerald-950/80 flex items-center gap-1 shadow-inner select-none">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -1024,14 +1019,14 @@ export default function HomeClient() {
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 py-2 sm:py-3 px-1 sm:px-3 rounded-2xl text-[11px] sm:text-sm font-bold border transition-all text-center select-none ${
+                className={`flex-1 py-2 sm:py-2.5 px-2 rounded-xl text-xs sm:text-sm font-semibold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                   isActive
-                    ? `${tab.activeBg} shadow-xs font-black`
-                    : "bg-white dark:bg-[#111815] border-slate-200 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-[#15201b]"
+                    ? "bg-white dark:bg-[#1a2620] text-emerald-900 dark:text-emerald-300 font-bold shadow-xs border border-slate-200/80 dark:border-emerald-800/50"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
                 }`}
               >
-                <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isActive ? "text-current" : "text-slate-400"}`} />
-                <span className="truncate max-w-full">
+                <Icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0 ${isActive ? "text-emerald-600 dark:text-emerald-400 stroke-[2.4]" : "text-slate-400 stroke-[1.8]"}`} />
+                <span className="truncate">
                   <span className="sm:hidden">{tab.shortLabel}</span>
                   <span className="hidden sm:inline">{tab.label}</span>
                 </span>
@@ -1043,6 +1038,41 @@ export default function HomeClient() {
         {/* ── TAB 1: INSTANTS (REAL COMMUNITY FEED) ── */}
         {activeTab === "instants" && (
           <div className="space-y-4">
+            {/* Modern Inline Quick Composer (Mobbin / Threads / X style) */}
+            <div className="bg-white dark:bg-[#111815] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-emerald-950/70 p-3 sm:p-4 shadow-xs hover:border-emerald-500/40 transition">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-emerald-50 dark:bg-emerald-950/80 flex items-center justify-center shrink-0 border border-emerald-300/60 dark:border-emerald-800/60 font-bold text-xs text-emerald-700 dark:text-emerald-300">
+                  {currentUser?.avatarUrl ? (
+                    <img
+                      src={currentUser.avatarUrl}
+                      alt={currentUser.displayName || "User"}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span>{currentUser?.displayName?.charAt(0) || "U"}</span>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => requireAuth(() => setIsCreateInstantOpen(true))}
+                  className="flex-1 text-left px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full bg-slate-100 dark:bg-[#16201b] hover:bg-slate-200/70 dark:hover:bg-[#1c2822] text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium transition cursor-pointer select-none"
+                >
+                  Share an observation or travel moment...
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => requireAuth(() => setIsCreateInstantOpen(true))}
+                  className="p-2 sm:px-3 sm:py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
+                  title="Share Photo"
+                >
+                  <Camera className="w-4 h-4" />
+                  <span className="hidden sm:inline">Photo</span>
+                </button>
+              </div>
+            </div>
+
             {loading && instants.length === 0 ? (
               <div className="columns-1 md:columns-2 gap-4">
                 {[1, 2, 3, 4].map((n) => (
@@ -1073,7 +1103,7 @@ export default function HomeClient() {
               </div>
             ) : instants.length === 0 ? (
               <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 shadow-sm">
-                <div className="w-12 h-12 rounded-2xl bg-orange-50 dark:bg-orange-950/40 text-orange-600 flex items-center justify-center mx-auto mb-3">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mx-auto mb-3">
                   <Camera className="w-6 h-6" />
                 </div>
                 <h3 className="text-base font-bold text-slate-900 dark:text-white">
@@ -1083,12 +1113,13 @@ export default function HomeClient() {
                   Be the first explorer to share a post, spontaneous moment, meetup recap, or local travel photo with the community!
                 </p>
                 <div className="pt-4">
-                  <Link
-                    href="/activities/create?type=instant"
-                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 shadow-md hover:from-orange-600 hover:to-amber-600 transition active:scale-95"
+                  <button
+                    type="button"
+                    onClick={() => requireAuth(() => setIsCreateInstantOpen(true))}
+                    className="inline-flex items-center justify-center px-5 py-2.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 shadow-md hover:from-emerald-700 hover:to-teal-700 transition active:scale-95 cursor-pointer"
                   >
                     Create First Post
-                  </Link>
+                  </button>
                 </div>
               </div>
             ) : (
@@ -1104,7 +1135,7 @@ export default function HomeClient() {
                     <article
                       key={post.id}
                       onDoubleClick={() => handleDoubleTap(post.id)}
-                      className="break-inside-avoid mb-4 inline-block w-full align-top group relative rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/10 hover:border-emerald-500/50 dark:hover:border-emerald-600/50 transition-all duration-300 overflow-hidden"
+                      className="break-inside-avoid mb-4 inline-block w-full align-top group relative rounded-2xl sm:rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/70 p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-emerald-950/5 hover:border-slate-300 dark:hover:border-emerald-900/60 transition-all duration-200 overflow-hidden"
                     >
                       {/* Double Tap Heart Burst Animation */}
                       {doubleTapHeartPostId === post.id && (
@@ -1114,8 +1145,6 @@ export default function HomeClient() {
                           </div>
                         </div>
                       )}
-                      {/* Top Explorer Accent Stripe */}
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" />
 
                       <div className="space-y-3">
                         {/* Author Header Row with Three Dots menu (for author only) */}
@@ -1222,9 +1251,9 @@ export default function HomeClient() {
                           )}
                         </div>
 
-                        {/* 3. Field Note Observation (Text) */}
-                        <div className="relative pl-3 border-l-2 border-amber-400/80 dark:border-amber-500/80 py-0.5">
-                          <p className="text-xs sm:text-[13.5px] text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text">
+                        {/* 3. Field Note Observation (Clean Typography, No Orange Bar) */}
+                        <div className="py-0.5">
+                          <p className="text-[13.5px] sm:text-[14.5px] text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text font-normal">
                             {post.content}
                           </p>
                         </div>
@@ -1239,13 +1268,13 @@ export default function HomeClient() {
                             onTouchEnd={() => {
                               handleCardTouchOrClick(post.id);
                             }}
-                            className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-emerald-950/80 bg-slate-100 dark:bg-slate-900 group/img cursor-pointer select-none"
+                            className="relative rounded-2xl overflow-hidden border border-slate-200/80 dark:border-emerald-950/80 bg-slate-100 dark:bg-slate-900 group/img cursor-pointer select-none"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={post.imageUrl}
                               alt="Expedition capture"
-                              className="w-full max-h-72 object-cover group-hover/img:scale-[1.02] transition-transform duration-500 ease-out"
+                              className="w-full max-h-80 object-cover group-hover/img:scale-[1.02] transition-transform duration-500 ease-out"
                             />
                             {post.locationName && (
                               <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-semibold text-white border border-white/10 shadow-lg">
@@ -1256,43 +1285,43 @@ export default function HomeClient() {
                           </div>
                         )}
 
-                        {/* 5. Explorer Interaction Dock */}
-                        <div className="pt-2.5 border-t border-slate-100 dark:border-emerald-950/60 flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-1.5 sm:gap-2">
-                            {/* Like Button (icon + count only, NO text) */}
+                        {/* 5. Explorer Interaction Dock - Sleek, Borderless Minimalist Icons */}
+                        <div className="pt-2 border-t border-slate-100 dark:border-emerald-950/50 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1 sm:gap-2">
+                            {/* Like Button */}
                             <button
                               type="button"
                               onClick={() => handleLikeInstant(post.id)}
                               disabled={likingId === post.id}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-95 text-xs font-semibold cursor-pointer ${
                                 hasLiked
-                                  ? "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 shadow-xs"
-                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-rose-300 dark:hover:border-rose-900/60 hover:text-rose-600 dark:hover:text-rose-400"
+                                  ? "text-rose-500 bg-rose-50 dark:bg-rose-950/50"
+                                  : "text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50/60 dark:hover:bg-rose-950/40"
                               }`}
                               title={hasLiked ? "Unlike" : "Like"}
                             >
                               <Heart
-                                className={`w-3.5 h-3.5 transition-transform ${
+                                className={`w-4 h-4 transition-transform ${
                                   hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
                                 }`}
                               />
                               <span>{post.likesCount || 0}</span>
                             </button>
 
-                            {/* Repost Button (icon + count only, NO text) */}
+                            {/* Repost Button */}
                             <button
                               type="button"
                               onClick={() => handleRepostInstant(post.id)}
                               disabled={repostingId === post.id}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-95 text-xs font-semibold cursor-pointer ${
                                 hasReposted
-                                  ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 shadow-xs"
-                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-emerald-300 dark:hover:border-emerald-900/60 hover:text-emerald-600 dark:hover:text-emerald-400"
+                                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50"
+                                  : "text-slate-500 dark:text-slate-400 hover:text-emerald-600 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/40"
                               }`}
                               title={hasReposted ? "Undo Repost" : "Repost"}
                             >
                               <Repeat2
-                                className={`w-3.5 h-3.5 transition-transform ${
+                                className={`w-4 h-4 transition-transform ${
                                   hasReposted ? "text-emerald-600 dark:text-emerald-400 scale-110 stroke-[2.5]" : ""
                                 }`}
                               />
@@ -1303,29 +1332,29 @@ export default function HomeClient() {
                             <button
                               type="button"
                               onClick={() => toggleComments(post.id)}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
+                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-95 text-xs font-semibold cursor-pointer ${
                                 openCommentsPostId === post.id
-                                  ? "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-800 shadow-xs"
-                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-blue-300 dark:hover:border-blue-900/60 hover:text-blue-600 dark:hover:text-blue-400"
+                                  ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50"
+                                  : "text-slate-500 dark:text-slate-400 hover:text-sky-600 hover:bg-sky-50/60 dark:hover:bg-sky-950/40"
                               }`}
                               title="Comments"
                             >
-                              <MessageCircle className="w-3.5 h-3.5" />
+                              <MessageCircle className="w-4 h-4" />
                               <span>{post.commentsCount || (post.comments?.length) || 0}</span>
                             </button>
                           </div>
 
-                          {/* Share Button (icon only, NO text) */}
+                          {/* Share Button */}
                           <button
                             type="button"
                             onClick={() => handleShareDispatch(post.id)}
-                            className="inline-flex items-center justify-center p-2 rounded-full bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1c2822] hover:text-emerald-600 dark:hover:text-emerald-400 transition active:scale-95 font-semibold text-xs"
+                            className="p-2 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a2620] transition active:scale-95 cursor-pointer"
                             title="Share"
                           >
                             {copiedPostId === post.id ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-500" />
+                              <Check className="w-4 h-4 text-emerald-500" />
                             ) : (
-                              <Share2 className="w-3.5 h-3.5" />
+                              <Share2 className="w-4 h-4" />
                             )}
                           </button>
                         </div>
@@ -1784,7 +1813,7 @@ export default function HomeClient() {
               <X className="w-5 h-5" />
             </button>
             <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Camera className="w-5 h-5 text-orange-500" />
+              <Camera className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <span>Create a Post</span>
             </h3>
             <form onSubmit={handleCreateInstant} className="space-y-4">
@@ -1798,7 +1827,7 @@ export default function HomeClient() {
                   placeholder="Share a photo moment, local food spot, or spontaneous thought with the community..."
                   required
                   rows={3}
-                  className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                  className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                 />
               </div>
 
@@ -1828,7 +1857,7 @@ export default function HomeClient() {
                       <button
                         type="button"
                         onClick={() => setInstantImage("")}
-                        className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-xs font-bold shadow-md hover:bg-rose-700 transition flex items-center gap-1.5"
+                        className="px-3 py-1.5 rounded-full bg-rose-600 text-white text-xs font-bold shadow-md hover:bg-rose-700 transition flex items-center gap-1.5 cursor-pointer"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                         <span>Remove</span>
@@ -1845,9 +1874,9 @@ export default function HomeClient() {
                     </button>
                   </div>
                 ) : (
-                  <label className="flex flex-col items-center justify-center w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 dark:border-emerald-950/80 bg-slate-50 dark:bg-[#16201b]/60 hover:bg-orange-50/40 dark:hover:bg-[#1c2822] hover:border-orange-400 dark:hover:border-orange-500/60 transition-all cursor-pointer group">
+                  <label className="flex flex-col items-center justify-center w-full h-32 rounded-2xl border-2 border-dashed border-slate-300 dark:border-emerald-950/80 bg-slate-50 dark:bg-[#16201b]/60 hover:bg-emerald-50/40 dark:hover:bg-[#1c2822] hover:border-emerald-400 dark:hover:border-emerald-500/60 transition-all cursor-pointer group">
                     <div className="flex flex-col items-center justify-center p-3 text-center">
-                      <div className="w-10 h-10 rounded-xl bg-orange-100 dark:bg-orange-950/50 text-orange-600 dark:text-orange-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-2 group-hover:scale-110 transition-transform">
                         <UploadCloud className="w-5 h-5" />
                       </div>
                       <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -1883,7 +1912,7 @@ export default function HomeClient() {
                     value={instantLocation}
                     onChange={(e) => setInstantLocation(e.target.value)}
                     placeholder="e.g. Jubilee Hills, Hyderabad"
-                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500/30"
+                    className="w-full pl-8 pr-3 py-2 rounded-xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
                   />
                 </div>
               </div>
@@ -1895,14 +1924,14 @@ export default function HomeClient() {
                     setIsCreateInstantOpen(false);
                     setInstantImageError(null);
                   }}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#18241f]"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#18241f] cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingInstant || !instantContent.trim()}
-                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-orange-500 to-amber-500 shadow-md transition disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition disabled:opacity-50 cursor-pointer"
                 >
                   {submittingInstant ? "Publishing..." : "Publish Post"}
                 </button>
@@ -2355,7 +2384,7 @@ export default function HomeClient() {
             >
               <X className="w-5 h-5" />
             </button>
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-orange-400 to-emerald-500 flex items-center justify-center mx-auto text-white shadow-md">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto text-white shadow-md">
               <Camera className="w-6 h-6" />
             </div>
             <h3 className="text-base font-black text-slate-900 dark:text-white">
