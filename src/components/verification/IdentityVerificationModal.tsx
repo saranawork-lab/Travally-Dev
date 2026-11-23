@@ -1422,30 +1422,20 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                       </div>
                       <div className="min-w-0">
                         {documentType ? (
-                          <>
-                            <div className="flex items-center gap-2">
-                              <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
-                                {DOCUMENT_OPTIONS.find((d) => d.id === documentType)?.label}
-                              </p>
-                              {DOCUMENT_OPTIONS.find((d) => d.id === documentType)?.badge && (
-                                <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
-                                  {DOCUMENT_OPTIONS.find((d) => d.id === documentType)?.badge}
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-[10.5px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                              {DOCUMENT_OPTIONS.find((d) => d.id === documentType)?.description}
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white truncate">
+                              {DOCUMENT_OPTIONS.find((d) => d.id === documentType)?.label}
                             </p>
-                          </>
+                            {DOCUMENT_OPTIONS.find((d) => d.id === documentType)?.badge && (
+                              <span className="hidden sm:inline-block px-1.5 py-0.2 rounded text-[9.5px] font-semibold bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                                {DOCUMENT_OPTIONS.find((d) => d.id === documentType)?.badge}
+                              </span>
+                            )}
+                          </div>
                         ) : (
-                          <>
-                            <p className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
-                              -- Select ID Document Type --
-                            </p>
-                            <p className="text-[10.5px] sm:text-[11px] text-slate-400 dark:text-slate-500 truncate">
-                              Tap to choose PAN Card, Passport, Driver&apos;s License...
-                            </p>
-                          </>
+                          <p className="text-xs sm:text-sm font-bold text-slate-700 dark:text-slate-200">
+                            Select ID Document Type
+                          </p>
                         )}
                       </div>
                     </div>
@@ -1474,7 +1464,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: -8, scale: 0.98 }}
                         transition={{ duration: 0.15 }}
-                        className="absolute left-0 right-0 top-full mt-2 z-40 bg-white/95 dark:bg-[#141f19]/95 backdrop-blur-xl border border-slate-200 dark:border-emerald-950/90 rounded-2xl shadow-2xl p-1.5 space-y-1 overflow-hidden"
+                        className="absolute left-0 right-0 top-full mt-1.5 z-40 bg-white/95 dark:bg-[#141f19]/95 backdrop-blur-xl border border-slate-200 dark:border-emerald-950/90 rounded-2xl shadow-2xl p-1 space-y-0.5 overflow-hidden"
                       >
                         {DOCUMENT_OPTIONS.map((doc) => {
                           const isSelected = documentType === doc.id;
@@ -1486,7 +1476,7 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                                 handleSelectDocumentType(doc.id);
                                 setIsDocDropdownOpen(false);
                               }}
-                              className={`w-full flex items-center justify-between p-2.5 sm:p-3 rounded-xl transition-all cursor-pointer text-left ${
+                              className={`w-full flex items-center justify-between py-1.5 px-2.5 sm:py-2 sm:px-3 rounded-xl transition-all cursor-pointer text-left ${
                                 isSelected
                                   ? "bg-emerald-500/15 dark:bg-emerald-500/20 text-emerald-950 dark:text-emerald-100 border border-emerald-500/40 shadow-xs"
                                   : "hover:bg-slate-100 dark:hover:bg-slate-800/70 text-slate-800 dark:text-slate-200 border border-transparent"
@@ -1494,28 +1484,23 @@ export const IdentityVerificationModal: React.FC<IdentityVerificationModalProps>
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <div
-                                  className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                                  className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 ${
                                     isSelected
                                       ? "bg-emerald-500 text-white shadow-xs"
                                       : "bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400"
                                   }`}
                                 >
-                                  <CreditCard className="w-4 h-4" />
+                                  <CreditCard className="w-3.5 h-3.5" />
                                 </div>
-                                <div className="min-w-0">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-xs sm:text-sm font-bold truncate">
-                                      {doc.label}
+                                <div className="flex items-center gap-2 min-w-0">
+                                  <span className="text-xs sm:text-sm font-semibold truncate">
+                                    {doc.label}
+                                  </span>
+                                  {doc.badge && (
+                                    <span className="text-[9px] px-1.5 py-0.2 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
+                                      {doc.badge}
                                     </span>
-                                    {doc.badge && (
-                                      <span className="text-[9px] px-1.5 py-0.2 rounded font-medium bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400">
-                                        {doc.badge}
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[10.5px] sm:text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                                    {doc.description}
-                                  </p>
+                                  )}
                                 </div>
                               </div>
                               {isSelected && (
