@@ -11,7 +11,7 @@ interface CacheEntry {
   timestamp: number;
 }
 const activitiesFeedCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 15000; // 15 seconds
+const CACHE_TTL_MS = 2000; // 2 seconds
 
 export async function GET(req: NextRequest) {
   try {
@@ -151,7 +151,10 @@ export async function GET(req: NextRequest) {
     }
 
     // High-Level Matching Algorithm implementation
-    let matchedActivities = sanitizedActivities;
+    const effectiveActivities = sanitizedActivities.length > 0
+      ? sanitizedActivities
+      : activities.filter((act) => act.status !== "CANCELLED" && act.status !== "CLOSED");
+    let matchedActivities = effectiveActivities;
 
     if (currentUser) {
       // 1. We already fetched userProfile in parallel with blocks

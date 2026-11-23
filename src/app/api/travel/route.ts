@@ -13,7 +13,7 @@ interface CacheEntry {
   timestamp: number;
 }
 const travelFeedCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 15000; // 15 seconds
+const CACHE_TTL_MS = 2000; // 2 seconds
 
 export async function GET(req: NextRequest) {
   try {
@@ -154,7 +154,11 @@ export async function GET(req: NextRequest) {
     }
 
     // Augment with transparent compatibility score
-    const plansWithCompatibility = sanitizedTrips.map((trip) => {
+    const effectiveTrips = sanitizedTrips.length > 0
+      ? sanitizedTrips
+      : travelPlans.filter((trip) => trip.status !== "CANCELLED" && trip.status !== "CLOSED");
+
+    const plansWithCompatibility = effectiveTrips.map((trip) => {
       const compatibility = calculateTravelCompatibility(userTravelProfile, {
         destination: trip.destination,
         departureCity: trip.departureCity,
