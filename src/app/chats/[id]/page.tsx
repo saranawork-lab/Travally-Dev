@@ -1613,12 +1613,14 @@ export default function ActiveChatPage() {
               <div
                 key={msg.id}
                 id={`msg-${msg.id}`}
-                className={`flex w-full ${isMe ? "justify-end" : "justify-start"} group/msg relative transition-all`}
+                className={`flex w-full ${isMe ? "justify-end" : "justify-start"} group/msg relative transition-all ${
+                  contextMenuMsg?.msg?.id === msg.id ? "z-50" : "z-1"
+                }`}
               >
                 <div
                   className={`flex max-w-[85%] sm:max-w-[70%] items-end gap-2 relative ${
                     isMe ? "flex-row-reverse" : "flex-row"
-                  }`}
+                  } ${contextMenuMsg?.msg?.id === msg.id ? "z-50" : "z-1"}`}
                 >
                   {/* Sender Avatar for Received messages */}
                   {!isMe && (
@@ -2200,7 +2202,7 @@ export default function ActiveChatPage() {
                   </div>
 
                     {/* ── REACTION CHIPS DOCKED AT BOTTOM OF BUBBLE ── */}
-                    {!parsed.isDeleted && reactionKeys.length > 0 && (
+                    {!parsed.isDeleted && reactionKeys.length > 0 && contextMenuMsg?.msg?.id !== msg.id && (
                       <div
                         className={`flex flex-wrap items-center gap-1 mt-0.5 z-10 ${
                           isMe ? "justify-end" : "justify-start"
@@ -2218,7 +2220,7 @@ export default function ActiveChatPage() {
                               type="button"
                               onClick={(e) => handleToggleReaction(msg.id, emoji, e)}
                               title={`Reacted by: ${reactors.join(", ")}`}
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold shadow-sm transition-all transform hover:scale-110 active:scale-95 ${
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold shadow-xs transition-all transform hover:scale-110 active:scale-95 ${
                                 hasReacted
                                   ? isTravel
                                     ? "bg-orange-100 dark:bg-orange-950/80 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800"
@@ -2227,7 +2229,9 @@ export default function ActiveChatPage() {
                               }`}
                             >
                               <RealisticEmoji emoji={emoji} size={16} animate={true} />
-                              <span className="text-[11px] font-bold">{reactors.length}</span>
+                              {reactors.length > 1 && (
+                                <span className="text-[11px] font-bold">{reactors.length}</span>
+                              )}
                             </button>
                           );
                         })}
