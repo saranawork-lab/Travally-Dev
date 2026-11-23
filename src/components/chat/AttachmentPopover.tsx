@@ -7,12 +7,16 @@ interface AttachmentPopoverProps {
   isOpen: boolean;
   onClose: () => void;
   onSelectAttachment: (type: "PHOTO" | "LOCATION" | "TRIP") => void;
+  showItineraryPin?: boolean;
+  itineraryType?: "TRAVEL" | "ACTIVITY";
 }
 
 export const AttachmentPopover: React.FC<AttachmentPopoverProps> = ({
   isOpen,
   onClose,
   onSelectAttachment,
+  showItineraryPin = false,
+  itineraryType = "TRAVEL",
 }) => {
   const popoverRef = useRef<HTMLDivElement>(null);
 
@@ -57,13 +61,17 @@ export const AttachmentPopover: React.FC<AttachmentPopoverProps> = ({
       color:
         "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 text-orange-700 dark:from-orange-950/90 dark:to-amber-900/60 dark:text-orange-300 border-orange-300/80 dark:border-orange-700/60",
     },
-    {
-      id: "TRIP" as const,
-      label: "Trip Pin",
-      icon: Compass,
-      color:
-        "bg-gradient-to-br from-teal-100 via-cyan-50 to-teal-100 text-teal-700 dark:from-teal-950/90 dark:to-cyan-900/60 dark:text-teal-300 border-teal-300/80 dark:border-teal-700/60",
-    },
+    ...(showItineraryPin
+      ? [
+          {
+            id: "TRIP" as const,
+            label: itineraryType === "ACTIVITY" ? "Activity Pin" : "Trip Pin",
+            icon: Compass,
+            color:
+              "bg-gradient-to-br from-teal-100 via-cyan-50 to-teal-100 text-teal-700 dark:from-teal-950/90 dark:to-cyan-900/60 dark:text-teal-300 border-teal-300/80 dark:border-teal-700/60",
+          },
+        ]
+      : []),
   ];
 
   return (

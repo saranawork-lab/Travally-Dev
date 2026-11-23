@@ -44,7 +44,7 @@ import {
   PinOff,
   CheckSquare,
 } from "lucide-react";
-import { formatTimeAgo, formatMessageTime } from "@/lib/utils";
+import { formatTimeAgo, formatMessageTime, formatDate } from "@/lib/utils";
 import { ReportModal } from "@/components/common/ReportModal";
 import { ProfileModal } from "@/components/profile/ProfileModal";
 import { RealisticEmoji } from "@/components/chat/RealisticEmoji";
@@ -1537,22 +1537,47 @@ export default function ActiveChatPage() {
     }
   };
 
-  // Attachment Handler (Photo, Location, Trip)
+  // Attachment Handler (Photo, Location, Trip / Activity Itinerary Pin)
   const handleSelectAttachment = (type: "PHOTO" | "LOCATION" | "TRIP") => {
     if (type === "PHOTO") {
       photoInputRef.current?.click();
     } else if (type === "LOCATION") {
       setIsShareLocationOpen(true);
     } else if (type === "TRIP") {
-      handleSendMessage({
-        text: "Trip Itinerary Pin",
-        mediaType: "TRIP",
-        mediaData: {
-          title: conversation?.travelPlan?.destination || "Kasol & Tosh Parvati Valley Trek",
-          dates: "Oct 12 – Oct 17 • 6 Days",
-          budget: "₹8,500 – ₹14,500 per traveler",
-        },
-      });
+      if (conversation?.travelPlan) {
+        const tp = conversation.travelPlan;
+        const start = tp.startDate ? formatDate(tp.startDate) : "";
+        const end = tp.endDate ? formatDate(tp.endDate) : "";
+        const dateStr = start && end ? `${start} – ${end}` : start || "Flexible dates";
+        const budgetStr =
+          tp.budgetMin && tp.budgetMax
+            ? `₹${tp.budgetMin.toLocaleString("en-IN")} – ₹${tp.budgetMax.toLocaleString("en-IN")} per traveler`
+            : "Shared expense";
+        handleSendMessage({
+          text: "Trip Itinerary Pin",
+          mediaType: "TRIP",
+          mediaData: {
+            title: tp.destination || "Trip Itinerary",
+            dates: dateStr,
+            budget: budgetStr,
+            tripId: tp.id || conversation.travelPlanId,
+          },
+        });
+      } else if (conversation?.activity) {
+        const act = conversation.activity;
+        const actDate = act.date ? formatDate(act.date) : "Upcoming";
+        const dateStr = act.startTime ? `${actDate} at ${act.startTime}` : actDate;
+        handleSendMessage({
+          text: "Activity Itinerary Pin",
+          mediaType: "TRIP",
+          mediaData: {
+            title: act.title || "Companion Activity",
+            dates: dateStr,
+            budget: act.locationName || "Meetup Location",
+            activityId: act.id || conversation.activityId,
+          },
+        });
+      }
     }
   };
 
@@ -1845,6 +1870,13 @@ export default function ActiveChatPage() {
     Boolean(conversation?.travelPlanId) ||
     Boolean(conversation?.travelPlan);
   const isActivity = !isTravel;
+
+  const hasConnectedTripOrActivity = Boolean(
+    conversation?.travelPlan ||
+    conversation?.travelPlanId ||
+    conversation?.activity ||
+    conversation?.activityId
+  );
 
   // Extract participants for Voice Call (both 1:1 and Group)
   const rawParticipants =
@@ -2229,6 +2261,12 @@ export default function ActiveChatPage() {
               (conversation?.otherUser?.id === msg.senderId ? conversation.otherUser.avatarUrl : null);
 
             const parsed = parseMessageContent(msg.content);
+
+            // Hide trip/activity itinerary pins in direct chats where there is no connected trip or activity
+            if (!hasConnectedTripOrActivity && parsed.mediaType === "TRIP") {
+              return null;
+            }
+
             const isEmojiOnly = isStandaloneEmoji(parsed.text) && !parsed.mediaType && !parsed.replyTo;
             const isCallLog = !parsed.isDeleted && !parsed.mediaType && isCallMessage(parsed.text);
             const reactions = parsed.reactions || {};
@@ -3022,14 +3060,26 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* Media Container: Trip Card Snippet */}
+                      {/* Media Container: Trip / Activity Card Snippet */}
                       {!parsed.isDeleted && parsed.mediaType === "TRIP" && parsed.mediaData && (
                         <div
+                          onClick={() => {
+                            if (parsed.mediaData.tripId) {
+                              router.push(`/travel/${parsed.mediaData.tripId}`);
+                            } else if (parsed.mediaData.activityId) {
+                              router.push(`/activities/${parsed.mediaData.activityId}`);
+                            } else if (conversation?.travelPlanId || conversation?.travelPlan?.id) {
+                              router.push(`/travel/${conversation.travelPlanId || conversation.travelPlan.id}`);
+                            } else if (conversation?.activityId || conversation?.activity?.id) {
+                              router.push(`/activities/${conversation.activityId || conversation.activity.id}`);
+                            }
+                          }}
                           className={`mt-2 p-3 rounded-2xl border ${
                             isTravel
-                              ? "border-orange-200/90 dark:border-orange-800/60"
-                              : "border-emerald-200/90 dark:border-emerald-800/60"
-                          } bg-white/80 dark:bg-[#18241f] text-slate-800 dark:text-slate-200 shadow-xs flex items-start gap-3`}
+                              ? "border-orange-200/90 dark:border-orange-800/60 hover:border-orange-400"
+                              : "border-emerald-200/90 dark:border-emerald-800/60 hover:border-emerald-400"
+                          } bg-white/80 dark:bg-[#18241f] text-slate-800 dark:text-slate-200 shadow-xs flex items-start gap-3 cursor-pointer transition hover:shadow-md`}
+                          title="Click to view itinerary"
                         >
                           <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 text-emerald-700 border border-emerald-300/80 flex items-center justify-center shrink-0 shadow-xs">
                             <Compass className="w-4 h-4" />
@@ -3045,6 +3095,7 @@ export default function ActiveChatPage() {
                               {parsed.mediaData.budget}
                             </span>
                           </div>
+                          <ExternalLink className="w-3.5 h-3.5 text-slate-400 shrink-0 self-center" />
                         </div>
                       )}
 
@@ -3214,6 +3265,8 @@ export default function ActiveChatPage() {
             isOpen={isAttachmentOpen}
             onClose={() => setIsAttachmentOpen(false)}
             onSelectAttachment={handleSelectAttachment}
+            showItineraryPin={hasConnectedTripOrActivity}
+            itineraryType={conversation?.activity || conversation?.activityId ? "ACTIVITY" : "TRAVEL"}
           />
 
           {isRecordingVoice ? (
