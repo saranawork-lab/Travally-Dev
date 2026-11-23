@@ -1618,7 +1618,7 @@ export default function ActiveChatPage() {
                 }`}
               >
                 <div
-                  className={`flex max-w-[85%] sm:max-w-[70%] items-end gap-2 relative ${
+                  className={`flex max-w-[85%] sm:max-w-[calc(100%-68px)] items-end gap-2 relative ${
                     isMe ? "flex-row-reverse" : "flex-row"
                   } ${contextMenuMsg?.msg?.id === msg.id ? "z-50" : "z-1"}`}
                 >
@@ -1695,44 +1695,39 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* ── DESKTOP-ONLY HOVER ACTION CAPSULE (SMILE + CHEVRON) ── */}
+                      {/* ── DESKTOP-ONLY HOVER ACTION BUTTONS (SMILE + CHEVRON OPTIONS) ── */}
                       {!isSelectMode && !parsed.isDeleted && (
                         <div
                           data-chat-actions="true"
-                          className={`hidden sm:flex absolute top-1.5 items-center opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
-                            isMe ? "-left-14" : "-right-14"
+                          className={`hidden sm:flex absolute top-1.5 items-center gap-1 opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
+                            isMe ? "right-[calc(100%+6px)]" : "left-[calc(100%+6px)]"
                           }`}
                         >
-                          <div className="flex items-center h-7 px-1 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all">
-                            {/* ☺ Smile Emoji Reaction Trigger */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
-                              }}
-                              className="w-5 h-5 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer"
-                              title="React with emoji"
-                            >
-                              <Smile className="w-3.5 h-3.5" />
-                            </button>
+                          {/* ☺ Smile Emoji Reaction Trigger */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
+                            }}
+                            className="w-6.5 h-6.5 rounded-full flex items-center justify-center bg-white/90 dark:bg-[#18241f]/90 backdrop-blur-md text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-[#203029] border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                            title="React with emoji"
+                          >
+                            <Smile className="w-3.5 h-3.5" />
+                          </button>
 
-                            {/* Subtle vertical separator */}
-                            <div className="w-px h-3 bg-slate-200 dark:bg-emerald-800/40 mx-0.5" />
-
-                            {/* ⌵ Context Menu Trigger */}
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
-                              }}
-                              className="w-5 h-5 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer"
-                              title="Message options"
-                            >
-                              <ChevronDown className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                          {/* ⌵ Context Menu Trigger */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
+                            }}
+                            className="w-6.5 h-6.5 rounded-full flex items-center justify-center bg-white/90 dark:bg-[#18241f]/90 backdrop-blur-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#203029] border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer"
+                            title="Message options"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       )}
 
@@ -2274,15 +2269,15 @@ export default function ActiveChatPage() {
         <button
           type="button"
           onClick={() => scrollToBottom(true)}
-          className="absolute bottom-24 right-5 z-30 w-10 h-10 rounded-full bg-white dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/80 shadow-2xl text-slate-700 dark:text-slate-200 flex items-center justify-center hover:scale-110 active:scale-95 transition-all"
+          className="absolute bottom-20 sm:bottom-22 right-2.5 sm:right-3.5 z-30 w-7.5 h-7.5 sm:w-8 sm:h-8 rounded-full bg-white/95 dark:bg-[#15221c]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-800/40 shadow-lg text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           aria-label="Scroll to bottom"
         >
-          <ChevronDown className="w-5 h-5" />
+          <ChevronDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           {unreadCount > 0 && (
             <span
-              className={`absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-full ${
+              className={`absolute -top-1 -right-1 min-w-[14px] h-3.5 px-1 rounded-full ${
                 isTravel ? "bg-orange-500" : "bg-emerald-500"
-              } text-white text-[10px] font-bold shadow-sm`}
+              } text-white text-[8px] font-bold shadow-sm inline-flex items-center justify-center`}
             >
               {unreadCount}
             </span>

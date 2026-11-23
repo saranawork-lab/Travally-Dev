@@ -125,12 +125,13 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
           >
             Chats
           </Link>
-          <span
-            suppressHydrationWarning
-            className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
-          >
-            {mounted ? conversations.length : 0}
-          </span>
+          {mounted && conversations.length > 0 && (
+            <span
+              className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+            >
+              {conversations.length}
+            </span>
+          )}
         </div>
 
         <div className="flex items-center gap-1">
