@@ -64,6 +64,7 @@ import { encryptChatMessage, decryptChatMessage, isE2EEMessage } from "@/lib/cry
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { getTripImage, getActivityImage } from "@/lib/images";
+import { formatLastSeen } from "@/lib/presence";
 
 // Quick reactions shown on the floating pill
 const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "🔥", "👍"];
@@ -219,6 +220,9 @@ export default function ActiveChatPage() {
         if (cachedConv) {
           const parsed = JSON.parse(cachedConv);
           setConversation(parsed);
+          if (parsed?.otherUser?.presence) {
+            setCompanionPresence(parsed.otherUser.presence);
+          }
           setLoading(false);
         }
         const cachedMsgs = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
@@ -418,6 +422,10 @@ export default function ActiveChatPage() {
   const [typingUsers, setTypingUsers] = useState<
     Array<{ userId: string; displayName: string; avatarUrl?: string }>
   >([]);
+  const [companionPresence, setCompanionPresence] = useState<{
+    isOnline: boolean;
+    lastSeenAt: string | null;
+  } | null>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const lastTypingSignalSentRef = useRef<number>(0);
 
@@ -937,6 +945,9 @@ export default function ActiveChatPage() {
           // Full initial load
           if (data.conversation) {
             setConversation(data.conversation);
+            if (data.conversation.otherUser?.presence) {
+              setCompanionPresence(data.conversation.otherUser.presence);
+            }
             memoryConvMap.set(conversationId, data.conversation);
             try {
               sessionStorage.setItem(`travally_chat_conv_${conversationId}`, JSON.stringify(data.conversation));
@@ -991,17 +1002,31 @@ export default function ActiveChatPage() {
     }
   }, [conversationId]);
 
-  // Poll for typing status every 2000ms
+  // Sync initial companion presence when conversation loads
+  useEffect(() => {
+    if (conversation?.otherUser?.presence) {
+      setCompanionPresence(conversation.otherUser.presence);
+    }
+  }, [conversation?.otherUser?.presence]);
+
+  // Poll for typing status and live companion presence every 2000ms
   useEffect(() => {
     if (!conversationId) return;
 
     const fetchTyping = async () => {
       if (typeof document !== "undefined" && document.hidden) return;
       try {
-        const res = await fetch(`/api/chats/${conversationId}/typing`);
+        const targetUserId = conversation?.otherUser?.id || otherParticipants[0]?.id;
+        const url = targetUserId && targetUserId !== "partner-1"
+          ? `/api/chats/${conversationId}/typing?otherUserId=${encodeURIComponent(targetUserId)}`
+          : `/api/chats/${conversationId}/typing`;
+        const res = await fetch(url);
         if (res.ok) {
           const data = await res.json();
           setTypingUsers(data.typingUsers || []);
+          if (data.companionPresence) {
+            setCompanionPresence(data.companionPresence);
+          }
         }
       } catch {
         // network error
@@ -2063,12 +2088,28 @@ export default function ActiveChatPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5 text-[10px] sm:text-[11px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    Active now
-                  </span>
-                  {!isDirectChat && (
+                  {isDirectChat ? (
+                    companionPresence?.isOnline ? (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0 animate-pulse" />
+                        <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          Active now
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-300 dark:bg-slate-600 shrink-0" />
+                        <span className="font-medium text-slate-500 dark:text-slate-400">
+                          {formatLastSeen(companionPresence?.lastSeenAt)}
+                        </span>
+                      </>
+                    )
+                  ) : (
                     <>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                        Active now
+                      </span>
                       <span className="text-slate-300 dark:text-slate-700">•</span>
                       <span className="text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition font-medium underline underline-offset-2 truncate">
                         {conversation?.activity?.participants?.length || conversation?.travelPlan?.participants?.length || otherParticipants.length + 1} members

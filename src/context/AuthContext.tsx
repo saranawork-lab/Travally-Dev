@@ -164,13 +164,24 @@ export const AuthProvider: React.FC<{
       refreshUser();
     };
 
+    const handlePageHide = () => {
+      try {
+        if (navigator.sendBeacon) {
+          const blob = new Blob([JSON.stringify({ isOnline: false })], { type: "application/json" });
+          navigator.sendBeacon("/api/presence", blob);
+        }
+      } catch {}
+    };
+
     window.addEventListener("focus", handleFocus);
     document.addEventListener("visibilitychange", handleFocus);
+    window.addEventListener("pagehide", handlePageHide);
 
     return () => {
       clearInterval(intervalId);
       window.removeEventListener("focus", handleFocus);
       document.removeEventListener("visibilitychange", handleFocus);
+      window.removeEventListener("pagehide", handlePageHide);
     };
   }, [currentUser, refreshUser]);
 

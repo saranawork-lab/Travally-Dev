@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { updateUserPresence, getUserPresence } from "@/lib/presence";
 
 export const dynamic = "force-dynamic";
 
@@ -101,9 +102,19 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
     const { id: conversationId } = params;
 
+    // Refresh requesting user's active presence in the app
+    updateUserPresence(user.id, true).catch(() => {});
+
     // Prune and get active entries, excluding the requesting user
     const active = pruneExpired(conversationId);
     const others = active.filter((e) => e.userId !== user.id);
+
+    // Optional: live presence check for companion in direct chats
+    const otherUserId = req.nextUrl.searchParams.get("otherUserId");
+    let companionPresence = null;
+    if (otherUserId) {
+      companionPresence = await getUserPresence(otherUserId);
+    }
 
     const response = NextResponse.json({
       typingUsers: others.map((e) => ({
@@ -111,6 +122,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         displayName: e.displayName,
         avatarUrl: e.avatarUrl,
       })),
+      companionPresence,
     });
     response.headers.set("Cache-Control", "private, no-cache, no-store, must-revalidate");
     return response;

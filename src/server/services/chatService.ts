@@ -3,6 +3,7 @@ import { decryptChatMessage } from "@/lib/crypto";
 import { getChatRetentionInfo } from "@/lib/chatRetention";
 import { getDb } from "@/lib/mongo";
 import { ObjectId } from "mongodb";
+import { updateUserPresence, getUserPresence } from "@/lib/presence";
 
 export interface CreateMessageInput {
   conversationId: string;
@@ -327,6 +328,16 @@ export const ChatService = {
         }
       }
     }
+
+    if (otherUserProfile) {
+      try {
+        const pres = await getUserPresence((otherUserProfile as any).id);
+        (otherUserProfile as any).presence = pres;
+      } catch {}
+    }
+
+    // Also update requesting user's active presence in the background
+    updateUserPresence(userId, true).catch(() => {});
 
     return {
       isDelta: false,

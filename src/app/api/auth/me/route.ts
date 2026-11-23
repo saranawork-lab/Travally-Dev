@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { getCurrentUser, AuthService, invalidateSessionCache } from "@/lib/auth";
+import { updateUserPresence } from "@/lib/presence";
 
 export const dynamic = "force-dynamic";
 
@@ -22,6 +23,10 @@ export async function GET() {
       }
       return response;
     }
+
+    // Refresh user's active presence in the app
+    updateUserPresence(user.id, true).catch(() => {});
+
     return NextResponse.json({ user }, { status: 200 });
   } catch (error) {
     return NextResponse.json({ user: null }, { status: 200 });
