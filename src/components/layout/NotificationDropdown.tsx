@@ -14,6 +14,8 @@ interface AppNotification {
   actionUrl: string | null;
   isRead: boolean;
   createdAt: string;
+  count?: number;
+  groupedIds?: string[];
 }
 
 const getNotificationTypeConfig = (type: string) => {
@@ -134,10 +136,11 @@ export const NotificationDropdown: React.FC = () => {
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
       try {
+        const payload = n.groupedIds && n.groupedIds.length > 0 ? { ids: n.groupedIds } : { id: n.id };
         await fetch("/api/notifications", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ id: n.id }),
+          body: JSON.stringify(payload),
         });
       } catch (e) {
         console.error(e);

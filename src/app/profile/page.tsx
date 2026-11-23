@@ -140,6 +140,15 @@ export default function MyProfilePage() {
 
       {/* ── PROFILE HEADER CARD (Read-only on profile, edited in settings) ── */}
       <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/80 p-6 sm:p-8 shadow-sm flex flex-col gap-6 relative">
+        {/* Settings button at top right of the card box */}
+        <Link
+          href="/settings"
+          className="absolute top-4 right-4 sm:top-5 sm:right-5 z-20 p-2.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-[#16221c] dark:hover:bg-[#1e2f27] text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all shadow-xs border border-slate-200/60 dark:border-emerald-950"
+          title="Settings"
+        >
+          <Settings className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600 dark:text-emerald-400" />
+        </Link>
+
         <div className="flex flex-col items-center justify-center gap-4 text-center">
           {/* Avatar with Dropdown */}
           <div className="relative inline-block">
@@ -162,49 +171,62 @@ export default function MyProfilePage() {
               </div>
             </div>
 
-            {/* Settings button at top right of the profile photo */}
-            <Link
-              href="/settings"
-              className="absolute -top-1 -right-1 z-30 w-8 h-8 rounded-full bg-white dark:bg-[#16201b] border border-slate-200/90 dark:border-emerald-800/80 shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:scale-110 active:scale-95 transition-all cursor-pointer"
-              title="Settings & Edit Profile"
+            {/* WhatsApp-style Edit / Camera button at bottom-right of profile photo */}
+            <button
+              type="button"
+              onClick={() => setIsAvatarMenuOpen(!isAvatarMenuOpen)}
+              className="absolute bottom-0 right-0 z-20 w-8 h-8 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white shadow-md flex items-center justify-center transition-all hover:scale-110 active:scale-95 cursor-pointer border-2 border-white dark:border-[#111815]"
+              title="Edit Profile Photo"
             >
-              <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-            </Link>
+              <Camera className="w-4 h-4 text-white" />
+            </button>
 
             {isAvatarMenuOpen && (
-              <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-[#1a231f] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden text-sm">
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 transition-colors text-left"
-                >
-                  <Camera className="w-4 h-4 text-emerald-500" />
-                  <span className="font-medium">Change Photo</span>
-                </button>
-                {currentAvatarSrc && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsAvatarModalOpen(true);
-                        setIsAvatarMenuOpen(false);
-                      }}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 transition-colors text-left"
-                    >
-                      <Eye className="w-4 h-4 text-blue-500" />
-                      <span className="font-medium">View Photo</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleRemoveAvatar}
-                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 transition-colors text-left border-t border-slate-100 dark:border-slate-800"
-                    >
-                      <Trash2 className="w-4 h-4 text-red-500" />
-                      <span className="font-medium">Remove Photo</span>
-                    </button>
-                  </>
-                )}
-              </div>
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setIsAvatarMenuOpen(false)}
+                />
+                <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-[#1a231f] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden text-sm">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsAvatarMenuOpen(false);
+                      fileInputRef.current?.click();
+                    }}
+                    className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 transition-colors text-left"
+                  >
+                    <Camera className="w-4 h-4 text-emerald-500" />
+                    <span className="font-medium">Change Photo</span>
+                  </button>
+                  {currentAvatarSrc && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAvatarModalOpen(true);
+                          setIsAvatarMenuOpen(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/50 text-slate-700 dark:text-slate-300 transition-colors text-left"
+                      >
+                        <Eye className="w-4 h-4 text-blue-500" />
+                        <span className="font-medium">View Photo</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAvatarMenuOpen(false);
+                          handleRemoveAvatar();
+                        }}
+                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 transition-colors text-left border-t border-slate-100 dark:border-slate-800"
+                      >
+                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <span className="font-medium">Remove Photo</span>
+                      </button>
+                    </>
+                  )}
+                </div>
+              </>
             )}
 
             <input

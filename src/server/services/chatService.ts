@@ -476,18 +476,54 @@ export const ChatService = {
             }
           }
 
+          const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
           await Promise.all(
-            otherParticipants.map((p) =>
-              db.notification.create({
-                data: {
-                  userId: p.userId,
-                  type: "NEW_MESSAGE",
-                  title: `New message in ${conversation.title}`,
-                  body: `${senderName}: ${previewSnippet.slice(0, 100)}`,
-                  actionUrl: `/chats/${conversation.id}`,
-                },
-              }).catch(() => {})
-            )
+            otherParticipants.map(async (p) => {
+              try {
+                const existingNotif = await db.notification.findFirst({
+                  where: {
+                    userId: p.userId,
+                    type: "NEW_MESSAGE",
+                    actionUrl: `/chats/${conversation.id}`,
+                    createdAt: { gte: oneDayAgo },
+                  },
+                  orderBy: { createdAt: "desc" },
+                });
+
+                if (existingNotif) {
+                  let count = 2;
+                  const countMatch =
+                    existingNotif.body.match(/\((\d+)\):/) ||
+                    existingNotif.title.match(/\((\d+)\)/);
+                  if (countMatch && countMatch[1]) {
+                    count = parseInt(countMatch[1], 10) + 1;
+                  }
+
+                  const baseTitle = existingNotif.title.replace(/\s*\(\d+\)/, "").trim();
+                  await db.notification.update({
+                    where: { id: existingNotif.id },
+                    data: {
+                      title: `${baseTitle} (${count})`,
+                      body: `${senderName} (${count}): ${previewSnippet.slice(0, 100)}`,
+                      isRead: false,
+                      createdAt: new Date(),
+                    },
+                  });
+                } else {
+                  await db.notification.create({
+                    data: {
+                      userId: p.userId,
+                      type: "NEW_MESSAGE",
+                      title: `New message in ${conversation.title}`,
+                      body: `${senderName}: ${previewSnippet.slice(0, 100)}`,
+                      actionUrl: `/chats/${conversation.id}`,
+                    },
+                  });
+                }
+              } catch (notifErr) {
+                console.warn("Failed to create/update chat notification:", notifErr);
+              }
+            })
           );
         }
       } catch (bgErr) {
