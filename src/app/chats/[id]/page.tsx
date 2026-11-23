@@ -1475,7 +1475,7 @@ export default function ActiveChatPage() {
       <main
         ref={messagesContainerRef}
         onScroll={handleScroll}
-        className="flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4 space-y-2 relative"
+        className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-3 sm:p-4 space-y-2 relative w-full max-w-full"
       >
         {/* ── WHATSAPP-STYLE PINNED MESSAGE BANNER ── */}
         {pinnedMessage && (
@@ -1693,15 +1693,15 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* ── UNIFIED HOVER / TAP ACTION CAPSULE (SMILE + CHEVRON) ── */}
+                      {/* ── DESKTOP-ONLY HOVER ACTION CAPSULE (SMILE + CHEVRON) ── */}
                       {!isSelectMode && !parsed.isDeleted && (
                         <div
                           data-chat-actions="true"
-                          className={`absolute top-1.5 flex items-center opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
-                            isMe ? "-left-12 sm:-left-14" : "-right-12 sm:-right-14"
+                          className={`hidden sm:flex absolute top-1.5 items-center opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
+                            isMe ? "-left-14" : "-right-14"
                           }`}
                         >
-                          <div className="flex items-center h-6.5 sm:h-7 px-1 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all">
+                          <div className="flex items-center h-7 px-1 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all">
                             {/* ☺ Smile Emoji Reaction Trigger */}
                             <button
                               type="button"
@@ -2182,6 +2182,18 @@ export default function ActiveChatPage() {
                               timestamp={formatMessageTime(msg.createdAt)}
                             />
                           )}
+                          {/* Mobile in-bubble action trigger: flush inside bubble, zero overflow */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
+                            }}
+                            className="sm:hidden -mr-1 p-0.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
+                            title="Message options"
+                          >
+                            <ChevronDown className="w-3 h-3 opacity-70" />
+                          </button>
                         </div>
                       )}
                     </div>

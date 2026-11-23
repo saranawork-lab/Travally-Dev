@@ -129,7 +129,7 @@ export default async function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${inter.className} min-h-screen flex flex-col antialiased bg-[#f8fafc] dark:bg-[#090d0b] text-slate-900 dark:text-slate-100`}
+        className={`${inter.className} min-h-screen flex flex-col antialiased bg-[#f8fafc] dark:bg-[#090d0b] text-slate-900 dark:text-slate-100 overflow-x-hidden w-full max-w-full`}
       >
         <LanguageProvider>
           <ThemeProvider>
@@ -138,9 +138,9 @@ export default async function RootLayout({
               <GlobalIncomingCallListener />
               <Navbar initialUser={currentUser} />
               <PrimaryNavigation initialUser={currentUser} />
-              <div className="flex-1 flex min-w-0">
+              <div className="flex-1 flex min-w-0 w-full max-w-full">
                 <DesktopSidebar initialUser={currentUser} />
-                <main className="flex-1 min-w-0">{children}</main>
+                <main className="flex-1 min-w-0 w-full max-w-full overflow-x-hidden">{children}</main>
               </div>
               <Footer initialUser={currentUser} />
               <BottomNav initialUser={currentUser} />
