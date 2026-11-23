@@ -39,6 +39,8 @@ const parseLastMessageSnippet = (content?: string): string => {
   return content;
 };
 
+let cachedSidebarConversations: any[] | null = null;
+
 export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
   activeConversationId,
   isCollapsed,
@@ -47,17 +49,39 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
   onCloseMobileDrawer,
 }) => {
   const router = useRouter();
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<any[]>(() => {
+    if (cachedSidebarConversations && cachedSidebarConversations.length > 0) return cachedSidebarConversations;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("travally_chats_inbox_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedSidebarConversations = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [filterType, setFilterType] = useState<"ALL" | "ACTIVITY" | "TRAVEL">("ALL");
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    return !(cachedSidebarConversations && cachedSidebarConversations.length > 0);
+  });
 
   const fetchChats = async () => {
     try {
       const res = await fetch("/api/chats");
       if (res.ok) {
         const data = await res.json();
-        setConversations(data.conversations || []);
+        const list = data.conversations || [];
+        setConversations(list);
+        cachedSidebarConversations = list;
+        try {
+          sessionStorage.setItem("travally_chats_inbox_cache", JSON.stringify(list));
+        } catch {}
       }
     } catch (e) {
       console.error("ChatsSidebar fetch error:", e);

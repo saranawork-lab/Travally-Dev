@@ -119,6 +119,10 @@ const parseMessageContent = (raw: string): MessagePayload => {
   return { text: raw };
 };
 
+// Fast in-memory cache maps for instantaneous chat room opening
+const memoryConvMap = new Map<string, any>();
+const memoryMsgsMap = new Map<string, any[]>();
+
 export default function ActiveChatPage() {
   const { t } = useLanguage();
   const params = useParams();
@@ -126,19 +130,29 @@ export default function ActiveChatPage() {
   const conversationId = params?.id as string;
 
   const [conversation, setConversation] = useState<any>(() => {
+    if (memoryConvMap.has(conversationId)) return memoryConvMap.get(conversationId);
     if (typeof window !== "undefined") {
       try {
         const cached = sessionStorage.getItem(`travally_chat_conv_${conversationId}`);
-        if (cached) return JSON.parse(cached);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          memoryConvMap.set(conversationId, parsed);
+          return parsed;
+        }
       } catch {}
     }
     return null;
   });
   const [messages, setMessages] = useState<any[]>(() => {
+    if (memoryMsgsMap.has(conversationId)) return memoryMsgsMap.get(conversationId)!;
     if (typeof window !== "undefined") {
       try {
         const cached = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
-        if (cached) return JSON.parse(cached);
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          memoryMsgsMap.set(conversationId, parsed);
+          return parsed;
+        }
       } catch {}
     }
     return [];
@@ -159,6 +173,7 @@ export default function ActiveChatPage() {
 
   const [inputMessage, setInputMessage] = useState("");
   const [loading, setLoading] = useState(() => {
+    if (memoryMsgsMap.has(conversationId) || memoryConvMap.has(conversationId)) return false;
     if (typeof window !== "undefined") {
       try {
         const cached = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
@@ -385,6 +400,7 @@ export default function ActiveChatPage() {
           // Full initial load
           if (data.conversation) {
             setConversation(data.conversation);
+            memoryConvMap.set(conversationId, data.conversation);
             try {
               sessionStorage.setItem(`travally_chat_conv_${conversationId}`, JSON.stringify(data.conversation));
             } catch {}
@@ -397,6 +413,7 @@ export default function ActiveChatPage() {
             }))
           );
           setMessages(decryptedList);
+          memoryMsgsMap.set(conversationId, decryptedList);
           try {
             sessionStorage.setItem(`travally_chat_msgs_${conversationId}`, JSON.stringify(decryptedList.slice(-50)));
           } catch {}
@@ -417,12 +434,14 @@ export default function ActiveChatPage() {
   };
 
   useEffect(() => {
-    fetch("/api/auth/me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((data) => {
-        if (data?.user) setCurrentUser(data.user);
-      })
-      .catch(() => {});
+    if (!currentUser) {
+      fetch("/api/auth/me")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((data) => {
+          if (data?.user) setCurrentUser(data.user);
+        })
+        .catch(() => {});
+    }
 
     if (conversationId) {
       fetchChatData();

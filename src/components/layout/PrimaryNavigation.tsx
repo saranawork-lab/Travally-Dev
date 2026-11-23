@@ -113,6 +113,7 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
             <Link
               key={item.id}
               href={item.href}
+              prefetch={true}
               className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none h-full border-b-[3px] transition-all ${
                 isActive
                   ? `${item.activeBorderClass} ${item.activeTextClass}`

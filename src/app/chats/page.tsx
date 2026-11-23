@@ -35,6 +35,9 @@ const parseLastMessageSnippet = (content?: string): string => {
   return content;
 };
 
+// Module-level cache for instant 0ms inbox rendering
+let cachedInboxConversations: any[] | null = null;
+
 function ChatsContent() {
   const { t } = useLanguage();
   const searchParams = useSearchParams();
@@ -44,9 +47,28 @@ function ChatsContent() {
   const initialTab = searchParams.get("tab") === "requests" ? "requests" : "chats";
   const [activeMainTab, setActiveMainTab] = useState<"chats" | "requests">(initialTab);
 
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<any[]>(() => {
+    if (cachedInboxConversations && cachedInboxConversations.length > 0) {
+      return cachedInboxConversations;
+    }
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("travally_chats_inbox_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedInboxConversations = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    return !(cachedInboxConversations && cachedInboxConversations.length > 0);
+  });
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");
@@ -70,7 +92,12 @@ function ChatsContent() {
       const res = await fetch("/api/chats");
       if (res.ok) {
         const data = await res.json();
-        setConversations(data.conversations || []);
+        const list = data.conversations || [];
+        setConversations(list);
+        cachedInboxConversations = list;
+        try {
+          sessionStorage.setItem("travally_chats_inbox_cache", JSON.stringify(list));
+        } catch {}
       }
     } catch (e) {
       console.error(e);

@@ -7,11 +7,23 @@ import { ObjectId } from "mongodb";
 
 export const dynamic = "force-dynamic";
 
+// Fast in-memory user chats cache to avoid repeat MongoDB aggregation hits
+const userChatsCache = new Map<string, { data: any; timestamp: number }>();
+const CHATS_CACHE_TTL_MS = 10000; // 10 seconds
+
 export async function GET(req: NextRequest) {
   try {
     const user = await getCurrentUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Return instant cached response if queried within 10 seconds
+    const cached = userChatsCache.get(user.id);
+    if (cached && Date.now() - cached.timestamp < CHATS_CACHE_TTL_MS) {
+      const res = NextResponse.json(cached.data);
+      res.headers.set("Cache-Control", "private, s-maxage=5, stale-while-revalidate=30");
+      return res;
     }
 
     // 1. Non-blocking background purge of conversations exceeding 7-day retention
@@ -210,8 +222,11 @@ export async function GET(req: NextRequest) {
       retentionInfo: getChatRetentionInfo(conv as any),
     }));
 
-    const response = NextResponse.json({ conversations: decorated });
-    response.headers.set("Cache-Control", "private, s-maxage=10, stale-while-revalidate=59");
+    const resultPayload = { conversations: decorated };
+    userChatsCache.set(user.id, { data: resultPayload, timestamp: Date.now() });
+
+    const response = NextResponse.json(resultPayload);
+    response.headers.set("Cache-Control", "private, s-maxage=5, stale-while-revalidate=30");
     return response;
   } catch (error) {
     console.error("GET chats error:", error);
