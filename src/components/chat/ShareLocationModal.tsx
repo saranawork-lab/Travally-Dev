@@ -353,22 +353,6 @@ export const ShareLocationModal: React.FC<ShareLocationModalProps> = ({
           {activeTab === "LIVE" ? (
             /* ── SHARE LIVE LOCATION SECTION (WHATSAPP PARITY) ── */
             <div className="space-y-4 animate-fade-in">
-              <div className="p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 flex items-start gap-3">
-                <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                  <Radio className="w-4 h-4 animate-pulse" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-xs text-slate-900 dark:text-white">
-                    Live Location updates in real time
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-relaxed">
-                    Participants in this chat can see your live position on the map even when your
-                    phone is locked or the app is in the background. You can stop sharing at any
-                    time.
-                  </p>
-                </div>
-              </div>
-
               {/* Duration selector */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-2">
