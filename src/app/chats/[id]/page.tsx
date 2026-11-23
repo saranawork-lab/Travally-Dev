@@ -38,6 +38,7 @@ import {
   Reply,
   Forward,
   Pin,
+  PinOff,
   CheckSquare,
 } from "lucide-react";
 import { formatTimeAgo, formatMessageTime } from "@/lib/utils";
@@ -216,13 +217,101 @@ export default function ActiveChatPage() {
   const liveLocationWatchIdRef = useRef<number | null>(null);
   const lastLiveBroadcastRef = useRef<number>(0);
 
-  // WhatsApp-style message hover actions, unified context menu with reactions, pinned message & select mode
-  const [contextMenuMsg, setContextMenuMsg] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
+  // WhatsApp-style message hover actions, unified context menu with reactions, multi-pin messages & select mode
+  interface PinnedItem {
+    id: string;
+    text: string;
+    senderName: string;
+    pinnedBy: string;
+    pinnedAt: number;
+  }
+  const [contextMenuMsg, setContextMenuMsg] = useState<{
+    msg: any;
+    parsed: MessagePayload;
+    direction?: "down" | "up";
+  } | null>(null);
   const [messageInfoTarget, setMessageInfoTarget] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
-  const [pinnedMessage, setPinnedMessage] = useState<{ id: string; text: string; senderName: string } | null>(null);
+  const [pinnedMessages, setPinnedMessages] = useState<PinnedItem[]>([]);
+  const [activePinIndex, setActivePinIndex] = useState<number>(0);
   const [deleteTargetMsg, setDeleteTargetMsg] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [selectedMsgIds, setSelectedMsgIds] = useState<Set<string>>(new Set());
+
+  // Restore and persist pinned messages per conversation
+  useEffect(() => {
+    if (!conversationId) return;
+    try {
+      const saved = localStorage.getItem(`travally_pinned_${conversationId}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          setPinnedMessages(parsed);
+        }
+      }
+    } catch {}
+  }, [conversationId]);
+
+  // Handle toggling pins with 5-pins-per-person limit in group and 1-to-1 chats
+  const handleTogglePin = (targetMsg: any, targetParsed: MessagePayload, targetSenderName: string) => {
+    const currentUserId = currentUser?.id || "me";
+    setPinnedMessages((prev) => {
+      // If already pinned, unpin it
+      if (prev.some((p) => p.id === targetMsg.id)) {
+        const updated = prev.filter((p) => p.id !== targetMsg.id);
+        try {
+          localStorage.setItem(`travally_pinned_${conversationId}`, JSON.stringify(updated));
+        } catch {}
+        return updated;
+      }
+
+      // Max 5 pins per person
+      const myPins = prev.filter((p) => p.pinnedBy === currentUserId);
+      let updatedBase = prev;
+      if (myPins.length >= 5) {
+        const oldestId = myPins[myPins.length - 1].id;
+        updatedBase = prev.filter((p) => p.id !== oldestId);
+      }
+
+      const snippet =
+        targetParsed.text ||
+        (targetParsed.mediaType === "PHOTO"
+          ? "📷 Photo"
+          : targetParsed.mediaType === "LOCATION"
+          ? "📍 Location"
+          : targetParsed.mediaType === "TRIP"
+          ? "🎒 Trip itinerary"
+          : "Shared message");
+
+      const newPin: PinnedItem = {
+        id: targetMsg.id,
+        text: snippet,
+        senderName: targetSenderName,
+        pinnedBy: currentUserId,
+        pinnedAt: Date.now(),
+      };
+
+      const updated = [newPin, ...updatedBase];
+      try {
+        localStorage.setItem(`travally_pinned_${conversationId}`, JSON.stringify(updated));
+      } catch {}
+      return updated;
+    });
+    setActivePinIndex(0);
+    setContextMenuMsg(null);
+  };
+
+  // Viewport-aware context menu trigger (optimizes direction: down if space available, up if constrained)
+  const handleOpenContextMenu = (e: React.MouseEvent, msg: any, parsed: MessagePayload) => {
+    e.stopPropagation();
+    if (contextMenuMsg?.msg?.id === msg.id) {
+      setContextMenuMsg(null);
+      return;
+    }
+    const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const direction: "down" | "up" = spaceBelow < 320 && rect.top > 300 ? "up" : "down";
+    setContextMenuMsg({ msg, parsed, direction });
+  };
 
   // Click outside to dismiss context menu
   useEffect(() => {
@@ -784,13 +873,16 @@ export default function ActiveChatPage() {
   // Long-press and context menu handlers with WhatsApp-style swipe-to-reply
   const handleTouchStart = (msg: any, parsed: MessagePayload, e: React.TouchEvent) => {
     if (parsed.isDeleted) return;
-    touchStartPosRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    const clientY = e.touches[0].clientY;
+    touchStartPosRef.current = { x: e.touches[0].clientX, y: clientY };
     setSwipingMsgId(msg.id);
     setSwipeOffset(0);
 
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     longPressTimerRef.current = setTimeout(() => {
-      setContextMenuMsg({ msg, parsed });
+      const spaceBelow = window.innerHeight - clientY;
+      const direction: "down" | "up" = spaceBelow < 320 && clientY > 300 ? "up" : "down";
+      setContextMenuMsg({ msg, parsed, direction });
       setSwipingMsgId(null);
       setSwipeOffset(0);
       if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -855,7 +947,9 @@ export default function ActiveChatPage() {
   const handleContextMenu = (msg: any, parsed: MessagePayload, e: React.MouseEvent) => {
     e.preventDefault();
     if (parsed.isDeleted) return;
-    setContextMenuMsg({ msg, parsed });
+    const spaceBelow = window.innerHeight - e.clientY;
+    const direction: "down" | "up" = spaceBelow < 320 && e.clientY > 300 ? "up" : "down";
+    setContextMenuMsg({ msg, parsed, direction });
   };
 
   const handleForwardMessage = (text: string) => {
@@ -1477,47 +1571,84 @@ export default function ActiveChatPage() {
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-3 sm:p-4 space-y-2 relative w-full max-w-full"
       >
-        {/* ── WHATSAPP-STYLE PINNED MESSAGE BANNER ── */}
-        {pinnedMessage && (
-          <div
-            onClick={() => {
-              const el = document.getElementById(`msg-${pinnedMessage.id}`);
-              el?.scrollIntoView({ behavior: "smooth", block: "center" });
-            }}
-            className="sticky top-0 z-30 mb-2 px-3.5 py-2 rounded-2xl bg-white/95 dark:bg-[#15221c]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-950/80 shadow-sm flex items-center justify-between gap-3 text-xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2b23] transition-colors"
-          >
-            <div className="flex items-center gap-2 truncate">
-              <Pin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <strong className="text-slate-800 dark:text-slate-200 shrink-0">{pinnedMessage.senderName}:</strong>
-              <span className="text-slate-500 dark:text-slate-400 truncate">{pinnedMessage.text}</span>
-            </div>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setPinnedMessage(null);
+        {/* ── MULTI-PIN MESSAGE BANNER (UP TO 5 PINS PER PERSON, CYCLES ON CLICK) ── */}
+        {pinnedMessages.length > 0 && (() => {
+          const currentPin = pinnedMessages[Math.min(activePinIndex, pinnedMessages.length - 1)] || pinnedMessages[0];
+          return (
+            <div
+              onClick={() => {
+                const el = document.getElementById(`msg-${currentPin.id}`);
+                if (el) {
+                  el.scrollIntoView({ behavior: "smooth", block: "center" });
+                  el.classList.add("ring-2", "ring-emerald-500", "rounded-2xl");
+                  setTimeout(() => {
+                    el.classList.remove("ring-2", "ring-emerald-500", "rounded-2xl");
+                  }, 1800);
+                }
+                // When clicked: advance to next pin and scroll there
+                if (pinnedMessages.length > 1) {
+                  setActivePinIndex((prev) => (prev + 1) % pinnedMessages.length);
+                }
               }}
-              className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
-              title="Unpin message"
+              className="sticky top-0 z-30 mb-2 px-3.5 py-1.5 rounded-2xl bg-white/95 dark:bg-[#15221c]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-950/80 shadow-sm flex items-center justify-between gap-2.5 text-xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2b23] transition-colors select-none group"
+              title={
+                pinnedMessages.length > 1
+                  ? `Pin ${activePinIndex + 1} of ${pinnedMessages.length} (Click to scroll & cycle to next pin)`
+                  : "Click to scroll to pinned message"
+              }
             >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-        {/* ── WHATSAPP-STYLE IN-CHAT ENCRYPTION & 7-DAY RETENTION VALIDITY BANNER ── */}
-        <div className="flex flex-col items-center gap-1.5 pt-1 pb-3 px-3 max-w-sm sm:max-w-md mx-auto text-center select-none animate-fade-in">
-          {/* WhatsApp-style End-to-End Encrypted pill */}
-          <button
-            type="button"
-            onClick={() => setSecurityModalOpen(true)}
-            className="group px-3 py-1.5 rounded-xl bg-amber-500/10 dark:bg-amber-400/10 hover:bg-amber-500/15 border border-amber-500/25 dark:border-amber-400/25 text-amber-900 dark:text-amber-200 text-[10px] sm:text-[10.5px] leading-tight flex items-center justify-center gap-1.5 shadow-2xs transition-all cursor-pointer"
-            title="Tap to verify End-to-End Encryption keys"
-          >
-            <Lock className="w-3 h-3 text-amber-600 dark:text-amber-400 shrink-0" />
-            <span>{t.e2eeNotice}</span>
-          </button>
+              <div className="flex items-center gap-2 truncate min-w-0">
+                <div className="relative flex items-center justify-center shrink-0">
+                  <Pin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  {pinnedMessages.length > 1 && (
+                    <span className="absolute -top-1.5 -right-2 text-[8px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-1 rounded-full border border-emerald-500/30">
+                      {activePinIndex + 1}/{pinnedMessages.length}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-1.5 truncate text-[11px] sm:text-xs min-w-0">
+                  <strong className="text-slate-800 dark:text-slate-200 shrink-0 font-bold">
+                    {currentPin.senderName}:
+                  </strong>
+                  <span className="text-slate-500 dark:text-slate-400 truncate">
+                    {currentPin.text}
+                  </span>
+                </div>
+              </div>
 
-          {/* 7-Day Post-Event Validity / Auto-Deletion Notice */}
+              <div className="flex items-center gap-1 shrink-0">
+                {pinnedMessages.length > 1 && (
+                  <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden sm:inline">
+                    Tap to cycle
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setPinnedMessages((prev) => {
+                      const updated = prev.filter((p) => p.id !== currentPin.id);
+                      try {
+                        localStorage.setItem(`travally_pinned_${conversationId}`, JSON.stringify(updated));
+                      } catch {}
+                      return updated;
+                    });
+                    if (activePinIndex >= pinnedMessages.length - 1) {
+                      setActivePinIndex(Math.max(0, pinnedMessages.length - 2));
+                    }
+                  }}
+                  className="p-1 rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 cursor-pointer transition-colors"
+                  title="Unpin this message"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── 7-DAY RETENTION VALIDITY NOTICE ── */}
+        <div className="flex flex-col items-center gap-1.5 pt-1 pb-3 px-3 max-w-sm sm:max-w-md mx-auto text-center select-none animate-fade-in">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-200/60 dark:bg-white/5 border border-slate-300/40 dark:border-white/10 text-slate-500 dark:text-slate-400 text-[9.5px] font-medium">
             <Clock className="w-2.5 h-2.5 text-slate-400 shrink-0" />
             <span>
@@ -1695,21 +1826,18 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* ── DESKTOP-ONLY HOVER ACTION BUTTONS (SMILE + CHEVRON OPTIONS) ── */}
+                      {/* ── HOVER / TAP ACTION BUTTONS AT SIDE OF BUBBLE (SMILE + CHEVRON OPTIONS) ── */}
                       {!isSelectMode && !parsed.isDeleted && (
                         <div
                           data-chat-actions="true"
-                          className={`hidden sm:flex absolute top-1.5 items-center gap-1 opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
+                          className={`flex absolute top-1.5 items-center gap-1 opacity-70 sm:opacity-0 sm:group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
                             isMe ? "right-[calc(100%+6px)]" : "left-[calc(100%+6px)]"
                           }`}
                         >
                           {/* ☺ Smile Emoji Reaction Trigger */}
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
-                            }}
+                            onClick={(e) => handleOpenContextMenu(e, msg, parsed)}
                             className="w-6.5 h-6.5 rounded-full flex items-center justify-center bg-white/90 dark:bg-[#18241f]/90 backdrop-blur-md text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-[#203029] border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer"
                             title="React with emoji"
                           >
@@ -1719,10 +1847,7 @@ export default function ActiveChatPage() {
                           {/* ⌵ Context Menu Trigger */}
                           <button
                             type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
-                            }}
+                            onClick={(e) => handleOpenContextMenu(e, msg, parsed)}
                             className="w-6.5 h-6.5 rounded-full flex items-center justify-center bg-white/90 dark:bg-[#18241f]/90 backdrop-blur-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-white dark:hover:bg-[#203029] border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer"
                             title="Message options"
                           >
@@ -1731,23 +1856,23 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* ── UNIFIED CONTEXT MENU DROPDOWN WITH ATTRACTIVE QUICK REACTIONS HEADER ── */}
+                      {/* ── UNIFIED VIEWPORT-OPTIMIZED CONTEXT MENU DROPDOWN ── */}
                       {contextMenuMsg?.msg?.id === msg.id && (
                         <div
                           data-chat-actions="true"
-                          className="absolute z-50 min-w-[215px] max-w-[calc(100vw-32px)] p-1.5 rounded-2xl bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/50 shadow-[0_12px_36px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.65)] animate-scale-up text-xs select-none"
+                          className="absolute z-50 w-[180px] min-w-[175px] max-w-[calc(100vw-32px)] p-1 rounded-2xl bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/50 shadow-[0_12px_36px_rgba(0,0,0,0.14),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.7)] animate-scale-up text-xs select-none max-h-[min(380px,calc(100vh-100px))] overflow-y-auto no-scrollbar"
                           style={{
-                            top: idx >= messages.length - 2 && idx > 2 ? "auto" : "100%",
-                            bottom: idx >= messages.length - 2 && idx > 2 ? "100%" : "auto",
+                            top: contextMenuMsg?.direction === "up" ? "auto" : "100%",
+                            bottom: contextMenuMsg?.direction === "up" ? "100%" : "auto",
                             [isMe ? "right" : "left"]: "0px",
-                            marginTop: idx >= messages.length - 2 && idx > 2 ? "0px" : "6px",
-                            marginBottom: idx >= messages.length - 2 && idx > 2 ? "6px" : "0px",
+                            marginTop: contextMenuMsg?.direction === "up" ? "0px" : "6px",
+                            marginBottom: contextMenuMsg?.direction === "up" ? "6px" : "0px",
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
                           {/* 1. Quick Reactions Tray at top of Dropdown */}
-                          <div className="flex items-center justify-between gap-1 px-1.5 py-1 mb-1 rounded-xl bg-slate-100/80 dark:bg-emerald-950/40 border border-slate-200/60 dark:border-emerald-800/30">
-                            {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                          <div className="flex items-center justify-between gap-1 px-1 py-1 mb-1 rounded-xl bg-slate-100/80 dark:bg-emerald-950/40 border border-slate-200/60 dark:border-emerald-800/30">
+                            {["👍", "❤️", "😂", "😮", "🙏"].map((emoji) => (
                               <button
                                 key={emoji}
                                 type="button"
@@ -1756,10 +1881,10 @@ export default function ActiveChatPage() {
                                   handleToggleReaction(msg.id, emoji);
                                   setContextMenuMsg(null);
                                 }}
-                                className="w-7 h-7 rounded-lg hover:scale-130 active:scale-95 transition-transform flex items-center justify-center hover:bg-white dark:hover:bg-emerald-900/50 shadow-xs cursor-pointer"
+                                className="w-6 h-6 rounded-md hover:scale-125 active:scale-95 transition-transform flex items-center justify-center hover:bg-white dark:hover:bg-emerald-900/50 shadow-xs cursor-pointer"
                                 title={`React ${emoji}`}
                               >
-                                <RealisticEmoji emoji={emoji} size={19} />
+                                <RealisticEmoji emoji={emoji} size={16} />
                               </button>
                             ))}
                             <button
@@ -1769,14 +1894,14 @@ export default function ActiveChatPage() {
                                 setContextMenuMsg(null);
                                 setIsEmojiPickerOpen(true);
                               }}
-                              className="w-6 h-6 rounded-lg bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+                              className="w-5.5 h-5.5 rounded-md bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
                               title="More reactions"
                             >
-                              <Plus className="w-3.5 h-3.5" />
+                              <Plus className="w-3 h-3" />
                             </button>
                           </div>
 
-                          <div className="h-px bg-slate-200/70 dark:bg-emerald-900/30 my-1 mx-1" />
+                          <div className="h-px bg-slate-200/70 dark:bg-emerald-900/30 my-0.5 mx-1" />
 
                           {/* 2. Message info */}
                           <button
@@ -1785,10 +1910,10 @@ export default function ActiveChatPage() {
                               setMessageInfoTarget({ msg, parsed });
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
+                            className="w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Info className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
-                            <span className="text-[13px] font-medium">Message info</span>
+                            <Info className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
+                            <span className="text-xs font-medium">Message info</span>
                           </button>
 
                           {/* 3. Reply */}
@@ -1803,10 +1928,10 @@ export default function ActiveChatPage() {
                               setContextMenuMsg(null);
                               textareaRef.current?.focus();
                             }}
-                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
+                            className="w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Reply className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
-                            <span className="text-[13px] font-medium">Reply</span>
+                            <Reply className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
+                            <span className="text-xs font-medium">Reply</span>
                           </button>
 
                           {/* 4. Copy */}
@@ -1817,10 +1942,10 @@ export default function ActiveChatPage() {
                                 handleCopyText(parsed.text, msg.id);
                                 setContextMenuMsg(null);
                               }}
-                              className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
+                              className="w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                             >
-                              <Copy className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
-                              <span className="text-[13px] font-medium">Copy</span>
+                              <Copy className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
+                              <span className="text-xs font-medium">Copy</span>
                             </button>
                           )}
 
@@ -1831,27 +1956,31 @@ export default function ActiveChatPage() {
                               handleForwardMessage(parsed.text || parsed.mediaType || "Shared message");
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
+                            className="w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Forward className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
-                            <span className="text-[13px] font-medium">Forward</span>
+                            <Forward className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
+                            <span className="text-xs font-medium">Forward</span>
                           </button>
 
-                          {/* 6. Pin */}
+                          {/* 6. Pin / Unpin (up to 5 pins per person) */}
                           <button
                             type="button"
                             onClick={() => {
-                              setPinnedMessage({
-                                id: msg.id,
-                                text: parsed.text || parsed.mediaType || "Message",
-                                senderName: isMe ? "You" : senderName,
-                              });
-                              setContextMenuMsg(null);
+                              handleTogglePin(msg, parsed, isMe ? "You" : senderName);
                             }}
-                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
+                            className="w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Pin className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
-                            <span className="text-[13px] font-medium">Pin</span>
+                            {pinnedMessages.some((p) => p.id === msg.id) ? (
+                              <>
+                                <PinOff className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                                <span className="text-xs font-medium text-amber-600 dark:text-amber-400">Unpin</span>
+                              </>
+                            ) : (
+                              <>
+                                <Pin className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
+                                <span className="text-xs font-medium">Pin</span>
+                              </>
+                            )}
                           </button>
 
                           {/* 7. Select */}
@@ -1862,13 +1991,13 @@ export default function ActiveChatPage() {
                               setSelectedMsgIds(new Set([msg.id]));
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
+                            className="w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <CheckSquare className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
-                            <span className="text-[13px] font-medium">Select</span>
+                            <CheckSquare className="w-3.5 h-3.5 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
+                            <span className="text-xs font-medium">Select</span>
                           </button>
 
-                          <div className="h-px bg-slate-200/70 dark:bg-emerald-900/30 my-1 mx-1" />
+                          <div className="h-px bg-slate-200/70 dark:bg-emerald-900/30 my-0.5 mx-1" />
 
                           {/* 8. Delete */}
                           <button
@@ -1877,10 +2006,10 @@ export default function ActiveChatPage() {
                               setDeleteTargetMsg({ msg, parsed });
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer text-left group"
+                            className="w-full px-2.5 py-1.5 rounded-xl flex items-center gap-2.5 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
-                            <span className="text-[13px] font-medium">Delete</span>
+                            <Trash2 className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                            <span className="text-xs font-medium">Delete</span>
                           </button>
                         </div>
                       )}
@@ -2179,18 +2308,6 @@ export default function ActiveChatPage() {
                               timestamp={formatMessageTime(msg.createdAt)}
                             />
                           )}
-                          {/* Mobile in-bubble action trigger: flush inside bubble, zero overflow */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
-                            }}
-                            className="sm:hidden -mr-1 p-0.5 rounded-full hover:bg-black/5 dark:hover:bg-white/10 transition-colors"
-                            title="Message options"
-                          >
-                            <ChevronDown className="w-3 h-3 opacity-70" />
-                          </button>
                         </div>
                       )}
                     </div>
