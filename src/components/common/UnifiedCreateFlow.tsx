@@ -2036,13 +2036,6 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               </div>
             </div>
 
-            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
-              <Clock className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>Ephemeral Guarantee:</strong> When the duration expires, your beacon and all saved cards across other profiles are completely and permanently deleted.
-              </span>
-            </div>
-
             <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-emerald-950/60">
               <Link
                 href="/?tab=find-me"

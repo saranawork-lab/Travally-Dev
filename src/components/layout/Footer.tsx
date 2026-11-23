@@ -81,7 +81,7 @@ const Footer: React.FC<FooterProps> = () => {
             <span>© {new Date().getFullYear()} Travally Technologies India. All rights reserved. Free social discovery for India.</span>
             <div className="flex items-center gap-5">
               <Link href="/safety#terms" className="hover:text-emerald-400 transition">Terms</Link>
-              <Link href="/safety#privacy" className="hover:text-emerald-400 transition">Privacy</Link>
+              <Link href="/privacy" className="hover:text-emerald-400 transition">Privacy</Link>
               <Link href="/safety" className="hover:text-emerald-400 transition">Safety Center</Link>
             </div>
           </div>

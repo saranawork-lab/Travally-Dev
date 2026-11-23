@@ -35,7 +35,7 @@ export const SocialAuthButtons: React.FC<SocialAuthButtonsProps> = ({
         </div>
 
         {/* 2. Right Column: Google */}
-        <div className="relative pt-2.5">
+        <div className="relative">
           <button
             type="button"
             onClick={handleGoogleClick}

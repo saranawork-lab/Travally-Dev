@@ -113,6 +113,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successNotification, setSuccessNotification] = useState(false);
+  const [agreedToPrivacyPolicy, setAgreedToPrivacyPolicy] = useState(false);
 
   // Email format validation
   const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
@@ -205,6 +206,13 @@ export default function RegisterPage() {
     const cleanPincode = pincode.replace(/[^0-9]/g, "");
     if (!cleanPincode || cleanPincode.length !== 6) {
       setError("Pincode is mandatory. Please enter a valid 6-digit PIN code.");
+      setLoading(false);
+      return;
+    }
+
+    // 5. Mandatory Privacy Policy agreement
+    if (!agreedToPrivacyPolicy) {
+      setError("You must review and agree to the Privacy Policy to create an account.");
       setLoading(false);
       return;
     }
@@ -621,11 +629,32 @@ export default function RegisterPage() {
 
 
 
-          <div className="p-3 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 text-[11px] text-emerald-800 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-900/40 flex items-start gap-2">
-            <ShieldCheck className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600 dark:text-emerald-400" />
-            <span>
-              By joining, you agree to our Community Guidelines and acknowledge that Travally is a free social companion platform.
-            </span>
+          {/* Mandatory Privacy Policy & Data Terms Agreement */}
+          <div className="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/40 border border-emerald-200/80 dark:border-emerald-900/40 space-y-2">
+            <label className="flex items-start gap-2.5 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                required
+                checked={agreedToPrivacyPolicy}
+                onChange={(e) => setAgreedToPrivacyPolicy(e.target.checked)}
+                className="mt-0.5 w-4 h-4 rounded text-emerald-600 focus:ring-emerald-500 border-emerald-300 dark:border-emerald-700 cursor-pointer accent-emerald-600"
+              />
+              <span className="text-xs text-emerald-950 dark:text-emerald-200 leading-snug">
+                I have read and agree to Travally&apos;s{" "}
+                <Link
+                  href="/privacy"
+                  target="_blank"
+                  className="font-bold text-emerald-700 dark:text-emerald-300 underline underline-offset-2 hover:text-emerald-800 dark:hover:text-emerald-100"
+                >
+                  Privacy Policy
+                </Link>{" "}
+                and Community Guidelines. I understand how my data and privacy are protected.{" "}
+                <span className="text-rose-500 font-bold">*</span>
+              </span>
+            </label>
+            <p className="text-[10px] text-emerald-700/80 dark:text-emerald-400/80 pl-6.5">
+              Mandatory for all members. Travally never sells personal data or contact details to third parties.
+            </p>
           </div>
 
           <button
