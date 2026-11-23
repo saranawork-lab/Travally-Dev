@@ -163,9 +163,9 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
     : null;
 
   return (
-    <div className="w-full bg-white dark:bg-[#111815] border-t border-slate-200/90 dark:border-emerald-950/80 shadow-inner px-3 py-2.5 z-30 select-none transition-all">
+    <div className="w-full bg-white dark:bg-[#111815] border-t border-slate-200/90 dark:border-emerald-950/80 shadow-inner px-2.5 sm:px-3 pt-2 pb-1 z-30 select-none transition-all">
       {/* Top Search & Controls Row */}
-      <div className="flex items-center gap-2 mb-2 max-w-4xl mx-auto">
+      <div className="flex items-center gap-2 mb-1.5 max-w-4xl mx-auto">
         <div className="relative flex-1">
           <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
@@ -173,7 +173,7 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search emojis or vibes..."
-            className="w-full pl-8 pr-7 py-1.5 rounded-full bg-slate-100 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/60 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
+            className="w-full pl-8 pr-7 py-1 rounded-full bg-slate-100 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950/60 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500/50"
           />
           {search && (
             <button
@@ -197,7 +197,7 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
 
       {/* Category Tabs Bar (Horizontally scrollable with smooth scrolling) */}
       {!search.trim() && (
-        <div className="flex items-center gap-1 pb-2 border-b border-slate-100 dark:border-emerald-950/60 mb-2 overflow-x-auto no-scrollbar max-w-4xl mx-auto">
+        <div className="flex items-center gap-1 pb-1.5 border-b border-slate-100 dark:border-emerald-950/60 mb-1.5 overflow-x-auto no-scrollbar max-w-4xl mx-auto">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isActive = activeTab === cat.id;
@@ -206,13 +206,13 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
                 key={cat.id}
                 type="button"
                 onClick={() => handleTabClick(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-semibold transition-all shrink-0 ${
+                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold transition-all shrink-0 ${
                   isActive
-                    ? "bg-emerald-600 text-white shadow-xs scale-102"
+                    ? "bg-emerald-600 text-white shadow-xs"
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16201b]"
                 }`}
               >
-                <Icon className="w-3.5 h-3.5" />
+                <Icon className="w-3 h-3" />
                 <span>{cat.name}</span>
               </button>
             );
@@ -220,28 +220,28 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
         </div>
       )}
 
-      {/* Continuous Scrollable Emojis Keyboard Area */}
+      {/* Continuous Scrollable Emojis Keyboard Area (Sized to match device keyboard height ~220px-240px) */}
       <div
         ref={scrollContainerRef}
         onScroll={handleScroll}
-        className="max-h-56 sm:max-h-64 overflow-y-auto overscroll-contain pr-1 space-y-4 max-w-4xl mx-auto"
+        className="h-[210px] sm:h-[230px] overflow-y-auto overscroll-contain pr-1 space-y-2 max-w-4xl mx-auto"
       >
         {searchResults ? (
           /* Search Results */
           <div>
-            <div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider py-1 px-1">
+            <div className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider py-0.5 px-1">
               Matching Emojis ({searchResults.length})
             </div>
-            <div className="grid grid-cols-7 sm:grid-cols-9 md:grid-cols-11 gap-1">
+            <div className="grid grid-cols-7 sm:grid-cols-9 md:grid-cols-11 gap-0.5 sm:gap-1">
               {searchResults.map((emoji, idx) => (
                 <button
                   key={`search-${idx}`}
                   type="button"
                   onClick={() => onSelectEmoji(emoji)}
-                  className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:scale-125 transition-transform duration-150 active:scale-95"
+                  className="h-8.5 w-full flex items-center justify-center rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:scale-120 transition-transform duration-100 active:scale-95"
                   title={emoji}
                 >
-                  <RealisticEmoji emoji={emoji} size={26} animate={true} />
+                  <RealisticEmoji emoji={emoji} size={23} animate={true} />
                 </button>
               ))}
             </div>
@@ -256,28 +256,28 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
                 ref={(el) => {
                   sectionRefs.current[cat.id] = el;
                 }}
-                className="space-y-1.5"
+                className="space-y-1"
               >
                 {/* Section Header */}
-                <div className="sticky top-0 bg-white/95 dark:bg-[#111815]/95 backdrop-blur-md z-10 py-1 px-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100/60 dark:border-emerald-950/40">
-                  <Icon className="w-3.5 h-3.5 text-emerald-500" />
+                <div className="sticky top-0 bg-white/95 dark:bg-[#111815]/95 backdrop-blur-md z-10 py-0.5 px-1 flex items-center gap-1 text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider border-b border-slate-100/60 dark:border-emerald-950/40">
+                  <Icon className="w-3 h-3 text-emerald-500" />
                   <span>{cat.name}</span>
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 font-normal">
+                  <span className="text-[9.5px] text-slate-400 dark:text-slate-500 font-normal">
                     ({cat.emojis.length})
                   </span>
                 </div>
 
                 {/* Emojis Grid for this section */}
-                <div className="grid grid-cols-7 sm:grid-cols-9 md:grid-cols-11 gap-1">
+                <div className="grid grid-cols-7 sm:grid-cols-9 md:grid-cols-11 gap-0.5 sm:gap-1">
                   {cat.emojis.map((emoji, idx) => (
                     <button
                       key={`${cat.id}-${idx}`}
                       type="button"
                       onClick={() => onSelectEmoji(emoji)}
-                      className="w-10 h-10 flex items-center justify-center rounded-xl hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:scale-125 transition-transform duration-150 active:scale-95"
+                      className="h-8.5 w-full flex items-center justify-center rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 hover:scale-120 transition-transform duration-100 active:scale-95"
                       title={emoji}
                     >
-                      <RealisticEmoji emoji={emoji} size={26} animate={true} />
+                      <RealisticEmoji emoji={emoji} size={23} animate={true} />
                     </button>
                   ))}
                 </div>
