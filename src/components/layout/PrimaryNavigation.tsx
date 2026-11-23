@@ -77,6 +77,11 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
 
   const activeTab = optimisticTab || resolvedActiveTab;
 
+  const isCardDetail = Boolean(
+    (pathname?.startsWith("/travel/") && pathname !== "/travel/create") ||
+    (pathname?.startsWith("/activities/") && pathname !== "/activities/create")
+  );
+
   const navItems = [
     {
       id: "companion",
@@ -96,6 +101,12 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
     },
   ];
 
+  const displayedNavItems = isCardDetail
+    ? navItems.filter((item) => item.id === activeTab).length > 0
+      ? navItems.filter((item) => item.id === activeTab)
+      : navItems
+    : navItems;
+
   const isDiscoverHome = pathname === "/discover";
   const shouldHideBecauseTop = isDiscoverHome && lastScrollYRef.current < 150;
   
@@ -110,8 +121,12 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
         pointerEvents: finallyVisible ? "auto" : "none"
       }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 flex items-center justify-between sm:justify-start sm:gap-12 h-14">
-        {navItems.map((item) => {
+      <div
+        className={`max-w-7xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 flex items-center ${
+          isCardDetail ? "justify-center sm:justify-start" : "justify-between sm:justify-start sm:gap-12"
+        } h-14`}
+      >
+        {displayedNavItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
           return (
@@ -120,7 +135,9 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
               href={item.href}
               onClick={() => setOptimisticTab(item.id)}
               prefetch={true}
-              className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none h-full border-b-[3px] transition-all ${
+              className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 ${
+                isCardDetail ? "px-6 sm:px-4 shrink-0" : "flex-1 sm:flex-none"
+              } h-full border-b-[3px] transition-all ${
                 isActive
                   ? `${item.activeBorderClass} ${item.activeTextClass}`
                   : "border-transparent text-[#0B2345] dark:text-slate-400 hover:text-emerald-700 dark:hover:text-emerald-300"
