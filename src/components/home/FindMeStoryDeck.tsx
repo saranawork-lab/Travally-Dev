@@ -120,6 +120,9 @@ const StoryCardItem: React.FC<{
         isTop ? "cursor-grab active:cursor-grabbing z-20" : "pointer-events-none z-10"
       }`}
     >
+      {/* Top Accent Stripe for Treasure & Find Me Cards */}
+      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-90 pointer-events-none" />
+
       {/* ── SWIPE OVERLAY STAMPS ── */}
       {isTop && (
         <>
@@ -717,8 +720,11 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
                 return (
                   <div
                     key={card.id}
-                    className="rounded-[32px] bg-[#faf8f5] dark:bg-[#121915] border-2 border-emerald-900/10 dark:border-emerald-800/40 p-5 sm:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_45px_rgba(0,0,0,0.4)] flex flex-col justify-between select-none space-y-4"
+                    className="relative overflow-hidden rounded-[32px] bg-[#faf8f5] dark:bg-[#121915] border-2 border-emerald-900/10 dark:border-emerald-800/40 p-5 sm:p-6 shadow-[0_16px_40px_rgba(0,0,0,0.06)] dark:shadow-[0_20px_45px_rgba(0,0,0,0.4)] flex flex-col justify-between select-none space-y-4"
                   >
+                    {/* Top Accent Stripe for Treasure & Find Me Cards */}
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-90 pointer-events-none" />
+
                     {/* ── CARD TOP BAR ── */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">

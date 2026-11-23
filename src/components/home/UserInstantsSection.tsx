@@ -334,8 +334,6 @@ export function UserInstantsSection({ userId, userName, isOwn }: UserInstantsSec
                     </div>
                   </div>
                 )}
-                {/* Top Explorer Accent Stripe */}
-                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" />
 
                 <div className="space-y-3">
                   {/* Author Header Row with Three Dots menu */}

@@ -1303,8 +1303,6 @@ export default function HomeClient() {
                           </div>
                         </div>
                       )}
-                      {/* Top Explorer Accent Stripe */}
-                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" />
 
                       <div className="space-y-3">
                         {/* Author Header Row with Three Dots menu (for author only) */}
@@ -1798,7 +1796,9 @@ export default function HomeClient() {
         {/* ── TAB 3: TREASURE FIND (INTERACTIVE MAP & GEOCACHING) ── */}
         <div className={activeTab === "treasure" ? "space-y-4" : "hidden"}>
           {/* Map Header */}
-            <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm space-y-4">
+            <div className="relative bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm space-y-4 overflow-hidden">
+              {/* Top Accent Stripe for Treasure Find Posts */}
+              <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-90" />
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="font-bold text-base text-slate-900 dark:text-white flex items-center gap-2">
@@ -1829,7 +1829,9 @@ export default function HomeClient() {
 
             {/* Selected Treasure Clue Card */}
             {selectedTreasure ? (
-              <div className="bg-gradient-to-br from-amber-50/60 via-white to-amber-50/30 dark:from-[#161a14] dark:to-[#111815] rounded-3xl border border-amber-200/80 dark:border-amber-900/40 p-6 shadow-sm space-y-4">
+              <div className="relative bg-gradient-to-br from-amber-50/60 via-white to-amber-50/30 dark:from-[#161a14] dark:to-[#111815] rounded-3xl border border-amber-200/80 dark:border-amber-900/40 p-6 shadow-sm space-y-4 overflow-hidden">
+                {/* Top Accent Stripe for Treasure Find Posts */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-90" />
                 <div className="flex items-center justify-between gap-3">
                   <div className="flex items-center gap-2">
                     <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500 text-white">
