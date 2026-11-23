@@ -244,11 +244,6 @@ export default function BottomNav({ initialUser }: BottomNavProps) {
                         alt={currentUser.displayName || "Profile"}
                         className={`w-5 h-5 min-w-[20px] max-w-[20px] min-h-[20px] max-h-[20px] rounded-full object-cover shrink-0 ring-1.5 transition-all duration-300 ${isActive ? (userBadge ? "ring-amber-400" : "ring-emerald-500/60") : (userBadge ? "ring-amber-400/90 shadow-[0_0_6px_rgba(245,158,11,0.4)]" : "ring-slate-300 dark:ring-emerald-800/80")}`}
                       />
-                      {userBadge && (
-                        <span className={`absolute -top-1.5 -right-1 text-[7px] leading-none transition-all duration-300 ${isActive ? "scale-110" : ""}`}>
-                          👑
-                        </span>
-                      )}
                     </div>
                   ) : (
                     <Icon 

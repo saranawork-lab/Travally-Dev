@@ -28,7 +28,7 @@ export function AvatarBadge({
   size = "md",
   showBanner = false,
   showRibbon = false,
-  showCrown = true,
+  showCrown = false,
   className = "",
 }: AvatarBadgeProps) {
   const actualUrl = avatarUrl || src;
@@ -95,15 +95,6 @@ export function AvatarBadge({
         <div
           className={`absolute -inset-1.5 rounded-full bg-gradient-to-tr ${badge.glowClass} blur-md opacity-75 pointer-events-none animate-pulse`}
         />
-      )}
-
-      {/* Royal Crown / Emblem Topper for Genesis #1 */}
-      {showCrown && badge.rank === 1 && (
-        <div
-          className={`absolute left-1/2 -translate-x-1/2 ${config.crown} z-20 flex items-center justify-center pointer-events-none drop-shadow-[0_2px_8px_rgba(245,158,11,0.9)]`}
-        >
-          <span className="text-amber-300 animate-bounce">👑</span>
-        </div>
       )}
 
       {/* Pioneer Lightning Topper for Top 10 (#2 - #10) */}
