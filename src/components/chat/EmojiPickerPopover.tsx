@@ -4,11 +4,11 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   Search,
   Zap,
-  Compass,
-  Coffee,
+  Plane,
+  UtensilsCrossed,
   Smile,
   PartyPopper,
-  Trees,
+  Leaf,
   Trophy,
   Heart,
   X,
@@ -44,7 +44,7 @@ const CATEGORIES = [
   {
     id: "travel",
     name: "Travel",
-    icon: Compass,
+    icon: Plane,
     emojis: [
       "🏔️", "🏕️", "🚂", "🏖️", "🛺", "🥾", "🎒", "📸", "✈️", "🗺️", "🌅", "🌲", "🛶", "🛵", "🧗", "🚗",
       "🌊", "🏯", "🕌", "🧳", "🚲", "🚕", "🚌", "🚊", "🚀", "🚁", "🛳️", "⛵", "🏝️", "🏜️", "🌋", "🏛️",
@@ -54,7 +54,7 @@ const CATEGORIES = [
   {
     id: "food",
     name: "Food",
-    icon: Coffee,
+    icon: UtensilsCrossed,
     emojis: [
       "☕", "🍵", "🥘", "🍛", "🍿", "🎬", "🍻", "🧋", "🍕", "🥪", "🍲", "🧁", "🍩", "🥭", "🥥", "🥤",
       "🥂", "🍫", "🥞", "🧇", "🧀", "🥩", "🍗", "🍔", "🍟", "🌭", "🌮", "🌯", "🥗", "🍜", "🍣", "🍱",
@@ -74,7 +74,7 @@ const CATEGORIES = [
   {
     id: "nature",
     name: "Nature",
-    icon: Trees,
+    icon: Leaf,
     emojis: [
       "🐶", "🐱", "🐭", "🐹", "🐰", "🦊", "🐻", "🐼", "🐨", "🐯", "🦁", "🐮", "🐷", "🐸", "🐵", "🐔",
       "🐧", "🐦", "🦅", "🦆", "🦉", "🦇", "🐺", "🐗", "🐴", "🦄", "🐝", "🐛", "🦋", "🐌", "🐞", "🐜",
@@ -195,9 +195,9 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
         </button>
       </div>
 
-      {/* Category Tabs Bar (Horizontally scrollable with smooth scrolling) */}
+      {/* Category Tabs Bar (Related symbols only, evenly distributed across keyboard dock) */}
       {!search.trim() && (
-        <div className="flex items-center gap-1 pb-1.5 border-b border-slate-100 dark:border-emerald-950/60 mb-1.5 overflow-x-auto no-scrollbar max-w-4xl mx-auto">
+        <div className="flex items-center justify-between gap-1 pb-1.5 border-b border-slate-100 dark:border-emerald-950/60 mb-1.5 max-w-4xl mx-auto px-1">
           {CATEGORIES.map((cat) => {
             const Icon = cat.icon;
             const isActive = activeTab === cat.id;
@@ -206,14 +206,15 @@ export const EmojiPickerPopover: React.FC<EmojiPickerPopoverProps> = ({
                 key={cat.id}
                 type="button"
                 onClick={() => handleTabClick(cat.id)}
-                className={`flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold transition-all shrink-0 ${
+                title={cat.name}
+                aria-label={cat.name}
+                className={`flex-1 flex items-center justify-center py-1.5 rounded-xl transition-all ${
                   isActive
-                    ? "bg-emerald-600 text-white shadow-xs"
+                    ? "bg-emerald-600 text-white shadow-xs scale-105"
                     : "text-slate-500 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16201b]"
                 }`}
               >
-                <Icon className="w-3 h-3" />
-                <span>{cat.name}</span>
+                <Icon className="w-4 h-4 shrink-0" />
               </button>
             );
           })}
