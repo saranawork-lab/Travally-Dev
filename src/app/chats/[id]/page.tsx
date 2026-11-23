@@ -1425,22 +1425,6 @@ export default function ActiveChatPage() {
                           : "bg-white dark:bg-[#16201b] text-slate-800 dark:text-slate-100 border border-slate-200/90 dark:border-emerald-950/80 shadow-xs rounded-bl-[4px] px-3.5 pt-2 pb-1.5 min-w-[75px]"
                       }`}
                     >
-                      {/* Desktop Message Actions Button (Clickable alternative to right-click) */}
-                      {!parsed.isDeleted && (
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedMessage({ msg, parsed });
-                          }}
-                          className={`absolute -top-2.5 ${
-                            isMe ? "-left-2.5" : "-right-2.5"
-                          } w-5 h-5 rounded-full bg-white dark:bg-[#131c18] border border-slate-200 dark:border-emerald-950/80 shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-slate-700 dark:hover:text-white z-20`}
-                          title="Message actions (long-press on mobile, right-click on desktop)"
-                        >
-                          <MoreVertical className="w-3 h-3" />
-                        </button>
-                      )}
                       {/* Quoted Reply Block */}
                       {parsed.replyTo && (
                         <div
