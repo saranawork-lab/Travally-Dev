@@ -825,14 +825,14 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               }}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "treasure" || mode === "find-me"
-                  ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md shadow-blue-600/20 border-blue-600 font-black scale-[1.02]"
+                  ? "bg-gradient-to-r from-sky-400 via-indigo-300 to-pink-400 text-white shadow-md shadow-pink-400/25 border-transparent font-black scale-[1.02]"
                   : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
                   mode === "treasure" || mode === "find-me"
-                    ? "bg-white/20 text-white"
+                    ? "bg-white/25 text-white shadow-xs"
                     : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
                 }`}
               >
@@ -842,8 +842,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 Treasure & Clue
               </span>
               <span
-                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-80 ${
-                  mode === "treasure" || mode === "find-me" ? "text-white/90" : "text-slate-400"
+                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-90 ${
+                  mode === "treasure" || mode === "find-me" ? "text-white" : "text-slate-400"
                 }`}
               >
                 {mode === "find-me" ? "Find Me Clue" : "Treasure Quest"}
