@@ -7,7 +7,6 @@ import { ActivityCard } from "@/components/activities/ActivityCard";
 import { ActivityFilters } from "@/components/activities/ActivityFilters";
 import { TripCard } from "@/components/travel/TripCard";
 import { TripFilters } from "@/components/travel/TripFilters";
-import { DatabaseHealthGuard } from "@/components/common/DatabaseHealthGuard";
 import { PlusCircle, SearchX, Compass, Search, MapPin, Users, Calendar, Luggage } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
@@ -15,6 +14,10 @@ import { useLanguage } from "@/context/LanguageContext";
 interface DiscoverClientProps {
   initialUser: any;
 }
+
+// Module-level caches that persist across client-side page transitions for 0ms loads
+let cachedActivitiesList: any[] | null = null;
+let cachedTravelPlansList: any[] | null = null;
 
 function DiscoverContent({ initialUser }: DiscoverClientProps) {
   const searchParams = useSearchParams();
@@ -26,21 +29,55 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
   const [currentUser, setCurrentUser] = useState<any>(initialUser);
   const [heroSearchY, setHeroSearchY] = useState(0);
 
-  // Companion state
-  const [activities, setActivities] = useState<any[]>([]);
+  // Companion state with instant cache hydration
+  const [activities, setActivities] = useState<any[]>(() => {
+    if (cachedActivitiesList && cachedActivitiesList.length > 0) return cachedActivitiesList;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("travally_discover_activities");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedActivitiesList = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [selectedCategory, setSelectedCategory] = useState("ALL");
   const [activitySearch, setActivitySearch] = useState("");
   const [activitySort, setActivitySort] = useState("UPCOMING");
   const [activityOpenSpotsOnly, setActivityOpenSpotsOnly] = useState(false);
-  const [loadingActivities, setLoadingActivities] = useState(true);
+  const [loadingActivities, setLoadingActivities] = useState<boolean>(() => {
+    return !(cachedActivitiesList && cachedActivitiesList.length > 0);
+  });
 
-  // Travel state
-  const [travelPlans, setTravelPlans] = useState<any[]>([]);
+  // Travel state with instant cache hydration
+  const [travelPlans, setTravelPlans] = useState<any[]>(() => {
+    if (cachedTravelPlansList && cachedTravelPlansList.length > 0) return cachedTravelPlansList;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("travally_discover_travel");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedTravelPlansList = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [selectedTravelStyle, setSelectedTravelStyle] = useState("ALL");
   const [tripSearch, setTripSearch] = useState("");
   const [tripSort, setTripSort] = useState("UPCOMING");
   const [tripOpenSpotsOnly, setTripOpenSpotsOnly] = useState(false);
-  const [loadingTrips, setLoadingTrips] = useState(true);
+  const [loadingTrips, setLoadingTrips] = useState<boolean>(() => {
+    return !(cachedTravelPlansList && cachedTravelPlansList.length > 0);
+  });
 
   // Keep user in sync; if unauthenticated, redirect immediately to landing page
   useEffect(() => {
@@ -104,9 +141,10 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Fetch activities
-  const fetchActivities = async () => {
+  // Fetch activities with smooth background revalidation
+  const fetchActivities = async (silent = false) => {
     try {
+      if (!silent && activities.length === 0) setLoadingActivities(true);
       const params = new URLSearchParams();
       if (selectedCategory !== "ALL") params.set("category", selectedCategory);
       if (activitySearch.trim()) params.set("search", activitySearch.trim());
@@ -117,6 +155,10 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : data.activities || [];
         setActivities(list);
+        cachedActivitiesList = list;
+        try {
+          sessionStorage.setItem("travally_discover_activities", JSON.stringify(list));
+        } catch {}
       }
     } catch (e) {
       console.error("fetchActivities error:", e);
@@ -125,9 +167,10 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
     }
   };
 
-  // Fetch travel plans
-  const fetchTravelPlans = async () => {
+  // Fetch travel plans with smooth background revalidation
+  const fetchTravelPlans = async (silent = false) => {
     try {
+      if (!silent && travelPlans.length === 0) setLoadingTrips(true);
       const params = new URLSearchParams();
       if (selectedTravelStyle !== "ALL") params.set("style", selectedTravelStyle);
       if (tripSearch.trim()) params.set("search", tripSearch.trim());
@@ -138,6 +181,10 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
         const data = await res.json();
         const list = Array.isArray(data) ? data : data.travelPlans || [];
         setTravelPlans(list);
+        cachedTravelPlansList = list;
+        try {
+          sessionStorage.setItem("travally_discover_travel", JSON.stringify(list));
+        } catch {}
       }
     } catch (e) {
       console.error("fetchTravelPlans error:", e);
@@ -146,15 +193,25 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
     }
   };
 
+  // Fetch companion activities and prefetch travel plans in background
   useEffect(() => {
     if (mode === "companion") {
-      fetchActivities();
+      fetchActivities(activities.length > 0);
+      // Pre-fetch travel plans in background so switching to Travel is instant 0ms!
+      if (!cachedTravelPlansList) {
+        fetchTravelPlans(true);
+      }
     }
   }, [mode, selectedCategory, activitySearch]);
 
+  // Fetch travel plans and prefetch companion activities in background
   useEffect(() => {
     if (mode === "travel") {
-      fetchTravelPlans();
+      fetchTravelPlans(travelPlans.length > 0);
+      // Pre-fetch companion activities in background so switching to Companion is instant 0ms!
+      if (!cachedActivitiesList) {
+        fetchActivities(true);
+      }
     }
   }, [mode, selectedTravelStyle, tripSearch]);
 
@@ -222,17 +279,18 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
   };
 
   return (
-    <DatabaseHealthGuard>
-      <div className="w-full flex flex-col min-h-screen">
-        
-        {/* ── HERO SECTION ── */}
-        <div className="w-full relative h-[25vh] sm:h-[30vh] min-h-[200px] max-h-[280px] bg-slate-100 mb-10 sm:mb-8">
-          <div className="absolute inset-0 overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1920&auto=format&fit=crop&q=80"
-              alt="Discover Travally"
-              className="absolute inset-0 w-full h-full object-cover object-center animate-fade-in-up"
-            />
+    <div className="w-full flex flex-col min-h-screen">
+      
+      {/* ── HERO SECTION ── */}
+      <div className="w-full relative h-[25vh] sm:h-[30vh] min-h-[200px] max-h-[280px] bg-slate-100 mb-10 sm:mb-8">
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&auto=format&fit=crop&q=75"
+            alt="Discover Travally"
+            // @ts-ignore
+            fetchPriority="high"
+            className="absolute inset-0 w-full h-full object-cover object-center animate-fade-in-up"
+          />
             {/* White gradient at top to ensure logo legibility, dark at bottom for contrast */}
             <div className="absolute inset-0 bg-gradient-to-b from-white/80 via-transparent to-black/20" />
           </div>
@@ -389,8 +447,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
           </section>
         )}
       </div>
-      </div>
-    </DatabaseHealthGuard>
+    </div>
   );
 }
 

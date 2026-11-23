@@ -7,14 +7,36 @@ import { safeJsonParse } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
+// Short-lived server-side in-memory cache to make travel feed lightning-fast
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+const travelFeedCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 15000; // 15 seconds
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const destination = searchParams.get("destination");
     const style = searchParams.get("style");
     const search = searchParams.get("search");
+    const organizerId = searchParams.get("organizerId") || searchParams.get("userId");
+    const status = searchParams.get("status");
 
     const currentUser = await getCurrentUser();
+
+    // Check fast in-memory cache for default feed queries
+    const isDefaultQuery = !search && !destination && (!style || style === "ALL") && (!status || status === "OPEN") && !organizerId;
+    const cacheKey = `${currentUser?.id || "anon"}_default`;
+    if (isDefaultQuery) {
+      const cached = travelFeedCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        const res = NextResponse.json(cached.data);
+        res.headers.set("Cache-Control", "private, max-age=10, stale-while-revalidate=60");
+        return res;
+      }
+    }
 
     let blockedUserIds: string[] = [];
     let userTravelProfile: UserTravelProfile = {};
@@ -44,13 +66,15 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const organizerId = searchParams.get("organizerId") || searchParams.get("userId");
-    const status = searchParams.get("status");
-
     const where: any = {
       status: status === "ALL" ? undefined : (status || (organizerId ? undefined : "OPEN")),
       organizerId: organizerId ? organizerId : { notIn: blockedUserIds },
     };
+
+    if (!organizerId) {
+      // Don't pull long-expired travel plans from database
+      where.endDate = { gte: new Date(Date.now() - 24 * 3600 * 1000) };
+    }
 
     if (style && style !== "ALL") {
       where.travelStyle = style.toUpperCase();
@@ -148,7 +172,14 @@ export async function GET(req: NextRequest) {
       };
     });
 
-    return NextResponse.json({ travelPlans: plansWithCompatibility });
+    const resultPayload = { travelPlans: plansWithCompatibility };
+    if (isDefaultQuery) {
+      travelFeedCache.set(cacheKey, { data: resultPayload, timestamp: Date.now() });
+    }
+
+    const response = NextResponse.json(resultPayload);
+    response.headers.set("Cache-Control", "private, max-age=10, stale-while-revalidate=60");
+    return response;
   } catch (error) {
     console.error("GET travel error:", error);
     return NextResponse.json({ error: "Failed to fetch travel plans" }, { status: 500 });
@@ -227,6 +258,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    travelFeedCache.clear();
     return NextResponse.json({ success: true, travelPlan }, { status: 201 });
   } catch (error) {
     console.error("POST travel error:", error);

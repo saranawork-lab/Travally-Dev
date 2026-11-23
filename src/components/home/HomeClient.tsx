@@ -130,20 +130,40 @@ interface FindMeClue {
   createdAt: string;
 }
 
+// Module-level in-memory cache for instantaneous 0ms frame rendering
+let cachedInstantsList: CommunityPost[] | null = null;
+
 export default function HomeClient() {
   const { currentUser } = useAuth();
   const { t } = useLanguage();
 
   const [activeTab, setActiveTab] = useState<HomeTab>("instants");
 
-  // Data states
-  const [instants, setInstants] = useState<CommunityPost[]>([]);
+  // Data states with 0ms cache-first hydration
+  const [instants, setInstants] = useState<CommunityPost[]>(() => {
+    if (cachedInstantsList && cachedInstantsList.length > 0) return cachedInstantsList;
+    if (typeof window !== "undefined") {
+      try {
+        const cached = sessionStorage.getItem("travally_instants_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedInstantsList = parsed;
+            return parsed;
+          }
+        }
+      } catch {}
+    }
+    return [];
+  });
   const [growList, setGrowList] = useState<GrowInitiative[]>([]);
   const [treasures, setTreasures] = useState<TreasureItem[]>([]);
   const [findMeClues, setFindMeClues] = useState<FindMeClue[]>([]);
 
   // Loading states
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(() => {
+    return !(cachedInstantsList && cachedInstantsList.length > 0);
+  });
   const [likingId, setLikingId] = useState<string | null>(null);
   const [repostingId, setRepostingId] = useState<string | null>(null);
   const [joiningGrowId, setJoiningGrowId] = useState<string | null>(null);
@@ -276,12 +296,13 @@ export default function HomeClient() {
       } catch {}
     }
 
-    // 2. Fetch instants with highest priority (unblocks feed immediately)
+    // Fetch instants with highest priority (unblocks feed immediately)
     fetch("/api/home/instants")
       .then((res) => (res.ok ? res.json() : null))
       .then((d) => {
         if (d?.posts) {
           setInstants(d.posts);
+          cachedInstantsList = d.posts;
           try {
             sessionStorage.setItem("travally_instants_cache", JSON.stringify(d.posts));
           } catch {}
@@ -290,31 +311,35 @@ export default function HomeClient() {
       .catch((e) => console.error("Error loading posts:", e))
       .finally(() => setLoading(false));
 
-    // 3. Fetch secondary tabs in parallel without blocking community posts
-    fetch("/api/home/grow")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((d) => {
-        if (d?.initiatives) setGrowList(d.initiatives);
-      })
-      .catch(() => {});
+    // Defer secondary tabs slightly so initial load doesn't contend for network & DB bandwidth
+    const secondaryTimer = setTimeout(() => {
+      fetch("/api/home/grow")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((d) => {
+          if (d?.initiatives) setGrowList(d.initiatives);
+        })
+        .catch(() => {});
 
-    fetch("/api/home/treasure")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((d) => {
-        const list = d?.treasures || [];
-        setTreasures(list);
-        if (list.length > 0) {
-          setSelectedTreasure((prev) => prev || list[0]);
-        }
-      })
-      .catch(() => {});
+      fetch("/api/home/treasure")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((d) => {
+          const list = d?.treasures || [];
+          setTreasures(list);
+          if (list.length > 0) {
+            setSelectedTreasure((prev) => prev || list[0]);
+          }
+        })
+        .catch(() => {});
 
-    fetch("/api/home/find-me")
-      .then((res) => (res.ok ? res.json() : null))
-      .then((d) => {
-        if (d?.clues) setFindMeClues(d.clues);
-      })
-      .catch(() => {});
+      fetch("/api/home/find-me")
+        .then((res) => (res.ok ? res.json() : null))
+        .then((d) => {
+          if (d?.clues) setFindMeClues(d.clues);
+        })
+        .catch(() => {});
+    }, 800);
+
+    return () => clearTimeout(secondaryTimer);
   };
 
   useEffect(() => {

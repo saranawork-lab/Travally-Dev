@@ -6,11 +6,21 @@ import { ObjectId } from "mongodb";
 
 export const dynamic = "force-dynamic";
 
+let serverInstantsCache: any = null;
+let serverInstantsCacheTime = 0;
+const CACHE_TTL_MS = 10000; // 10 seconds
+
 // GET /api/home/instants?userId=xxx
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get("userId");
+
+    if (!userId && serverInstantsCache && Date.now() - serverInstantsCacheTime < CACHE_TTL_MS) {
+      const cachedRes = NextResponse.json(serverInstantsCache);
+      cachedRes.headers.set("Cache-Control", "private, max-age=5, stale-while-revalidate=30");
+      return cachedRes;
+    }
 
     // Fetch active users to enforce cascade visibility (no orphaned posts from deleted accounts)
     const prismaUsers = await dbPrisma.user.findMany({
@@ -90,7 +100,14 @@ export async function GET(req: Request) {
       };
     });
 
-    return NextResponse.json({ success: true, posts: formatted, instants: formatted });
+    const resultPayload = { success: true, posts: formatted, instants: formatted };
+    if (!userId) {
+      serverInstantsCache = resultPayload;
+      serverInstantsCacheTime = Date.now();
+    }
+    const response = NextResponse.json(resultPayload);
+    response.headers.set("Cache-Control", "private, max-age=5, stale-while-revalidate=30");
+    return response;
   } catch (error) {
     console.error("Error fetching community instants:", error);
     return NextResponse.json({ error: "Failed to fetch instants" }, { status: 500 });
@@ -134,6 +151,7 @@ export async function POST(req: Request) {
     };
 
     const result = await db.collection("community_posts").insertOne(newPost);
+    serverInstantsCacheTime = 0;
 
     return NextResponse.json({
       success: true,
@@ -275,6 +293,7 @@ export async function PUT(req: Request) {
       { _id: new ObjectId(postId) },
       { $set: updateFields }
     );
+    serverInstantsCacheTime = 0;
 
     return NextResponse.json({
       success: true,
@@ -319,6 +338,7 @@ export async function DELETE(req: Request) {
     }
 
     await db.collection("community_posts").deleteOne({ _id: new ObjectId(postId) });
+    serverInstantsCacheTime = 0;
 
     return NextResponse.json({ success: true });
   } catch (error) {

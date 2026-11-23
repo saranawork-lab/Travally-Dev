@@ -5,14 +5,14 @@
  */
 
 const CATEGORY_ASSIGNED_IMAGES: Record<string, string> = {
-  MOVIES: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=900&auto=format&fit=crop&q=80",
-  FOOD_CAFES: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=900&auto=format&fit=crop&q=80",
-  WALKING: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=900&auto=format&fit=crop&q=80",
-  STUDYING: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=900&auto=format&fit=crop&q=80",
-  EVENTS: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=900&auto=format&fit=crop&q=80",
-  SHOPPING: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=900&auto=format&fit=crop&q=80",
-  CITY_EXPLORATION: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=900&auto=format&fit=crop&q=80",
-  OTHER: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=900&auto=format&fit=crop&q=80",
+  MOVIES: "https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=600&auto=format&fit=crop&q=75",
+  FOOD_CAFES: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=600&auto=format&fit=crop&q=75",
+  WALKING: "https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=600&auto=format&fit=crop&q=75",
+  STUDYING: "https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?w=600&auto=format&fit=crop&q=75",
+  EVENTS: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=600&auto=format&fit=crop&q=75",
+  SHOPPING: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&auto=format&fit=crop&q=75",
+  CITY_EXPLORATION: "https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=600&auto=format&fit=crop&q=75",
+  OTHER: "https://images.unsplash.com/photo-1523580494863-6f3031224c94?w=600&auto=format&fit=crop&q=75",
 };
 
 const CATEGORY_META: Record<
@@ -109,39 +109,39 @@ export function getTripImage(trip: {
   const destLower = (trip.destination || "").toLowerCase();
 
   if (destLower.includes("manali") || destLower.includes("kasol") || destLower.includes("himachal") || destLower.includes("parvati") || destLower.includes("tosh")) {
-    return "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=600&auto=format&fit=crop&q=75";
   }
   if (destLower.includes("ladakh") || destLower.includes("leh") || destLower.includes("spiti") || destLower.includes("pangong")) {
-    return "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?w=600&auto=format&fit=crop&q=75";
   }
   if (destLower.includes("meghalaya") || destLower.includes("dawki") || destLower.includes("shillong") || destLower.includes("cherrapunji")) {
-    return "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&auto=format&fit=crop&q=75";
   }
   if (destLower.includes("kerala") || destLower.includes("munnar") || destLower.includes("alleppey") || destLower.includes("wayanad")) {
-    return "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?w=600&auto=format&fit=crop&q=75";
   }
   if (destLower.includes("goa") || destLower.includes("gokarna") || destLower.includes("beach")) {
-    return "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&auto=format&fit=crop&q=75";
   }
   if (destLower.includes("rajasthan") || destLower.includes("jaipur") || destLower.includes("udaipur") || destLower.includes("jaisalmer")) {
-    return "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1599661046289-e31897846e41?w=600&auto=format&fit=crop&q=75";
   }
   if (destLower.includes("rishikesh") || destLower.includes("uttarakhand") || destLower.includes("ganga")) {
-    return "https://images.unsplash.com/photo-1506461883276-594a12b11cf3?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1506461883276-594a12b11cf3?w=600&auto=format&fit=crop&q=75";
   }
   if (destLower.includes("hampi") || destLower.includes("coorg") || destLower.includes("karnataka") || destLower.includes("gokarna")) {
-    return "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=900&auto=format&fit=crop&q=80";
+    return "https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?w=600&auto=format&fit=crop&q=75";
   }
 
   switch (trip.travelStyle) {
     case "BACKPACKING":
     case "ADVENTURE":
-      return "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=900&auto=format&fit=crop&q=80";
+      return "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=600&auto=format&fit=crop&q=75";
     case "LUXURY":
-      return "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=900&auto=format&fit=crop&q=80";
+      return "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&auto=format&fit=crop&q=75";
     case "SLOW_TRAVEL":
-      return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=900&auto=format&fit=crop&q=80";
+      return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=600&auto=format&fit=crop&q=75";
     default:
-      return "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=900&auto=format&fit=crop&q=80";
+      return "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=600&auto=format&fit=crop&q=75";
   }
 }

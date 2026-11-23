@@ -5,12 +5,35 @@ import { requireVerifiedUser } from "@/lib/verificationGuard";
 
 export const dynamic = "force-dynamic";
 
+// Short-lived server-side in-memory cache to make feeds lightning-fast
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+const activitiesFeedCache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 15000; // 15 seconds
+
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const category = searchParams.get("category");
     const search = searchParams.get("search");
     const status = searchParams.get("status") || "OPEN";
+    const organizerId = searchParams.get("organizerId") || searchParams.get("userId");
+
+    const currentUser = await getCurrentUser();
+
+    // Check fast in-memory cache for default feed queries
+    const isDefaultQuery = !search && (!category || category === "ALL") && status === "OPEN" && !organizerId;
+    const cacheKey = `${currentUser?.id || "anon"}_default`;
+    if (isDefaultQuery) {
+      const cached = activitiesFeedCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        const res = NextResponse.json(cached.data);
+        res.headers.set("Cache-Control", "private, max-age=10, stale-while-revalidate=60");
+        return res;
+      }
+    }
 
     // MVO80 Matching Algorithm Configuration
     const SCORE_WEIGHTS = {
@@ -20,8 +43,6 @@ export async function GET(req: NextRequest) {
       TRENDING_PER_USER: 5,
       URGENCY_MAX: 20,
     };
-
-    const currentUser = await getCurrentUser();
 
     // Find blocked users and user profile in parallel if authenticated
     let blockedUserIds: string[] = [];
@@ -46,12 +67,15 @@ export async function GET(req: NextRequest) {
       userProfile = profile;
     }
 
-    const organizerId = searchParams.get("organizerId") || searchParams.get("userId");
-
     const where: any = {
       status: status === "ALL" ? undefined : status,
       organizerId: organizerId ? organizerId : { notIn: blockedUserIds },
     };
+
+    if (!organizerId) {
+      // Don't pull long-expired activities from database
+      where.date = { gte: new Date(Date.now() - 24 * 3600 * 1000) };
+    }
 
     if (category && category !== "ALL") {
       where.category = category.toUpperCase().replace(/\s+/g, "_");
@@ -222,7 +246,14 @@ export async function GET(req: NextRequest) {
       matchedActivities = sanitizedActivities.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
     }
 
-    return NextResponse.json({ activities: matchedActivities });
+    const resultPayload = { activities: matchedActivities };
+    if (isDefaultQuery) {
+      activitiesFeedCache.set(cacheKey, { data: resultPayload, timestamp: Date.now() });
+    }
+
+    const response = NextResponse.json(resultPayload);
+    response.headers.set("Cache-Control", "private, max-age=10, stale-while-revalidate=60");
+    return response;
   } catch (error) {
     console.error("GET activities error:", error);
     return NextResponse.json({ error: "Failed to fetch activities" }, { status: 500 });
@@ -301,6 +332,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
+    activitiesFeedCache.clear();
     return NextResponse.json({ success: true, activity }, { status: 201 });
   } catch (error) {
     console.error("POST activity error:", error);
