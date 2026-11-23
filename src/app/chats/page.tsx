@@ -51,24 +51,29 @@ function ChatsContent() {
     if (cachedInboxConversations && cachedInboxConversations.length > 0) {
       return cachedInboxConversations;
     }
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("travally_chats_inbox_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            cachedInboxConversations = parsed;
-            return parsed;
-          }
-        }
-      } catch {}
-    }
     return [];
   });
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState<boolean>(() => {
     return !(cachedInboxConversations && cachedInboxConversations.length > 0);
   });
+
+  // On mount, hydrate from sessionStorage if module cache is empty
+  useEffect(() => {
+    if (!cachedInboxConversations || cachedInboxConversations.length === 0) {
+      try {
+        const cached = sessionStorage.getItem("travally_chats_inbox_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedInboxConversations = parsed;
+            setConversations(parsed);
+            setLoading(false);
+          }
+        }
+      } catch {}
+    }
+  }, []);
 
   useEffect(() => {
     const tabParam = searchParams.get("tab");

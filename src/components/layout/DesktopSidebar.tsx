@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Home,
   Compass,
@@ -24,7 +24,6 @@ interface DesktopSidebarProps {
 
 const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const pathname = usePathname();
-  const router = useRouter();
   const { currentUser, logout } = useAuth();
   const { t } = useLanguage();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
@@ -58,7 +57,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   }, [pathname, currentUser]);
 
   // Helper to notify navbar of sidebar open/close state immediately
-  const dispatchSidebarState = (expanded: boolean) => {
+  const dispatchSidebarState = useCallback((expanded: boolean) => {
     if (typeof window !== "undefined") {
       window.dispatchEvent(
         new CustomEvent("travally-sidebar-state", {
@@ -66,14 +65,15 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
         })
       );
     }
-  };
+  }, []);
 
-  // When route changes, shrink sidebar to collapsed state
+  // When route changes, collapse sidebar instantly without flashing
   useEffect(() => {
     setForceCollapsed(true);
     setIsHovered(false);
-    dispatchSidebarState(false);
-  }, [pathname]);  // Mouse hover handlers
+    // Use microtask to dispatch after state update
+    queueMicrotask(() => dispatchSidebarState(false));
+  }, [pathname, dispatchSidebarState]);  // Mouse hover handlers
   const handleMouseEnter = () => {
     setForceCollapsed(false);
     setIsHovered(true);

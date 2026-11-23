@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ModeToggle, AppMode } from "@/components/common/ModeToggle";
 import { ActivityCard } from "@/components/activities/ActivityCard";
@@ -29,21 +29,9 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
   const [currentUser, setCurrentUser] = useState<any>(initialUser);
   const [heroSearchY, setHeroSearchY] = useState(0);
 
-  // Companion state with instant cache hydration
+  // Companion state — initialize from module cache (SSR safe), hydrate sessionStorage on mount
   const [activities, setActivities] = useState<any[]>(() => {
     if (cachedActivitiesList && cachedActivitiesList.length > 0) return cachedActivitiesList;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("travally_discover_activities");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            cachedActivitiesList = parsed;
-            return parsed;
-          }
-        }
-      } catch {}
-    }
     return [];
   });
   const [selectedCategory, setSelectedCategory] = useState("ALL");
@@ -54,21 +42,9 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
     return !(cachedActivitiesList && cachedActivitiesList.length > 0);
   });
 
-  // Travel state with instant cache hydration
+  // Travel state — initialize from module cache (SSR safe), hydrate sessionStorage on mount
   const [travelPlans, setTravelPlans] = useState<any[]>(() => {
     if (cachedTravelPlansList && cachedTravelPlansList.length > 0) return cachedTravelPlansList;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("travally_discover_travel");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            cachedTravelPlansList = parsed;
-            return parsed;
-          }
-        }
-      } catch {}
-    }
     return [];
   });
   const [selectedTravelStyle, setSelectedTravelStyle] = useState("ALL");
@@ -78,6 +54,36 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
   const [loadingTrips, setLoadingTrips] = useState<boolean>(() => {
     return !(cachedTravelPlansList && cachedTravelPlansList.length > 0);
   });
+
+  // On mount, hydrate from sessionStorage if module cache is empty
+  useEffect(() => {
+    if (!cachedActivitiesList || cachedActivitiesList.length === 0) {
+      try {
+        const cached = sessionStorage.getItem("travally_discover_activities");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedActivitiesList = parsed;
+            setActivities(parsed);
+            setLoadingActivities(false);
+          }
+        }
+      } catch {}
+    }
+    if (!cachedTravelPlansList || cachedTravelPlansList.length === 0) {
+      try {
+        const cached = sessionStorage.getItem("travally_discover_travel");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedTravelPlansList = parsed;
+            setTravelPlans(parsed);
+            setLoadingTrips(false);
+          }
+        }
+      } catch {}
+    }
+  }, []);
 
   // Keep user in sync; if unauthenticated, redirect immediately to landing page
   useEffect(() => {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Users, Luggage } from "lucide-react";
@@ -16,33 +16,31 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
   const { t } = useLanguage();
 
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
+  const lastScrollYRef = useRef(0);
+  const tickingRef = useRef(false);
+
+  const handleScroll = useCallback(() => {
+    if (tickingRef.current) return;
+    tickingRef.current = true;
+    requestAnimationFrame(() => {
+      const currentScrollY = window.scrollY;
+      const lastY = lastScrollYRef.current;
+
+      if (currentScrollY > lastY && currentScrollY > 50) {
+        setIsVisible(false);
+      } else if (currentScrollY < lastY - 10 || currentScrollY <= 50) {
+        setIsVisible(true);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+      tickingRef.current = false;
+    });
+  }, []);
 
   useEffect(() => {
-    let ticking = false;
-
-    const handleScroll = () => {
-      if (!ticking) {
-        window.requestAnimationFrame(() => {
-          const currentScrollY = window.scrollY;
-
-          // Hide when scrolling down, show when scrolling up
-          if (currentScrollY > lastScrollY && currentScrollY > 50) {
-            setIsVisible(false);
-          } else if (currentScrollY < lastScrollY - 10 || currentScrollY <= 50) {
-            setIsVisible(true);
-          }
-
-          setLastScrollY(currentScrollY);
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY]);
+  }, [handleScroll]);
 
   // Hide on auth, landing, onboarding, single chats
   if (!initialUser) return null;
@@ -59,7 +57,7 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
 
   // Determine active tab
   const mode = searchParams.get("mode");
-  let activeTab: string | null = null; // default to no active tab (Home)
+  let activeTab: string | null = null;
 
   if (pathname === "/discover") {
     if (mode === "travel") activeTab = "travel";
@@ -91,9 +89,8 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
   ];
 
   const isDiscoverHome = pathname === "/discover";
-  const shouldHideBecauseTop = isDiscoverHome && lastScrollY < 150;
+  const shouldHideBecauseTop = isDiscoverHome && lastScrollYRef.current < 150;
   
-  // Combine scroll visibility with top-hide logic
   const finallyVisible = isVisible && !shouldHideBecauseTop;
 
   return (

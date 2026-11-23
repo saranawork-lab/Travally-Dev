@@ -139,21 +139,9 @@ export default function HomeClient() {
 
   const [activeTab, setActiveTab] = useState<HomeTab>("instants");
 
-  // Data states with 0ms cache-first hydration
+  // Data states — initialize from module cache (SSR safe), hydrate sessionStorage on mount
   const [instants, setInstants] = useState<CommunityPost[]>(() => {
     if (cachedInstantsList && cachedInstantsList.length > 0) return cachedInstantsList;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem("travally_instants_cache");
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            cachedInstantsList = parsed;
-            return parsed;
-          }
-        }
-      } catch {}
-    }
     return [];
   });
   const [growList, setGrowList] = useState<GrowInitiative[]>([]);
@@ -164,6 +152,24 @@ export default function HomeClient() {
   const [loading, setLoading] = useState<boolean>(() => {
     return !(cachedInstantsList && cachedInstantsList.length > 0);
   });
+
+  // On mount, hydrate from sessionStorage if module cache is empty
+  useEffect(() => {
+    if (!cachedInstantsList || cachedInstantsList.length === 0) {
+      try {
+        const cached = sessionStorage.getItem("travally_instants_cache");
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            cachedInstantsList = parsed;
+            setInstants(parsed);
+            setLoading(false);
+          }
+        }
+      } catch {}
+    }
+  }, []);
+
   const [likingId, setLikingId] = useState<string | null>(null);
   const [repostingId, setRepostingId] = useState<string | null>(null);
   const [joiningGrowId, setJoiningGrowId] = useState<string | null>(null);

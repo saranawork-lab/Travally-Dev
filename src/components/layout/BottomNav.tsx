@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Home,
   Compass,
@@ -29,13 +29,13 @@ const renderGradientLabel = (label: string) => {
 
 const BottomNav: React.FC<BottomNavProps> = () => {
   const pathname = usePathname();
-  const router = useRouter();
   const { currentUser } = useAuth();
   const { t } = useLanguage();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const [mounted, setMounted] = useState(false);
-  const navRef = React.useRef<HTMLDivElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const rafIdRef = useRef<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -70,41 +70,25 @@ const BottomNav: React.FC<BottomNavProps> = () => {
             ? "profile"
             : "home";
 
-  useEffect(() => {
-    let animationFrameId: number;
-
-    const updatePill = () => {
-      if (!navRef.current) return;
-      const activeEl = navRef.current.querySelector('[data-active="true"]') as HTMLElement;
-      if (activeEl) {
-        setPillStyle({
-          left: activeEl.offsetLeft,
-          width: activeEl.offsetWidth,
-          opacity: 1,
-        });
-      }
-    };
-
-    // Initial positioning
-    updatePill();
-
-    // Set up a ResizeObserver to flawlessly track width changes during CSS transitions
-    const observer = new ResizeObserver(() => {
-      cancelAnimationFrame(animationFrameId);
-      animationFrameId = requestAnimationFrame(updatePill);
-    });
-
-    if (navRef.current) {
-      observer.observe(navRef.current);
-      // Observe all child elements so we track their flex layout transitions
-      Array.from(navRef.current.children).forEach((child) => observer.observe(child));
+  const updatePill = useCallback(() => {
+    if (!navRef.current) return;
+    const activeEl = navRef.current.querySelector('[data-active="true"]') as HTMLElement;
+    if (activeEl) {
+      setPillStyle({
+        left: activeEl.offsetLeft,
+        width: activeEl.offsetWidth,
+        opacity: 1,
+      });
     }
+  }, []);
 
-    return () => {
-      observer.disconnect();
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [activeId, pathname]);
+  useEffect(() => {
+    // Immediate positioning on mount + path change
+    updatePill();
+    // Deferred re-measure after flex layout settles
+    rafIdRef.current = requestAnimationFrame(updatePill);
+    return () => cancelAnimationFrame(rafIdRef.current);
+  }, [activeId, pathname, updatePill]);
 
   // 1. NEVER render bottom dock when not logged in
   if (!currentUser) return null;
