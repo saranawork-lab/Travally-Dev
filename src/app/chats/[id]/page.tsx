@@ -217,6 +217,14 @@ export default function ActiveChatPage() {
   const liveLocationWatchIdRef = useRef<number | null>(null);
   const lastLiveBroadcastRef = useRef<number>(0);
 
+  // WhatsApp-style Photo sender states (max 3 photos, caption, preview modal)
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [pendingPhotos, setPendingPhotos] = useState<string[]>([]);
+  const [activePhotoIndex, setActivePhotoIndex] = useState<number>(0);
+  const [photoCaption, setPhotoCaption] = useState<string>("");
+  const [isPhotoPreviewOpen, setIsPhotoPreviewOpen] = useState<boolean>(false);
+  const [viewingPhoto, setViewingPhoto] = useState<string | null>(null);
+
   // WhatsApp-style message hover actions, unified context menu with reactions, multi-pin messages & select mode
   interface PinnedItem {
     id: string;
@@ -1047,14 +1055,7 @@ export default function ActiveChatPage() {
   // Attachment Handler (Photo, Location, Trip)
   const handleSelectAttachment = (type: "PHOTO" | "LOCATION" | "TRIP") => {
     if (type === "PHOTO") {
-      handleSendMessage({
-        text: "Shared a high-res photo from our Parvati Valley trail scouting!",
-        mediaType: "PHOTO",
-        mediaData: {
-          url: "https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?w=800&auto=format&fit=crop&q=80",
-          caption: "Kasol Chalal pine forest trail this morning 🌲",
-        },
-      });
+      photoInputRef.current?.click();
     } else if (type === "LOCATION") {
       setIsShareLocationOpen(true);
     } else if (type === "TRIP") {
@@ -1068,6 +1069,46 @@ export default function ActiveChatPage() {
         },
       });
     }
+  };
+
+  // WhatsApp-style Photo Files Selected Handler (max 3 at a time silently, no text mention)
+  const handlePhotoFilesSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawFiles = Array.from(e.target.files || []);
+    if (rawFiles.length === 0) return;
+    const files = rawFiles.slice(0, 3);
+    const readers = files.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.readAsDataURL(file);
+      });
+    });
+    const loaded = await Promise.all(readers);
+    setPendingPhotos(loaded);
+    setActivePhotoIndex(0);
+    setPhotoCaption("");
+    setIsPhotoPreviewOpen(true);
+    e.target.value = "";
+  };
+
+  // WhatsApp-style Send Photos
+  const handleSendPendingPhotos = async () => {
+    if (pendingPhotos.length === 0) return;
+    const photosToSend = [...pendingPhotos];
+    const captionToSend = photoCaption.trim();
+    setIsPhotoPreviewOpen(false);
+    setPendingPhotos([]);
+    setPhotoCaption("");
+
+    await handleSendMessage({
+      text: captionToSend || (photosToSend.length === 1 ? "📷 Photo" : `📷 ${photosToSend.length} photos`),
+      mediaType: "PHOTO",
+      mediaData: {
+        url: photosToSend[0],
+        urls: photosToSend,
+        caption: captionToSend || undefined,
+      },
+    });
   };
 
   // WhatsApp-style Live Location Handlers
@@ -1826,7 +1867,7 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* ── HOVER / TAP ACTION BUTTONS AT SIDE OF BUBBLE (SMILE + CHEVRON OPTIONS) ── */}
+                      {/* ── HOVER / TAP ACTION BUTTONS AT SIDE OF BUBBLE (CHEVRON OPTIONS) ── */}
                       {!isSelectMode && !parsed.isDeleted && (
                         <div
                           data-chat-actions="true"
@@ -1834,16 +1875,6 @@ export default function ActiveChatPage() {
                             isMe ? "right-[calc(100%+6px)]" : "left-[calc(100%+6px)]"
                           }`}
                         >
-                          {/* ☺ Smile Emoji Reaction Trigger */}
-                          <button
-                            type="button"
-                            onClick={(e) => handleOpenContextMenu(e, msg, parsed)}
-                            className="w-6.5 h-6.5 rounded-full flex items-center justify-center bg-white/90 dark:bg-[#18241f]/90 backdrop-blur-md text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-white dark:hover:bg-[#203029] border border-slate-200/80 dark:border-white/10 shadow-xs hover:shadow-sm transition-all hover:scale-110 active:scale-95 cursor-pointer"
-                            title="React with emoji"
-                          >
-                            <Smile className="w-3.5 h-3.5" />
-                          </button>
-
                           {/* ⌵ Context Menu Trigger */}
                           <button
                             type="button"
@@ -2086,21 +2117,60 @@ export default function ActiveChatPage() {
                         </p>
                       )}
 
-                      {/* Media Container: Photo */}
-                      {!parsed.isDeleted && parsed.mediaType === "PHOTO" && parsed.mediaData?.url && (
-                        <div className="mt-2 rounded-2xl overflow-hidden shadow-sm">
-                          <img
-                            src={parsed.mediaData.url}
-                            alt="Shared photo"
-                            className="w-full max-h-60 object-cover hover:scale-105 transition-transform duration-300"
-                          />
-                          {parsed.mediaData.caption && (
-                            <p className="p-2 text-xs opacity-90">
-                              {parsed.mediaData.caption}
-                            </p>
-                          )}
-                        </div>
-                      )}
+                      {/* Media Container: Photo (WhatsApp-style layout supporting up to 3 photos) */}
+                      {!parsed.isDeleted && parsed.mediaType === "PHOTO" && (parsed.mediaData?.urls?.length || parsed.mediaData?.url) && (() => {
+                        const photos: string[] = parsed.mediaData.urls?.length ? parsed.mediaData.urls : [parsed.mediaData.url];
+                        return (
+                          <div className="mt-2 rounded-2xl overflow-hidden shadow-sm max-w-sm">
+                            {photos.length === 1 ? (
+                              <img
+                                src={photos[0]}
+                                alt="Shared photo"
+                                onClick={() => setViewingPhoto(photos[0])}
+                                className="w-full max-h-72 object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer"
+                              />
+                            ) : photos.length === 2 ? (
+                              <div className="grid grid-cols-2 gap-1 bg-black/10">
+                                {photos.map((p, i) => (
+                                  <img
+                                    key={i}
+                                    src={p}
+                                    alt={`Photo ${i + 1}`}
+                                    onClick={() => setViewingPhoto(p)}
+                                    className="w-full h-44 object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer"
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-2 gap-1 bg-black/10">
+                                <img
+                                  src={photos[0]}
+                                  alt="Photo 1"
+                                  onClick={() => setViewingPhoto(photos[0])}
+                                  className="row-span-2 w-full h-full min-h-[160px] max-h-72 object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer"
+                                />
+                                <img
+                                  src={photos[1]}
+                                  alt="Photo 2"
+                                  onClick={() => setViewingPhoto(photos[1])}
+                                  className="w-full h-28 object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer"
+                                />
+                                <img
+                                  src={photos[2]}
+                                  alt="Photo 3"
+                                  onClick={() => setViewingPhoto(photos[2])}
+                                  className="w-full h-28 object-cover hover:scale-[1.02] transition-transform duration-300 cursor-pointer"
+                                />
+                              </div>
+                            )}
+                            {parsed.mediaData.caption && (
+                              <p className="p-2 text-xs opacity-90 leading-relaxed font-normal whitespace-pre-wrap">
+                                {parsed.mediaData.caption}
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       {/* Media Container: WhatsApp-style Live Location Card */}
                       {!parsed.isDeleted && parsed.mediaType === "LIVE_LOCATION" && parsed.mediaData && (() => {
@@ -2443,6 +2513,16 @@ export default function ActiveChatPage() {
               setIsEmojiPickerOpen(false);
               textareaRef.current?.focus();
             }}
+          />
+
+          {/* Hidden multi-image file input for WhatsApp-style photo sending */}
+          <input
+            type="file"
+            ref={photoInputRef}
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={handlePhotoFilesSelected}
           />
 
           {/* Attachment Menu Popover */}
@@ -2917,6 +2997,137 @@ export default function ActiveChatPage() {
         incomingCallOffer={incomingCallOffer}
         onCallEnded={handleCallEnded}
       />
+
+      {/* ── WHATSAPP-STYLE PHOTO PREVIEW & SENDER MODAL (MAX 3 AT A TIME, NO MENTION) ── */}
+      {isPhotoPreviewOpen && pendingPhotos.length > 0 && (
+        <div className="fixed inset-0 z-50 bg-[#0b141a]/98 text-white flex flex-col justify-between select-none animate-fade-in">
+          {/* Top Bar */}
+          <div className="flex items-center justify-between p-3 sm:p-4 bg-black/40 backdrop-blur-md z-10">
+            <button
+              type="button"
+              onClick={() => {
+                setIsPhotoPreviewOpen(false);
+                setPendingPhotos([]);
+                setPhotoCaption("");
+              }}
+              className="p-2 rounded-full hover:bg-white/10 transition active:scale-95 text-white cursor-pointer"
+              title="Cancel"
+            >
+              <X className="w-6 h-6" />
+            </button>
+
+            {pendingPhotos.length > 1 && (
+              <span className="text-xs font-semibold text-slate-300">
+                {activePhotoIndex + 1} of {pendingPhotos.length}
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={() => {
+                const nextPhotos = pendingPhotos.filter((_, idx) => idx !== activePhotoIndex);
+                if (nextPhotos.length === 0) {
+                  setIsPhotoPreviewOpen(false);
+                  setPendingPhotos([]);
+                  setPhotoCaption("");
+                } else {
+                  setPendingPhotos(nextPhotos);
+                  setActivePhotoIndex(Math.min(activePhotoIndex, nextPhotos.length - 1));
+                }
+              }}
+              className="p-2 rounded-full hover:bg-rose-500/20 text-slate-300 hover:text-rose-400 transition active:scale-95 cursor-pointer"
+              title="Delete photo"
+            >
+              <Trash2 className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Photo Preview */}
+          <div className="flex-1 flex items-center justify-center p-2 sm:p-4 min-h-0 overflow-hidden relative">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={pendingPhotos[activePhotoIndex]}
+              alt={`Selected ${activePhotoIndex + 1}`}
+              className="max-h-full max-w-full object-contain rounded-xl shadow-2xl transition-all duration-200"
+            />
+          </div>
+
+          {/* Bottom Bar: Thumbnails & Caption */}
+          <div className="p-3 sm:p-4 bg-black/50 backdrop-blur-md space-y-3 z-10">
+            {/* Thumbnails strip (if multiple) */}
+            {pendingPhotos.length > 1 && (
+              <div className="flex items-center justify-center gap-2 overflow-x-auto no-scrollbar py-1">
+                {pendingPhotos.map((photo, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setActivePhotoIndex(idx)}
+                    className={`w-12 h-12 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer ${
+                      activePhotoIndex === idx
+                        ? "border-[#00a884] scale-105 shadow-md"
+                        : "border-transparent opacity-60 hover:opacity-90"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photo} alt={`Thumb ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Caption Input & WhatsApp Send Button */}
+            <div className="max-w-xl mx-auto flex items-center gap-2 sm:gap-3">
+              <div className="flex-1 flex items-center gap-2 bg-[#202c33] rounded-full px-4 py-2 sm:py-2.5 shadow-inner">
+                <input
+                  type="text"
+                  value={photoCaption}
+                  onChange={(e) => setPhotoCaption(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleSendPendingPhotos();
+                    }
+                  }}
+                  placeholder="Add a caption..."
+                  className="flex-1 bg-transparent text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none"
+                  autoFocus
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleSendPendingPhotos}
+                className="w-11 h-11 sm:w-12 sm:h-12 rounded-full bg-[#00a884] hover:bg-[#008f6f] text-white flex items-center justify-center shadow-lg active:scale-95 transition cursor-pointer shrink-0"
+                title="Send photo"
+              >
+                <Send className="w-5 h-5 ml-0.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Zoom view for clicked photo in message bubble */}
+      {viewingPhoto && (
+        <div
+          onClick={() => setViewingPhoto(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in select-none cursor-pointer"
+        >
+          <button
+            type="button"
+            onClick={() => setViewingPhoto(null)}
+            className="absolute top-4 right-4 p-2 rounded-full bg-white/20 text-white hover:bg-white/30 transition cursor-pointer"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={viewingPhoto}
+            alt="Enlarged photo"
+            className="max-w-full max-h-[90vh] object-contain rounded-2xl shadow-2xl"
+          />
+        </div>
+      )}
     </div>
   );
 }

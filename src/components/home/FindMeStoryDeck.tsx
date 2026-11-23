@@ -284,6 +284,25 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [showStoryPopup, setShowStoryPopup] = useState(false);
+
+  // Check if popup should be shown (first time in a day, max 3 days ever for this user after logging in)
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    try {
+      const storageKey = `find_me_story_popup_days_${currentUser.id}`;
+      const raw = localStorage.getItem(storageKey);
+      const days: string[] = raw ? JSON.parse(raw) : [];
+      const today = new Date().toISOString().slice(0, 10);
+      if (days.length < 3 && !days.includes(today)) {
+        setShowStoryPopup(true);
+        const updatedDays = [...days, today];
+        localStorage.setItem(storageKey, JSON.stringify(updatedDays));
+      }
+    } catch (e) {
+      console.error("Popup check error:", e);
+    }
+  }, [currentUser?.id]);
 
   // Trigger quick toast notification
   const showToast = (msg: string) => {
@@ -443,29 +462,49 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
 
   return (
     <div className="space-y-6">
-      {/* ── BANNER HEADER ── */}
-      <div className="bg-gradient-to-r from-emerald-600/10 via-amber-500/10 to-teal-500/10 dark:from-emerald-950/40 dark:to-teal-950/30 border border-emerald-200/80 dark:border-emerald-900/50 rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
-            Story-First Dating & Hangout Beacons
-          </span>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-0.5">
-            Match based on story, not selfies to swipe.
-          </h2>
-          <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-lg leading-relaxed">
-            Read authentic stories and hangout clues. Swipe right to accept & save. When a beacon&apos;s timer expires, it is automatically and completely deleted from all profiles!
-          </p>
-        </div>
+      {/* ── ONCE-A-DAY POPUP (MAX 3 DAYS TOTAL FOR USER) ── */}
+      {showStoryPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in select-none">
+          <div className="relative w-full max-w-md rounded-3xl bg-white dark:bg-[#0e1713] border border-emerald-200/80 dark:border-emerald-900/60 shadow-2xl p-6 space-y-4 animate-scale-up">
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={() => setShowStoryPopup(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a2620] transition cursor-pointer"
+              aria-label="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
 
-        <button
-          type="button"
-          onClick={() => requireAuth(() => onOpenCreate && onOpenCreate())}
-          className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition shrink-0 active:scale-95"
-        >
-          <Flame className="w-3.5 h-3.5" />
-          <span>Drop a Find Me Clue</span>
-        </button>
-      </div>
+            {/* Content matching user's image */}
+            <div className="space-y-2 pt-1">
+              <span className="text-[10px] font-black uppercase tracking-widest text-emerald-700 dark:text-emerald-400">
+                Story-First Dating & Hangout Beacons
+              </span>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white leading-tight">
+                Match based on story, not selfies to swipe.
+              </h2>
+              <p className="text-xs sm:text-[13px] text-slate-600 dark:text-slate-300 leading-relaxed pt-1">
+                Read authentic stories and hangout clues. Swipe right to accept & save. When a beacon&apos;s timer expires, it is automatically and completely deleted from all profiles!
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowStoryPopup(false);
+                  requireAuth(() => onOpenCreate && onOpenCreate());
+                }}
+                className="w-full inline-flex items-center justify-center gap-2 py-3 px-5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-md transition active:scale-95 cursor-pointer"
+              >
+                <Flame className="w-4 h-4" />
+                <span>Drop a Find Me Clue</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── SUB-TABS (Deck, Saved Matches, My Beacons) ── */}
       <div className="flex items-center justify-between border-b border-slate-200/80 dark:border-emerald-950/60 pb-2">
@@ -522,15 +561,25 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
           </button>
         </div>
 
-        {tab === "deck" && deckClues.length > 0 && (
+        <div className="flex items-center gap-2">
+          {tab === "deck" && deckClues.length > 0 && (
+            <button
+              type="button"
+              onClick={loadDeck}
+              className="text-xs text-slate-500 hover:text-emerald-600 font-medium hidden sm:inline-block cursor-pointer"
+            >
+              Refresh Deck
+            </button>
+          )}
           <button
             type="button"
-            onClick={loadDeck}
-            className="text-xs text-slate-500 hover:text-emerald-600 font-medium hidden sm:inline-block"
+            onClick={() => requireAuth(() => onOpenCreate && onOpenCreate())}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-xs transition shrink-0 active:scale-95 cursor-pointer"
           >
-            Refresh Deck
+            <Flame className="w-3.5 h-3.5" />
+            <span>Drop Clue</span>
           </button>
-        )}
+        </div>
       </div>
 
       {/* ── TOAST NOTIFICATION ── */}

@@ -1038,41 +1038,6 @@ export default function HomeClient() {
         {/* ── TAB 1: INSTANTS (REAL COMMUNITY FEED) ── */}
         {activeTab === "instants" && (
           <div className="space-y-4">
-            {/* Modern Inline Quick Composer (Mobbin / Threads / X style) */}
-            <div className="bg-white dark:bg-[#111815] rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-emerald-950/70 p-3 sm:p-4 shadow-xs hover:border-emerald-500/40 transition">
-              <div className="flex items-center gap-2.5 sm:gap-3">
-                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden bg-emerald-50 dark:bg-emerald-950/80 flex items-center justify-center shrink-0 border border-emerald-300/60 dark:border-emerald-800/60 font-bold text-xs text-emerald-700 dark:text-emerald-300">
-                  {currentUser?.avatarUrl ? (
-                    <img
-                      src={currentUser.avatarUrl}
-                      alt={currentUser.displayName || "User"}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span>{currentUser?.displayName?.charAt(0) || "U"}</span>
-                  )}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => requireAuth(() => setIsCreateInstantOpen(true))}
-                  className="flex-1 text-left px-3.5 sm:px-4 py-2 sm:py-2.5 rounded-full bg-slate-100 dark:bg-[#16201b] hover:bg-slate-200/70 dark:hover:bg-[#1c2822] text-slate-500 dark:text-slate-400 text-xs sm:text-sm font-medium transition cursor-pointer select-none"
-                >
-                  Share an observation or travel moment...
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => requireAuth(() => setIsCreateInstantOpen(true))}
-                  className="p-2 sm:px-3 sm:py-2 rounded-full bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shrink-0"
-                  title="Share Photo"
-                >
-                  <Camera className="w-4 h-4" />
-                  <span className="hidden sm:inline">Photo</span>
-                </button>
-              </div>
-            </div>
-
             {loading && instants.length === 0 ? (
               <div className="columns-1 md:columns-2 gap-4">
                 {[1, 2, 3, 4].map((n) => (
@@ -1135,7 +1100,7 @@ export default function HomeClient() {
                     <article
                       key={post.id}
                       onDoubleClick={() => handleDoubleTap(post.id)}
-                      className="break-inside-avoid mb-4 inline-block w-full align-top group relative rounded-2xl sm:rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/70 p-4 sm:p-5 shadow-xs hover:shadow-lg hover:shadow-emerald-950/5 hover:border-slate-300 dark:hover:border-emerald-900/60 transition-all duration-200 overflow-hidden"
+                      className="break-inside-avoid mb-4 inline-block w-full align-top group relative rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/10 hover:border-emerald-500/50 dark:hover:border-emerald-600/50 transition-all duration-300 overflow-hidden"
                     >
                       {/* Double Tap Heart Burst Animation */}
                       {doubleTapHeartPostId === post.id && (
@@ -1145,6 +1110,8 @@ export default function HomeClient() {
                           </div>
                         </div>
                       )}
+                      {/* Top Explorer Accent Stripe */}
+                      <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" />
 
                       <div className="space-y-3">
                         {/* Author Header Row with Three Dots menu (for author only) */}
@@ -1251,9 +1218,9 @@ export default function HomeClient() {
                           )}
                         </div>
 
-                        {/* 3. Field Note Observation (Clean Typography, No Orange Bar) */}
-                        <div className="py-0.5">
-                          <p className="text-[13.5px] sm:text-[14.5px] text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text font-normal">
+                        {/* 3. Field Note Observation (Text with accent bar) */}
+                        <div className="relative pl-3 border-l-2 border-amber-400/80 dark:border-amber-500/80 py-0.5">
+                          <p className="text-xs sm:text-[13.5px] text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text">
                             {post.content}
                           </p>
                         </div>
@@ -1268,13 +1235,13 @@ export default function HomeClient() {
                             onTouchEnd={() => {
                               handleCardTouchOrClick(post.id);
                             }}
-                            className="relative rounded-2xl overflow-hidden border border-slate-200/80 dark:border-emerald-950/80 bg-slate-100 dark:bg-slate-900 group/img cursor-pointer select-none"
+                            className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-emerald-950/80 bg-slate-100 dark:bg-slate-900 group/img cursor-pointer select-none"
                           >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={post.imageUrl}
                               alt="Expedition capture"
-                              className="w-full max-h-80 object-cover group-hover/img:scale-[1.02] transition-transform duration-500 ease-out"
+                              className="w-full max-h-72 object-cover group-hover/img:scale-[1.02] transition-transform duration-500 ease-out"
                             />
                             {post.locationName && (
                               <div className="absolute bottom-2.5 left-2.5 flex items-center gap-1 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[10px] font-semibold text-white border border-white/10 shadow-lg">
@@ -1285,43 +1252,43 @@ export default function HomeClient() {
                           </div>
                         )}
 
-                        {/* 5. Explorer Interaction Dock - Sleek, Borderless Minimalist Icons */}
-                        <div className="pt-2 border-t border-slate-100 dark:border-emerald-950/50 flex items-center justify-between gap-2 text-xs">
-                          <div className="flex items-center gap-1 sm:gap-2">
-                            {/* Like Button */}
+                        {/* 5. Explorer Interaction Dock */}
+                        <div className="pt-2.5 border-t border-slate-100 dark:border-emerald-950/60 flex items-center justify-between gap-2 text-xs">
+                          <div className="flex items-center gap-1.5 sm:gap-2">
+                            {/* Like Button (icon + count only, NO text) */}
                             <button
                               type="button"
                               onClick={() => handleLikeInstant(post.id)}
                               disabled={likingId === post.id}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-95 text-xs font-semibold cursor-pointer ${
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
                                 hasLiked
-                                  ? "text-rose-500 bg-rose-50 dark:bg-rose-950/50"
-                                  : "text-slate-500 dark:text-slate-400 hover:text-rose-500 hover:bg-rose-50/60 dark:hover:bg-rose-950/40"
+                                  ? "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 shadow-xs"
+                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-rose-300 dark:hover:border-rose-900/60 hover:text-rose-600 dark:hover:text-rose-400"
                               }`}
                               title={hasLiked ? "Unlike" : "Like"}
                             >
                               <Heart
-                                className={`w-4 h-4 transition-transform ${
+                                className={`w-3.5 h-3.5 transition-transform ${
                                   hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
                                 }`}
                               />
                               <span>{post.likesCount || 0}</span>
                             </button>
 
-                            {/* Repost Button */}
+                            {/* Repost Button (icon + count only, NO text) */}
                             <button
                               type="button"
                               onClick={() => handleRepostInstant(post.id)}
                               disabled={repostingId === post.id}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-95 text-xs font-semibold cursor-pointer ${
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
                                 hasReposted
-                                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50"
-                                  : "text-slate-500 dark:text-slate-400 hover:text-emerald-600 hover:bg-emerald-50/60 dark:hover:bg-emerald-950/40"
+                                  ? "bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border-emerald-300 dark:border-emerald-800 shadow-xs"
+                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-emerald-300 dark:hover:border-emerald-900/60 hover:text-emerald-600 dark:hover:text-emerald-400"
                               }`}
                               title={hasReposted ? "Undo Repost" : "Repost"}
                             >
                               <Repeat2
-                                className={`w-4 h-4 transition-transform ${
+                                className={`w-3.5 h-3.5 transition-transform ${
                                   hasReposted ? "text-emerald-600 dark:text-emerald-400 scale-110 stroke-[2.5]" : ""
                                 }`}
                               />
@@ -1332,29 +1299,29 @@ export default function HomeClient() {
                             <button
                               type="button"
                               onClick={() => toggleComments(post.id)}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-full transition-all active:scale-95 text-xs font-semibold cursor-pointer ${
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
                                 openCommentsPostId === post.id
-                                  ? "text-sky-600 dark:text-sky-400 bg-sky-50 dark:bg-sky-950/50"
-                                  : "text-slate-500 dark:text-slate-400 hover:text-sky-600 hover:bg-sky-50/60 dark:hover:bg-sky-950/40"
+                                  ? "bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-800 shadow-xs"
+                                  : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-blue-300 dark:hover:border-blue-900/60 hover:text-blue-600 dark:hover:text-blue-400"
                               }`}
                               title="Comments"
                             >
-                              <MessageCircle className="w-4 h-4" />
+                              <MessageCircle className="w-3.5 h-3.5" />
                               <span>{post.commentsCount || (post.comments?.length) || 0}</span>
                             </button>
                           </div>
 
-                          {/* Share Button */}
+                          {/* Share Button (icon only, NO text) */}
                           <button
                             type="button"
                             onClick={() => handleShareDispatch(post.id)}
-                            className="p-2 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a2620] transition active:scale-95 cursor-pointer"
+                            className="inline-flex items-center justify-center p-2 rounded-full bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1c2822] hover:text-emerald-600 dark:hover:text-emerald-400 transition active:scale-95 font-semibold text-xs"
                             title="Share"
                           >
                             {copiedPostId === post.id ? (
-                              <Check className="w-4 h-4 text-emerald-500" />
+                              <Check className="w-3.5 h-3.5 text-emerald-500" />
                             ) : (
-                              <Share2 className="w-4 h-4" />
+                              <Share2 className="w-3.5 h-3.5" />
                             )}
                           </button>
                         </div>

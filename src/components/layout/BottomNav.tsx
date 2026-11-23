@@ -104,45 +104,51 @@ const BottomNav: React.FC<BottomNavProps> = () => {
       label: t.home || "Home",
       href: "/",
       icon: Home,
-      badge: null,
+      badge: 0,
+      badgeColor: "bg-emerald-500",
     },
     {
       id: "discover",
-      label: t.discover || "Discover",
+      label: t.discover,
       href: "/discover",
       icon: Compass,
-      badge: null,
+      badge: 0,
+      badgeColor: "bg-emerald-500",
     },
     {
       id: "create",
-      label: t.create || "Create",
+      label: t.create,
       href: "/activities/create",
       icon: PlusCircle,
-      badge: null,
+      badge: 0,
+      badgeColor: "bg-emerald-500",
     },
     {
       id: "chats",
-      label: t.chats || "Chats",
+      label: t.chats,
       href: "/chats",
       icon: MessageSquare,
       badge: chatsBadgeDisplay,
+      badgeColor: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-900 border border-emerald-300/80 shadow-xs",
     },
     {
       id: "profile",
-      label: t.profile || "Profile",
+      label: t.profile,
       href: "/profile",
       icon: User,
       isProfile: true,
-      badge: null,
+      badge: 0,
+      badgeColor: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-900 border border-emerald-300/80 shadow-xs",
     },
   ];
 
   return (
     <nav
-      className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 dark:bg-[#0a120e]/95 backdrop-blur-2xl border-t border-slate-200/80 dark:border-emerald-950/80 pb-[max(0.4rem,env(safe-area-inset-bottom,0px))] shadow-[0_-4px_20px_rgba(0,0,0,0.04)] select-none"
+      className="md:hidden fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 sm:left-1/2 sm:-translate-x-1/2 sm:w-[460px] z-50 pointer-events-none select-none"
       aria-label="Mobile Navigation"
     >
-      <div className="flex items-center justify-around h-14 max-w-lg mx-auto px-1">
+      {/* 100% Circular container (rounded-full) */}
+      <div className="pointer-events-auto relative w-full h-[50px] sm:h-[52px] rounded-full bg-white/95 dark:bg-[#0c1410]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/60 shadow-[0_12px_36px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.65),0_0_0_1px_rgba(16,185,129,0.25)] p-1 flex items-center justify-between gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isProfileItem = item.id === "profile";
@@ -156,62 +162,81 @@ const BottomNav: React.FC<BottomNavProps> = () => {
               onClick={() => setOptimisticActiveId(item.id)}
               prefetch={true}
               scroll={false}
-              className="relative flex flex-col items-center justify-center flex-1 h-full py-1 text-center transition-all duration-150 active:scale-95 group"
+              className={`relative flex items-center justify-center h-full rounded-full select-none transition-all duration-200 active:scale-95 ${
+                isActive
+                  ? "bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/5 dark:from-emerald-950/80 dark:to-teal-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-400/40 dark:border-emerald-600/50 shadow-xs px-3 sm:px-4 shrink-0"
+                  : "flex-1 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/60 dark:hover:bg-[#16221c]/60"
+              }`}
               title={item.label}
             >
-              {/* Subtle top indicator bar */}
-              {isActive && (
-                <span className="absolute top-0 w-8 h-[2.5px] rounded-full bg-emerald-500 dark:bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-              )}
-
-              <div className="relative flex items-center justify-center mb-0.5">
+              <div className="relative flex items-center justify-center shrink-0">
                 {isProfileItem && currentUser?.avatarUrl ? (
                   <div className="relative flex items-center justify-center">
                     <img
                       src={currentUser.avatarUrl}
                       alt={currentUser.displayName || "Profile"}
-                      className={`w-[22px] h-[22px] rounded-full object-cover transition-all duration-200 ${
+                      className={`w-5 h-5 min-w-[20px] max-w-[20px] min-h-[20px] max-h-[20px] rounded-full object-cover shrink-0 ring-1.5 transition-all duration-200 ${
                         isActive
-                          ? "ring-2 ring-emerald-500 shadow-xs"
-                          : "ring-1 ring-slate-300 dark:ring-emerald-900/60 group-hover:ring-slate-400"
+                          ? userBadge
+                            ? "ring-amber-400"
+                            : "ring-emerald-500/60"
+                          : userBadge
+                          ? "ring-amber-400/90 shadow-[0_0_6px_rgba(245,158,11,0.4)]"
+                          : "ring-slate-300 dark:ring-emerald-800/80"
                       }`}
                     />
                     {userBadge && (
-                      <span className="absolute -top-1.5 -right-1 text-[7px] leading-none">
+                      <span
+                        className={`absolute -top-1.5 -right-1 text-[7px] leading-none transition-all duration-200 ${
+                          isActive ? "scale-110" : ""
+                        }`}
+                      >
                         👑
                       </span>
                     )}
                   </div>
                 ) : (
                   <Icon
-                    className={`w-5 h-5 transition-transform duration-200 ${
+                    className={`w-5 h-5 shrink-0 transition-colors duration-200 ${
                       isActive
-                        ? "text-emerald-600 dark:text-emerald-400 stroke-[2.4] scale-105"
-                        : "text-slate-400 dark:text-slate-500 stroke-[1.9] group-hover:text-slate-700 dark:group-hover:text-slate-300"
+                        ? "text-emerald-600 dark:text-emerald-400 stroke-[2.4]"
+                        : "text-slate-500 dark:text-slate-400 stroke-[2]"
                     }`}
                   />
                 )}
 
                 {/* Badge */}
-                {!!item.badge && (
+                {!!item.badge ? (
                   <span
                     suppressHydrationWarning
-                    className="absolute -top-1.5 -right-2 min-w-[15px] h-3.5 px-1 rounded-full text-[8px] font-bold inline-flex items-center justify-center bg-emerald-500 text-white shadow-xs"
+                    className={`transition-all duration-200 absolute -top-1.5 -right-2 min-w-[15px] h-3.5 px-1 rounded-full text-[8px] font-bold inline-flex items-center justify-center ${
+                      isActive
+                        ? "opacity-0 scale-50"
+                        : `opacity-100 scale-100 ${item.badgeColor} ${
+                            item.id === "requests" ? "animate-pulse" : ""
+                          }`
+                    }`}
                   >
                     {item.badge}
                   </span>
-                )}
+                ) : null}
               </div>
 
-              <span
-                className={`text-[10px] leading-tight tracking-tight transition-colors duration-200 ${
-                  isActive
-                    ? "font-bold text-emerald-700 dark:text-emerald-400"
-                    : "font-medium text-slate-500 dark:text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-300"
-                }`}
-              >
-                {item.label}
-              </span>
+              {isActive && (
+                <div className="flex items-center overflow-hidden animate-fade-in ml-1.5">
+                  <span className="text-xs font-bold text-emerald-900 dark:text-emerald-200 whitespace-nowrap tracking-tight">
+                    {item.label}
+                  </span>
+                  {!!item.badge && (
+                    <span
+                      suppressHydrationWarning
+                      className="ml-1.5 min-w-[16px] h-4 px-1 rounded-full bg-emerald-300/90 dark:bg-emerald-800 text-emerald-950 dark:text-emerald-100 text-[9px] font-black inline-flex items-center justify-center border border-emerald-400 dark:border-emerald-600 shadow-2xs shrink-0"
+                    >
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+              )}
             </Link>
           );
         })}
