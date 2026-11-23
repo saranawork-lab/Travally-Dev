@@ -1598,87 +1598,90 @@ export default function ActiveChatPage() {
           </div>
         </header>
 
+        {/* ── MULTI-PIN MESSAGE BANNER (DOCKED RIGHT UNDER HEADER, LIFTED UP 20%) ── */}
+        {pinnedMessages.length > 0 && (() => {
+          const currentPin = pinnedMessages[Math.min(activePinIndex, pinnedMessages.length - 1)] || pinnedMessages[0];
+          return (
+            <div className="px-3 pt-1.5 pb-0 sm:px-4 max-w-4xl mx-auto w-full z-20">
+              <div
+                onClick={() => {
+                  const el = document.getElementById(`msg-${currentPin.id}`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "center" });
+                    el.classList.add("ring-2", "ring-emerald-500", "rounded-2xl");
+                    setTimeout(() => {
+                      el.classList.remove("ring-2", "ring-emerald-500", "rounded-2xl");
+                    }, 1800);
+                  }
+                  // When clicked: advance to next pin and scroll there
+                  if (pinnedMessages.length > 1) {
+                    setActivePinIndex((prev) => (prev + 1) % pinnedMessages.length);
+                  }
+                }}
+                className="px-3 py-1 rounded-2xl bg-white/95 dark:bg-[#15221c]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-950/80 shadow-xs flex items-center justify-between gap-2.5 text-xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2b23] transition-colors select-none group"
+                title={
+                  pinnedMessages.length > 1
+                    ? `Pin ${activePinIndex + 1} of ${pinnedMessages.length} (Click to scroll & cycle to next pin)`
+                    : "Click to scroll to pinned message"
+                }
+              >
+                <div className="flex items-center gap-2 truncate min-w-0">
+                  <div className="relative flex items-center justify-center shrink-0">
+                    <Pin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                    {pinnedMessages.length > 1 && (
+                      <span className="absolute -top-1.5 -right-2 text-[8px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-1 rounded-full border border-emerald-500/30">
+                        {activePinIndex + 1}/{pinnedMessages.length}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 truncate text-[11px] sm:text-xs min-w-0">
+                    <strong className="text-slate-800 dark:text-slate-200 shrink-0 font-bold">
+                      {currentPin.senderName}:
+                    </strong>
+                    <span className="text-slate-500 dark:text-slate-400 truncate">
+                      {currentPin.text}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                  {pinnedMessages.length > 1 && (
+                    <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden sm:inline">
+                      Tap to cycle
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPinnedMessages((prev) => {
+                        const updated = prev.filter((p) => p.id !== currentPin.id);
+                        try {
+                          localStorage.setItem(`travally_pinned_${conversationId}`, JSON.stringify(updated));
+                        } catch {}
+                        return updated;
+                      });
+                      if (activePinIndex >= pinnedMessages.length - 1) {
+                        setActivePinIndex(Math.max(0, pinnedMessages.length - 2));
+                      }
+                    }}
+                    className="p-1 rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 cursor-pointer transition-colors"
+                    title="Unpin this message"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
       {/* ── MESSAGES FEED (INSTAGRAM & TELEGRAM COMBINED) ── */}
       <main
         ref={messagesContainerRef}
         onScroll={handleScroll}
         className="flex-1 overflow-y-auto overflow-x-hidden overscroll-contain p-3 sm:p-4 space-y-2 relative w-full max-w-full"
       >
-        {/* ── MULTI-PIN MESSAGE BANNER (UP TO 5 PINS PER PERSON, CYCLES ON CLICK) ── */}
-        {pinnedMessages.length > 0 && (() => {
-          const currentPin = pinnedMessages[Math.min(activePinIndex, pinnedMessages.length - 1)] || pinnedMessages[0];
-          return (
-            <div
-              onClick={() => {
-                const el = document.getElementById(`msg-${currentPin.id}`);
-                if (el) {
-                  el.scrollIntoView({ behavior: "smooth", block: "center" });
-                  el.classList.add("ring-2", "ring-emerald-500", "rounded-2xl");
-                  setTimeout(() => {
-                    el.classList.remove("ring-2", "ring-emerald-500", "rounded-2xl");
-                  }, 1800);
-                }
-                // When clicked: advance to next pin and scroll there
-                if (pinnedMessages.length > 1) {
-                  setActivePinIndex((prev) => (prev + 1) % pinnedMessages.length);
-                }
-              }}
-              className="sticky top-0 z-30 mb-2 px-3.5 py-1.5 rounded-2xl bg-white/95 dark:bg-[#15221c]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-950/80 shadow-sm flex items-center justify-between gap-2.5 text-xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2b23] transition-colors select-none group"
-              title={
-                pinnedMessages.length > 1
-                  ? `Pin ${activePinIndex + 1} of ${pinnedMessages.length} (Click to scroll & cycle to next pin)`
-                  : "Click to scroll to pinned message"
-              }
-            >
-              <div className="flex items-center gap-2 truncate min-w-0">
-                <div className="relative flex items-center justify-center shrink-0">
-                  <Pin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                  {pinnedMessages.length > 1 && (
-                    <span className="absolute -top-1.5 -right-2 text-[8px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-1 rounded-full border border-emerald-500/30">
-                      {activePinIndex + 1}/{pinnedMessages.length}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-1.5 truncate text-[11px] sm:text-xs min-w-0">
-                  <strong className="text-slate-800 dark:text-slate-200 shrink-0 font-bold">
-                    {currentPin.senderName}:
-                  </strong>
-                  <span className="text-slate-500 dark:text-slate-400 truncate">
-                    {currentPin.text}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-1 shrink-0">
-                {pinnedMessages.length > 1 && (
-                  <span className="text-[10px] text-slate-400 dark:text-slate-500 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors hidden sm:inline">
-                    Tap to cycle
-                  </span>
-                )}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setPinnedMessages((prev) => {
-                      const updated = prev.filter((p) => p.id !== currentPin.id);
-                      try {
-                        localStorage.setItem(`travally_pinned_${conversationId}`, JSON.stringify(updated));
-                      } catch {}
-                      return updated;
-                    });
-                    if (activePinIndex >= pinnedMessages.length - 1) {
-                      setActivePinIndex(Math.max(0, pinnedMessages.length - 2));
-                    }
-                  }}
-                  className="p-1 rounded-lg text-slate-400 hover:text-rose-500 dark:hover:text-rose-400 cursor-pointer transition-colors"
-                  title="Unpin this message"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </div>
-          );
-        })()}
 
         {/* ── 7-DAY RETENTION VALIDITY NOTICE ── */}
         <div className="flex flex-col items-center gap-1.5 pt-1 pb-3 px-3 max-w-sm sm:max-w-md mx-auto text-center select-none animate-fade-in">
@@ -2062,9 +2065,9 @@ export default function ActiveChatPage() {
                           ? "bg-transparent p-0.5 shadow-none"
                           : isMe
                           ? isTravel
-                            ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/70 dark:to-amber-950/60 text-slate-800 dark:text-slate-100 border border-orange-200/90 dark:border-orange-800/60 shadow-xs rounded-br-[4px] px-3.5 pt-2 pb-1.5 min-w-[85px]"
-                            : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/70 dark:to-teal-950/60 text-slate-800 dark:text-slate-100 border border-emerald-200/90 dark:border-emerald-800/60 shadow-xs rounded-br-[4px] px-3.5 pt-2 pb-1.5 min-w-[85px]"
-                          : "bg-white dark:bg-[#16201b] text-slate-800 dark:text-slate-100 border border-slate-200/90 dark:border-emerald-950/80 shadow-xs rounded-bl-[4px] px-3.5 pt-2 pb-1.5 min-w-[75px]"
+                            ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950/70 dark:to-amber-950/60 text-slate-800 dark:text-slate-100 border border-orange-200/90 dark:border-orange-800/60 shadow-xs rounded-br-[4px] px-3 pt-1.5 pb-1 min-w-[70px]"
+                            : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/70 dark:to-teal-950/60 text-slate-800 dark:text-slate-100 border border-emerald-200/90 dark:border-emerald-800/60 shadow-xs rounded-br-[4px] px-3 pt-1.5 pb-1 min-w-[70px]"
+                          : "bg-white dark:bg-[#16201b] text-slate-800 dark:text-slate-100 border border-slate-200/90 dark:border-emerald-950/80 shadow-xs rounded-bl-[4px] px-3 pt-1.5 pb-1 min-w-[65px]"
                       }`}
                     >
                       {/* Quoted Reply Block */}
@@ -2074,7 +2077,7 @@ export default function ActiveChatPage() {
                             const target = document.getElementById(`msg-${parsed.replyTo?.id}`);
                             target?.scrollIntoView({ behavior: "smooth", block: "center" });
                           }}
-                          className={`mb-1.5 p-2 rounded-xl text-xs cursor-pointer border-l-3 transition-colors ${
+                          className={`mb-1 p-1.5 rounded-lg text-xs cursor-pointer border-l-2 transition-colors ${
                             isMe
                               ? isTravel
                                 ? "bg-white/80 dark:bg-black/20 border-orange-400 text-slate-800 dark:text-slate-200 hover:bg-white"
@@ -2082,10 +2085,10 @@ export default function ActiveChatPage() {
                               : "bg-slate-100 dark:bg-[#1d2b24] border-emerald-500 text-slate-700 dark:text-slate-300 hover:bg-slate-200/70"
                           }`}
                         >
-                          <strong className="block text-[11px] font-bold opacity-90">
+                          <strong className="block text-[10.5px] font-bold opacity-90">
                             {parsed.replyTo.senderName}
                           </strong>
-                          <p className="line-clamp-1 text-[11px] opacity-75">
+                          <p className="line-clamp-1 text-[10.5px] opacity-75">
                             {parsed.replyTo.text}
                           </p>
                         </div>
@@ -2112,12 +2115,12 @@ export default function ActiveChatPage() {
                           ))}
                         </div>
                       ) : (
-                        <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-0.5">
-                          <p className="whitespace-pre-wrap text-sm leading-relaxed font-normal break-words">
+                        <div className="flex items-end justify-between gap-x-2 min-w-0">
+                          <span className="whitespace-pre-wrap text-[13px] sm:text-[13.5px] leading-snug font-normal break-words select-text">
                             {parsed.text}
-                          </p>
-                          <div
-                            className={`inline-flex items-center gap-1 ml-auto self-end shrink-0 select-none ${
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-0.5 ml-auto pl-1.5 self-end shrink-0 select-none pb-0.5 ${
                               isMe
                                 ? isTravel
                                   ? "text-orange-950/60 dark:text-orange-300/60"
@@ -2126,7 +2129,7 @@ export default function ActiveChatPage() {
                             }`}
                           >
                             <span
-                              className="text-[9px] font-medium tracking-tight whitespace-nowrap"
+                              className="text-[8.5px] font-medium tracking-tight whitespace-nowrap"
                               title={formatTimeAgo(msg.createdAt)}
                             >
                               {formatMessageTime(msg.createdAt)}
@@ -2134,12 +2137,12 @@ export default function ActiveChatPage() {
                             {isMe && (
                               <MessageStatusBeacon
                                 status={deliveryStatus}
-                                size={14}
+                                size={12}
                                 recipientName={otherParticipantName}
                                 timestamp={formatMessageTime(msg.createdAt)}
                               />
                             )}
-                          </div>
+                          </span>
                         </div>
                       )}
 
