@@ -1491,16 +1491,7 @@ export default function ActiveChatPage() {
                 if (isDirectChat) {
                   const targetId = conversation?.otherUser?.id || otherParticipants[0]?.id;
                   if (targetId && targetId !== "partner-1") {
-                    setSelectedProfileUser({
-                      id: targetId,
-                      email: conversation?.otherUser?.email || "",
-                      profile: {
-                        displayName: directTitle,
-                        avatarUrl: directAvatarUrl,
-                        isVerified: isDirectVerified,
-                      },
-                    });
-                    setIsProfileModalOpen(true);
+                    router.push(`/profile/${targetId}`);
                   }
                 } else {
                   setIsMembersDrawerOpen(true);
@@ -1794,9 +1785,13 @@ export default function ActiveChatPage() {
                     isMe ? "flex-row-reverse" : "flex-row"
                   } ${contextMenuMsg?.msg?.id === msg.id ? "z-50" : "z-1"}`}
                 >
-                  {/* Sender Avatar for Received messages — ONLY shown in group chats */}
+                  {/* Sender Avatar for Received messages — ONLY shown in group chats (links to profile) */}
                   {!isMe && !isDirectChat && (
-                    <div className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30 shrink-0 mb-1 shadow-sm overflow-hidden">
+                    <Link
+                      href={`/profile/${msg.senderId || msg.sender?.id}`}
+                      className="w-7 h-7 rounded-full bg-emerald-100 dark:bg-emerald-950/80 border border-emerald-300 dark:border-emerald-700/60 flex items-center justify-center text-[10px] font-bold text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/30 shrink-0 mb-1 shadow-sm overflow-hidden hover:opacity-80 transition cursor-pointer"
+                      title={`View ${senderName}'s profile`}
+                    >
                       {senderAvatarUrl ? (
                         <img
                           src={senderAvatarUrl}
@@ -1806,14 +1801,18 @@ export default function ActiveChatPage() {
                       ) : (
                         senderName.charAt(0).toUpperCase()
                       )}
-                    </div>
+                    </Link>
                   )}
 
                   <div className={`flex flex-col ${isMe ? "items-end" : "items-start"} min-w-0`}>
                     {!isMe && !isDirectChat && (
-                      <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-2 mb-0.5">
+                      <Link
+                        href={`/profile/${msg.senderId || msg.sender?.id}`}
+                        className="text-[11px] font-bold text-slate-500 dark:text-slate-400 ml-2 mb-0.5 hover:underline cursor-pointer"
+                        title={`View ${senderName}'s profile`}
+                      >
                         {senderName}
-                      </span>
+                      </Link>
                     )}
 
                     {/* ── DOUBLE-TAP TELEGRAM HEART BURST OVERLAY ── */}
@@ -2112,9 +2111,35 @@ export default function ActiveChatPage() {
                           ))}
                         </div>
                       ) : (
-                        <p className="whitespace-pre-wrap text-sm leading-relaxed font-normal">
-                          {parsed.text}
-                        </p>
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-2.5 gap-y-0.5">
+                          <p className="whitespace-pre-wrap text-sm leading-relaxed font-normal break-words">
+                            {parsed.text}
+                          </p>
+                          <div
+                            className={`inline-flex items-center gap-1 ml-auto self-end shrink-0 select-none ${
+                              isMe
+                                ? isTravel
+                                  ? "text-orange-950/60 dark:text-orange-300/60"
+                                  : "text-emerald-950/60 dark:text-emerald-300/60"
+                                : "text-slate-400 dark:text-slate-500"
+                            }`}
+                          >
+                            <span
+                              className="text-[9px] font-medium tracking-tight whitespace-nowrap"
+                              title={formatTimeAgo(msg.createdAt)}
+                            >
+                              {formatMessageTime(msg.createdAt)}
+                            </span>
+                            {isMe && (
+                              <MessageStatusBeacon
+                                status={deliveryStatus}
+                                size={14}
+                                recipientName={otherParticipantName}
+                                timestamp={formatMessageTime(msg.createdAt)}
+                              />
+                            )}
+                          </div>
+                        </div>
                       )}
 
                       {/* Media Container: Photo (WhatsApp-style layout supporting up to 3 photos) */}
@@ -2353,10 +2378,10 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* ── IN-BUBBLE TIMESTAMP & STATUS INDICATOR (WHATSAPP PARITY) ── */}
-                      {!isEmojiOnly && (
+                      {/* ── IN-BUBBLE TIMESTAMP & STATUS INDICATOR (For media messages & deleted placeholders) ── */}
+                      {!isEmojiOnly && (parsed.mediaType || parsed.isDeleted) && (
                         <div
-                          className={`flex items-center justify-end gap-1.5 mt-1 select-none ${
+                          className={`flex items-center justify-end gap-1 mt-1 select-none ${
                             isMe
                               ? isTravel
                                 ? "text-orange-900/60 dark:text-orange-300/60"
@@ -2365,7 +2390,7 @@ export default function ActiveChatPage() {
                           }`}
                         >
                           <span
-                            className="text-[10px] font-medium tracking-tight"
+                            className="text-[9px] font-medium tracking-tight whitespace-nowrap"
                             title={formatTimeAgo(msg.createdAt)}
                           >
                             {formatMessageTime(msg.createdAt)}
@@ -2373,7 +2398,7 @@ export default function ActiveChatPage() {
                           {isMe && (
                             <MessageStatusBeacon
                               status={deliveryStatus}
-                              size={16}
+                              size={14}
                               recipientName={otherParticipantName}
                               timestamp={formatMessageTime(msg.createdAt)}
                             />

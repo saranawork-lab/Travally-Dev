@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Link from "next/link";
 import {
   X,
   Users,
@@ -223,11 +224,6 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
                     )}
                   </>
                 )}
-
-                <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold pt-1">
-                  <Lock className="w-3 h-3" />
-                  <span>256-bit End-to-End Encrypted Group</span>
-                </div>
               </div>
             </div>
 
@@ -263,8 +259,12 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
                       key={member.id}
                       className="relative group p-3 rounded-2xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/60 hover:border-emerald-500/30 transition flex items-center justify-between gap-3 shadow-xs"
                     >
-                      {/* Avatar & User Info */}
-                      <div className="flex items-center gap-3 min-w-0 flex-1">
+                      {/* Avatar & User Info (Links directly to profile page) */}
+                      <Link
+                        href={isMe ? "/profile" : `/profile/${member.id}`}
+                        className="flex items-center gap-3 min-w-0 flex-1 hover:opacity-85 transition cursor-pointer"
+                        title={isMe ? "View your profile" : `View ${member.displayName}'s profile`}
+                      >
                         <div className="relative shrink-0">
                           {member.avatarUrl ? (
                             <img
@@ -295,7 +295,7 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate">
+                            <span className="text-xs font-bold text-slate-900 dark:text-white truncate hover:underline">
                               {member.displayName}
                             </span>
                             {isMe && (
@@ -322,7 +322,7 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
                             )}
                           </div>
                         </div>
-                      </div>
+                      </Link>
 
                       {/* Member Actions (Only for other users) */}
                       {!isMe && (
@@ -370,7 +370,7 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
                                     className="w-full px-3 py-1.5 text-left text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 flex items-center gap-2 font-semibold"
                                   >
                                     <UserMinus className="w-3.5 h-3.5" />
-                                    <span>Remove Member</span>
+                                    <span>Remove</span>
                                   </button>
                                 )}
 

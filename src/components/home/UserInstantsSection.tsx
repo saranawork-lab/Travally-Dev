@@ -15,8 +15,10 @@ import {
   Loader2,
   UploadCloud,
   Check,
+  Share2,
 } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
+import { AvatarBadge } from "@/components/common/AvatarBadge";
 
 interface InstantItem {
   id: string;
@@ -314,146 +316,166 @@ export function UserInstantsSection({ userId, userName, isOwn }: UserInstantsSec
           )}
         </div>
       ) : (
-        /* Unique Mosaic Grid with Floating Cards */
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3.5 sm:gap-5">
+        /* Feed-style Cards (Parity with Home Posts Feed) */
+        <div className="space-y-4">
           {instants.map(item => {
             const hasLiked = item.likes?.includes(userId);
             return (
-              <div
+              <article
                 key={item.id}
-                onClick={() => setActiveItem(item)}
                 onDoubleClick={(e) => handleDoubleTap(e, item)}
-                onTouchEnd={() => handleCardTouchOrClick(item)}
-                className="group relative rounded-3xl overflow-hidden bg-[#0c1511] border border-emerald-950/60 dark:border-emerald-900/50 shadow-md hover:shadow-2xl hover:shadow-emerald-950/30 hover:border-emerald-500/60 transition-all duration-500 cursor-pointer flex flex-col aspect-[4/5] select-none"
+                className="group relative rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm hover:shadow-xl hover:shadow-emerald-950/10 hover:border-emerald-500/50 dark:hover:border-emerald-600/50 transition-all duration-300 overflow-hidden"
               >
                 {/* Double Tap Heart Burst Animation */}
                 {doubleTapHeartId === item.id && (
                   <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none animate-in fade-in zoom-in duration-150">
                     <div className="p-4 rounded-full bg-black/50 backdrop-blur-md shadow-2xl animate-bounce">
-                      <Heart className="w-14 h-14 fill-rose-500 text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
+                      <Heart className="w-14 h-14 sm:w-16 sm:h-16 fill-rose-500 text-rose-500 drop-shadow-[0_0_20px_rgba(244,63,94,0.9)]" />
                     </div>
                   </div>
                 )}
-                {/* Image Cover or Stylized Memory Canvas */}
-                {item.imageUrl ? (
-                  <div className="relative w-full h-full overflow-hidden bg-slate-950">
-                    <img
-                      src={item.imageUrl}
-                      alt={item.caption || "Instant"}
-                      className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
-                    />
-                    {/* Multi-layer cinematic vignette */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/30 opacity-90 group-hover:opacity-95 transition-opacity" />
-                  </div>
-                ) : (
-                  /* Unique Field Dispatch Canvas with Aurora Glow & Compass Accent */
-                  <div className="relative w-full h-full p-4 sm:p-5 flex flex-col justify-between overflow-hidden bg-gradient-to-br from-[#0d1c16] via-[#10271e] to-[#08120e]">
-                    {/* Background Ambient Glow & Grid Watermark */}
-                    <div className="absolute -top-10 -right-10 w-32 h-32 bg-emerald-500/15 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-400/25 transition-all duration-700" />
-                    <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl pointer-events-none" />
+                {/* Top Explorer Accent Stripe */}
+                <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-500 opacity-80 group-hover:opacity-100 transition-opacity" />
 
-                    {/* Top spacer */}
-                    <div className="h-6" />
-
-                    {/* Quotation Body */}
-                    <div className="relative z-10 my-auto space-y-2">
-                      <div className="w-6 h-6 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs font-serif font-black shadow-inner">
-                        &ldquo;
+                <div className="space-y-3">
+                  {/* Author Header Row with Three Dots menu */}
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <AvatarBadge
+                        src={item.userAvatar}
+                        name={item.userName || userName || "Explorer"}
+                        size="md"
+                      />
+                      <div className="min-w-0">
+                        <h4 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                          {item.userName || userName || "Explorer"}
+                        </h4>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-400 dark:text-slate-500 pt-0.5">
+                          {item.location && (
+                            <>
+                              <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium truncate max-w-[130px] sm:max-w-[180px]">
+                                <MapPin className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{item.location}</span>
+                              </span>
+                              <span>•</span>
+                            </>
+                          )}
+                          <span>{formatTimeAgo(item.createdAt)}</span>
+                        </div>
                       </div>
-                      <p className="text-xs sm:text-[13px] text-emerald-50 font-medium leading-relaxed tracking-wide line-clamp-5 drop-shadow-sm">
+                    </div>
+
+                    {/* Three Dots Button for author */}
+                    {isOwn && (
+                      <div className="relative instant-menu-container shrink-0">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === item.id ? null : item.id);
+                          }}
+                          className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1a2620] transition active:scale-95"
+                          title="More options"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+
+                        {openMenuId === item.id && (
+                          <div className="absolute right-0 top-full mt-1 w-32 bg-white dark:bg-[#16201b] rounded-2xl shadow-xl border border-slate-200 dark:border-emerald-950/80 p-1.5 z-30 animate-fade-in space-y-0.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                setOpenMenuId(null);
+                                handleOpenEdit(e, item);
+                              }}
+                              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#1f2d26] transition rounded-xl text-left"
+                            >
+                              <Pencil className="w-3.5 h-3.5 text-amber-500" />
+                              <span>Edit</span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                setOpenMenuId(null);
+                                handleDelete(e, item.id);
+                              }}
+                              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition rounded-xl text-left"
+                            >
+                              <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Caption / Content with accent bar */}
+                  {item.caption && (
+                    <div className="relative pl-3 border-l-2 border-amber-400/80 dark:border-amber-500/80 py-0.5">
+                      <p className="text-xs sm:text-[13.5px] text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-wrap select-text">
                         {item.caption}
                       </p>
                     </div>
+                  )}
 
-                    {/* Bottom spacer */}
-                    <div className="h-7" />
-                  </div>
-                )}
+                  {/* Photo if attached */}
+                  {item.imageUrl && (
+                    <div
+                      onClick={() => setActiveItem(item)}
+                      className="relative rounded-2xl overflow-hidden border border-slate-200 dark:border-emerald-950/80 bg-slate-100 dark:bg-slate-900 group/img cursor-pointer select-none"
+                    >
+                      <img
+                        src={item.imageUrl}
+                        alt="Expedition capture"
+                        className="w-full max-h-72 object-cover group-hover/img:scale-[1.02] transition-transform duration-500 ease-out"
+                      />
+                    </div>
+                  )}
 
-                {/* Top Location Pill */}
-                {item.location && (
-                  <div className="absolute top-2.5 left-2.5 z-10 px-2.5 py-1 rounded-full bg-black/65 backdrop-blur-md text-emerald-300 text-[10px] font-bold flex items-center gap-1 border border-white/10 shadow-lg group-hover:border-emerald-500/40 transition-colors">
-                    <MapPin className="w-2.5 h-2.5 text-emerald-400 shrink-0" />
-                    <span className="truncate max-w-[95px] tracking-tight">{item.location}</span>
-                  </div>
-                )}
-
-                {/* Three dots button for author only */}
-                {isOwn && (
-                  <div className="absolute top-2.5 right-2.5 z-20 instant-menu-container">
+                  {/* Interaction Dock */}
+                  <div className="pt-2.5 border-t border-slate-100 dark:border-emerald-950/60 flex items-center justify-between gap-2 text-xs">
                     <button
                       type="button"
-                      onClick={e => {
-                        e.stopPropagation();
-                        setOpenMenuId(openMenuId === item.id ? null : item.id);
-                      }}
-                      className="w-7 h-7 rounded-full bg-black/60 hover:bg-black/90 backdrop-blur-md text-slate-300 hover:text-white flex items-center justify-center transition active:scale-95 shadow-lg border border-white/10"
-                      title="Options"
-                      aria-label="Options"
+                      onClick={(e) => handleToggleLike(e, item)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border transition-all active:scale-95 font-bold text-xs ${
+                        hasLiked
+                          ? "bg-rose-50 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 border-rose-300 dark:border-rose-800 shadow-xs"
+                          : "bg-slate-50 dark:bg-[#16201b] text-slate-600 dark:text-slate-400 border-slate-200/80 dark:border-emerald-950/80 hover:border-rose-300 dark:hover:border-rose-900/60 hover:text-rose-600 dark:hover:text-rose-400"
+                      }`}
                     >
-                      <MoreVertical className="w-3.5 h-3.5" />
+                      <Heart
+                        className={`w-3.5 h-3.5 transition-transform ${
+                          hasLiked ? "fill-rose-500 text-rose-500 scale-110" : ""
+                        }`}
+                      />
+                      <span>{item.likesCount || 0}</span>
                     </button>
 
-                    {openMenuId === item.id && (
-                      <div
-                        onClick={e => e.stopPropagation()}
-                        className="absolute right-0 top-full mt-1.5 w-32 bg-[#121c17] rounded-2xl shadow-2xl border border-emerald-900/80 p-1.5 z-30 animate-fade-in space-y-0.5 text-left backdrop-blur-xl"
-                      >
-                        <button
-                          type="button"
-                          onClick={e => handleOpenEdit(e, item)}
-                          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-slate-200 hover:bg-[#1c2c24] hover:text-white transition rounded-xl"
-                        >
-                          <Pencil className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Edit</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={e => {
-                            setOpenMenuId(null);
-                            handleDelete(e, item.id);
-                          }}
-                          className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs font-semibold text-rose-400 hover:bg-rose-950/50 hover:text-rose-300 transition rounded-xl"
-                        >
-                          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
-                          <span>Delete</span>
-                        </button>
-                      </div>
-                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: item.caption || "Post on Travally",
+                            url: window.location.href,
+                          }).catch(() => {});
+                        }
+                      }}
+                      className="inline-flex items-center justify-center p-2 rounded-full bg-slate-50 dark:bg-[#16201b] border border-slate-200/80 dark:border-emerald-950/80 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-[#1c2822] hover:text-emerald-600 dark:hover:text-emerald-400 transition active:scale-95 font-semibold text-xs"
+                      title="Share"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                )}
-
-                {/* Bottom Overlay Info Pill */}
-                <div className="absolute bottom-0 inset-x-0 p-3 z-10 text-white flex items-center justify-between bg-gradient-to-t from-black/80 via-black/40 to-transparent">
-                  <div className="min-w-0 pr-2">
-                    {item.imageUrl && item.caption && (
-                      <p className="text-[11px] font-semibold truncate text-slate-200 drop-shadow-sm">
-                        {item.caption}
-                      </p>
-                    )}
-                    <p className="text-[9.5px] text-emerald-300/80 font-medium flex items-center gap-1">
-                      <Clock className="w-2.5 h-2.5 text-emerald-400/80" />
-                      <span>{formatTimeAgo(item.createdAt)}</span>
-                    </p>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={e => handleToggleLike(e, item)}
-                    className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md text-white transition-all active:scale-95 shrink-0 border border-white/10"
-                    title={hasLiked ? "Unlike" : "Like"}
-                  >
-                    <Heart className={`w-3 h-3 transition-transform ${hasLiked ? "fill-rose-500 text-rose-500 scale-110" : "text-white"}`} />
-                    <span className="text-[10px] font-bold">{item.likesCount || 0}</span>
-                  </button>
                 </div>
-              </div>
+              </article>
             );
           })}
         </div>
       )}
 
-      {/* Modal viewer for an instant */}
+            {/* Modal viewer for an instant */}
       {activeItem && (
         <div
           onClick={() => setActiveItem(null)}

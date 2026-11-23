@@ -197,17 +197,15 @@ export const TripCard: React.FC<TripCardProps> = ({
               </div>
 
               {/* Host row */}
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsProfileModalOpen(true);
-                }}
-                className="flex items-center gap-2 mt-2 text-left transition hover:opacity-80"
+              <Link 
+                href={trip.organizer?.id ? `/profile/${trip.organizer.id}` : "#"}
+                className="flex items-center gap-2 mt-2 text-left transition hover:opacity-80 cursor-pointer"
+                title={`View ${hostName}'s profile`}
               >
                 <div className="w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 ring-1 ring-emerald-500/40 flex items-center justify-center text-[10px] font-bold shrink-0">
                   {hostName.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate">
+                <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 truncate hover:underline">
                   {hostName}
                 </span>
                 <VerificationBadge
@@ -216,7 +214,7 @@ export const TripCard: React.FC<TripCardProps> = ({
                   hasLinkedin={!!trip.organizer?.profile?.linkedinUrl}
                   size="sm"
                 />
-              </button>
+              </Link>
             </div>
 
             {/* Description (Readable typography) */}

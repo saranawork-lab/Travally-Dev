@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import {
   Camera,
@@ -135,6 +136,7 @@ interface FindMeClue {
 let cachedInstantsList: CommunityPost[] | null = null;
 
 export default function HomeClient() {
+  const router = useRouter();
   const { currentUser } = useAuth();
   const { t } = useLanguage();
 
@@ -1116,24 +1118,8 @@ export default function HomeClient() {
                       <div className="space-y-3">
                         {/* Author Header Row with Three Dots menu (for author only) */}
                         <div className="flex items-center justify-between gap-3">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setSelectedProfileUser({
-                                id: post.authorId,
-                                email: "",
-                                joinRank: rank,
-                                profile: {
-                                  fullName: post.authorName,
-                                  avatarUrl: post.authorAvatar,
-                                  isVerified: post.isVerified,
-                                  rank: rank,
-                                  badge: badge,
-                                },
-                              });
-                              setProfileModalShowChat(false); // In post section, no message option
-                              setIsProfileModalOpen(true);
-                            }}
+                          <Link
+                            href={`/profile/${post.authorId}`}
                             className="flex items-center gap-2.5 min-w-0 group/author text-left cursor-pointer"
                           >
                             <AvatarBadge
@@ -1167,7 +1153,7 @@ export default function HomeClient() {
                                 <span>{formatTimeAgo(post.createdAt)}</span>
                               </div>
                             </div>
-                          </button>
+                          </Link>
 
                           {/* Three Dots Button: ONLY visible to author */}
                           {isAuthor && (
@@ -1367,20 +1353,8 @@ export default function HomeClient() {
                                       >
                                         {/* Comment Row: Avatar + Inline Content (Instagram style) */}
                                         <div className="flex items-start gap-2">
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setSelectedProfileUser({
-                                                id: comment.authorId,
-                                                email: "",
-                                                profile: {
-                                                  fullName: comment.authorName,
-                                                  avatarUrl: comment.authorAvatar,
-                                                },
-                                              });
-                                              setProfileModalShowChat(false);
-                                              setIsProfileModalOpen(true);
-                                            }}
+                                          <Link
+                                            href={`/profile/${comment.authorId}`}
                                             className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[9px] flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:ring-1 hover:ring-emerald-400 transition mt-0.5"
                                             title={comment.authorName}
                                           >
@@ -1393,28 +1367,16 @@ export default function HomeClient() {
                                             ) : (
                                               comment.authorName.charAt(0).toUpperCase()
                                             )}
-                                          </button>
+                                          </Link>
 
                                           <div className="flex-1 min-w-0">
                                             <div className="text-[11px] leading-snug text-slate-800 dark:text-slate-200">
-                                              <button
-                                                type="button"
-                                                onClick={() => {
-                                                  setSelectedProfileUser({
-                                                    id: comment.authorId,
-                                                    email: "",
-                                                    profile: {
-                                                      fullName: comment.authorName,
-                                                      avatarUrl: comment.authorAvatar,
-                                                    },
-                                                  });
-                                                  setProfileModalShowChat(false);
-                                                  setIsProfileModalOpen(true);
-                                                }}
+                                              <Link
+                                                href={`/profile/${comment.authorId}`}
                                                 className="font-bold text-slate-900 dark:text-white mr-1.5 hover:underline cursor-pointer"
                                               >
                                                 {comment.authorName}
-                                              </button>
+                                              </Link>
                                               <span className="whitespace-pre-wrap text-slate-700 dark:text-slate-300">{comment.content}</span>
                                             </div>
 
@@ -1459,20 +1421,8 @@ export default function HomeClient() {
                                                   key={reply.id}
                                                   className="flex items-start gap-1.5 py-0.5 group/reply"
                                                 >
-                                                  <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                      setSelectedProfileUser({
-                                                        id: reply.authorId,
-                                                        email: "",
-                                                        profile: {
-                                                          fullName: reply.authorName,
-                                                          avatarUrl: reply.authorAvatar,
-                                                        },
-                                                      });
-                                                      setProfileModalShowChat(false);
-                                                      setIsProfileModalOpen(true);
-                                                    }}
+                                                  <Link
+                                                    href={`/profile/${reply.authorId}`}
                                                     className="w-4 h-4 rounded-full bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[8px] flex items-center justify-center shrink-0 overflow-hidden cursor-pointer hover:ring-1 hover:ring-emerald-400 transition mt-0.5"
                                                     title={reply.authorName}
                                                   >
@@ -1485,28 +1435,16 @@ export default function HomeClient() {
                                                     ) : (
                                                       reply.authorName.charAt(0).toUpperCase()
                                                     )}
-                                                  </button>
+                                                  </Link>
 
                                                   <div className="flex-1 min-w-0">
                                                     <div className="text-[10.5px] leading-snug text-slate-800 dark:text-slate-200">
-                                                      <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                          setSelectedProfileUser({
-                                                            id: reply.authorId,
-                                                            email: "",
-                                                            profile: {
-                                                              fullName: reply.authorName,
-                                                              avatarUrl: reply.authorAvatar,
-                                                            },
-                                                          });
-                                                          setProfileModalShowChat(false);
-                                                          setIsProfileModalOpen(true);
-                                                        }}
+                                                      <Link
+                                                        href={`/profile/${reply.authorId}`}
                                                         className="font-bold text-slate-900 dark:text-white mr-1 hover:underline cursor-pointer"
                                                       >
                                                         {reply.authorName}
-                                                      </button>
+                                                      </Link>
                                                       {reply.replyToName && (
                                                         <span className="text-emerald-600 dark:text-emerald-400 font-medium mr-1">
                                                           @{reply.replyToName}
@@ -1657,9 +1595,9 @@ export default function HomeClient() {
                       isJoining={joiningGrowId === item.id}
                       onToggleJoin={handleToggleJoinGrow}
                       onOpenProfile={(user) => {
-                        setSelectedProfileUser(user);
-                        setProfileModalShowChat(true);
-                        setIsProfileModalOpen(true);
+                        if (user?.id) {
+                          router.push(`/profile/${user.id}`);
+                        }
                       }}
                     />
                   );

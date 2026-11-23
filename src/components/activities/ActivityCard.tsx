@@ -174,17 +174,15 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
               <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
                 HOST
               </span>
-              <button 
-                onClick={(e) => {
-                  e.preventDefault();
-                  setIsProfileModalOpen(true);
-                }}
-                className="flex items-center gap-1.5 ml-1 text-left transition hover:opacity-80"
+              <Link 
+                href={activity.organizer?.id ? `/profile/${activity.organizer.id}` : "#"}
+                className="flex items-center gap-1.5 ml-1 text-left transition hover:opacity-80 cursor-pointer"
+                title={`View ${hostName}'s profile`}
               >
                 <div className="w-5 h-5 rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-white dark:border-emerald-800 shadow-sm flex items-center justify-center text-[9px] font-bold shrink-0">
                   {hostName.charAt(0).toUpperCase()}
                 </div>
-                <span className="text-xs font-bold text-slate-900 dark:text-slate-100">
+                <span className="text-xs font-bold text-slate-900 dark:text-slate-100 hover:underline">
                   {hostName}
                 </span>
                 <VerificationBadge
@@ -193,7 +191,7 @@ export const ActivityCard: React.FC<ActivityCardProps> = ({
                   hasLinkedin={!!activity.organizer?.profile?.linkedinUrl}
                   size="sm"
                 />
-              </button>
+              </Link>
             </div>
             
             {activity.description && (
