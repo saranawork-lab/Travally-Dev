@@ -1295,12 +1295,31 @@ export default function ActiveChatPage() {
     }
   };
 
-  // Double-tap Instagram style quick react with ❤️
-  const handleDoubleTap = (messageId: string, e: React.MouseEvent) => {
-    e.preventDefault();
+  const lastMessageTapRef = useRef<{ id: string; time: number }>({ id: "", time: 0 });
+  const reactionDockTimeoutRef = useRef<any>(null);
+
+  // Double-tap Instagram/WhatsApp style quick react with ❤️ and pop open reaction dock
+  const handleDoubleTap = (messageId: string, e?: React.MouseEvent | React.TouchEvent) => {
+    if (e) {
+      try {
+        e.preventDefault();
+        e.stopPropagation();
+      } catch {}
+    }
     setHeartBurstMsgId(messageId);
     setTimeout(() => setHeartBurstMsgId(null), 900);
     handleToggleReaction(messageId, "❤️");
+
+    // Open WhatsApp-style floating reaction dock for quick emoji switching
+    setActiveReactionMsgId(messageId);
+    if (reactionDockTimeoutRef.current) clearTimeout(reactionDockTimeoutRef.current);
+    reactionDockTimeoutRef.current = setTimeout(() => {
+      setActiveReactionMsgId((curr) => (curr === messageId ? null : curr));
+    }, 4500);
+
+    if (typeof navigator !== "undefined" && navigator.vibrate) {
+      navigator.vibrate(35);
+    }
   };
 
   // Long-press and context menu handlers with WhatsApp-style swipe-to-reply
@@ -1348,7 +1367,7 @@ export default function ActiveChatPage() {
     }
   };
 
-  const handleTouchEnd = (msg: any, parsed: MessagePayload) => {
+  const handleTouchEnd = (msg: any, parsed: MessagePayload, e?: React.TouchEvent) => {
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
 
     if (swipingMsgId === msg.id && swipeOffset > 42) {
@@ -1370,12 +1389,42 @@ export default function ActiveChatPage() {
       if (typeof navigator !== "undefined" && navigator.vibrate) {
         navigator.vibrate(30);
       }
+      setSwipingMsgId(null);
+      setSwipeOffset(0);
+      touchStartPosRef.current = null;
+      return;
     }
 
     setSwipingMsgId(null);
     setSwipeOffset(0);
+
+    // Touch Double-Tap Detection:
+    if (!parsed.isDeleted && touchStartPosRef.current) {
+      const now = Date.now();
+      const isSameMsg = lastMessageTapRef.current.id === msg.id;
+      const diff = now - lastMessageTapRef.current.time;
+
+      if (isSameMsg && diff > 40 && diff < 380) {
+        // Double-tap detected on touch screen!
+        lastMessageTapRef.current = { id: "", time: 0 };
+        handleDoubleTap(msg.id, e);
+        touchStartPosRef.current = null;
+        return;
+      }
+
+      lastMessageTapRef.current = { id: msg.id, time: now };
+    }
+
     touchStartPosRef.current = null;
   };
+
+  useEffect(() => {
+    const handleDismissReactionDock = () => {
+      setActiveReactionMsgId(null);
+    };
+    window.addEventListener("click", handleDismissReactionDock);
+    return () => window.removeEventListener("click", handleDismissReactionDock);
+  }, []);
 
   const handleContextMenu = (msg: any, parsed: MessagePayload, e: React.MouseEvent) => {
     e.preventDefault();
@@ -2255,6 +2304,56 @@ export default function ActiveChatPage() {
                       </div>
                     )}
 
+                    {/* ── FLOATING QUICK REACTIONS DOCK (Triggered by Double-Tap) ── */}
+                    {activeReactionMsgId === msg.id && (
+                      <div
+                        data-chat-actions="true"
+                        className={`absolute bottom-full mb-2 z-50 flex items-center gap-1.5 p-1.5 rounded-full bg-white/95 dark:bg-[#16221c]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-700/60 shadow-[0_8px_30px_rgba(0,0,0,0.18)] animate-in zoom-in-95 fade-in duration-150 select-none ${
+                          isMe ? "right-0" : "left-0"
+                        }`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {["❤️", "👍", "😂", "😮", "🔥", "🙏"].map((em) => {
+                          const isAlreadyReacted = (parsed.reactions?.[em] || []).includes(
+                            currentUser?.displayName || currentUser?.email?.split("@")[0] || ""
+                          );
+                          return (
+                            <button
+                              key={em}
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleReaction(msg.id, em);
+                                setActiveReactionMsgId(null);
+                              }}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center transition-transform hover:scale-130 active:scale-95 cursor-pointer ${
+                                isAlreadyReacted
+                                  ? "bg-emerald-100 dark:bg-emerald-900/60 ring-2 ring-emerald-500/50 scale-110"
+                                  : "hover:bg-slate-100 dark:hover:bg-white/10"
+                              }`}
+                              title={`React ${em}`}
+                            >
+                              <RealisticEmoji emoji={em} size={18} animate={true} />
+                            </button>
+                          );
+                        })}
+
+                        {/* More emojis (+) button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setActiveReactionMsgId(null);
+                            setIsEmojiPickerOpen(true);
+                          }}
+                          className="w-6.5 h-6.5 rounded-full bg-slate-100 dark:bg-white/10 hover:bg-slate-200 dark:hover:bg-white/20 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer ml-0.5"
+                          title="More reactions"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
+
                     {/* ── BUBBLE CONTAINER (TOUCH LONG-PRESS / RIGHT-CLICK TO SELECT + SWIPE TO REPLY) ── */}
                     <div
                       className="relative flex items-center group/bubble"
@@ -2481,7 +2580,7 @@ export default function ActiveChatPage() {
                         onDoubleClick={(e) => handleDoubleTap(msg.id, e)}
                         onTouchStart={(e) => handleTouchStart(msg, parsed, e)}
                         onTouchMove={(e) => handleTouchMove(msg, parsed, e)}
-                        onTouchEnd={() => handleTouchEnd(msg, parsed)}
+                        onTouchEnd={(e) => handleTouchEnd(msg, parsed, e)}
                         onContextMenu={(e) => handleContextMenu(msg, parsed, e)}
                         className={`relative group rounded-[20px] transition-all select-text cursor-pointer ${
                           selectedMessage?.msg?.id === msg.id
