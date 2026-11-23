@@ -561,8 +561,8 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
           </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          {tab === "deck" && deckClues.length > 0 && (
+        {tab === "deck" && deckClues.length > 0 && (
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={loadDeck}
@@ -570,16 +570,8 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
             >
               Refresh Deck
             </button>
-          )}
-          <button
-            type="button"
-            onClick={() => requireAuth(() => onOpenCreate && onOpenCreate())}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-xs transition shrink-0 active:scale-95 cursor-pointer"
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span>Drop Clue</span>
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* ── TOAST NOTIFICATION ── */}
@@ -803,27 +795,6 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
       {/* ── 3. MY BEACONS VIEW ── */}
       {tab === "mine" && (
         <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-1.5">
-                <Flame className="w-4 h-4 text-rose-500" />
-                <span>My Active Find Me Beacons</span>
-              </h3>
-              <p className="text-xs text-slate-400">
-                Story cards you dropped. Active until expiration timer finishes.
-              </p>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => requireAuth(() => onOpenCreate && onOpenCreate())}
-              className="px-4 py-2 rounded-full text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 flex items-center gap-1 transition shadow-xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Drop New Beacon</span>
-            </button>
-          </div>
-
           {myClues.length === 0 ? (
             <div className="py-16 text-center bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 p-6 space-y-3">
               <Flame className="w-10 h-10 text-rose-500 mx-auto opacity-70" />
