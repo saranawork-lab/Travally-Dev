@@ -216,10 +216,10 @@ function ChatsContent() {
                   key={i}
                   className="animate-pulse flex items-center gap-3 p-3.5 rounded-2xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/60"
                 >
-                  <div className="w-8 h-8 bg-slate-200 dark:bg-slate-800 rounded-full shrink-0" />
-                  <div className="flex-1 flex items-center gap-2">
-                    <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-1/4" />
-                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+                  <div className="w-10 h-10 bg-slate-200 dark:bg-slate-800 rounded-full shrink-0" />
+                  <div className="flex-1 space-y-1.5 min-w-0">
+                    <div className="h-3.5 bg-slate-200 dark:bg-slate-800 rounded w-1/3" />
+                    <div className="h-3 bg-slate-200 dark:bg-slate-800 rounded w-1/2" />
                   </div>
                 </div>
               ))}
@@ -271,49 +271,46 @@ function ChatsContent() {
                   <Link
                     key={conv.id}
                     href={`/chats/${conv.id}`}
-                    className={`group flex items-center justify-between gap-2.5 px-3.5 py-3 rounded-2xl border transition-all shadow-xs ${cardBackground}`}
+                    className={`group flex items-center gap-3 px-3.5 py-2.5 rounded-2xl border transition-all shadow-xs ${cardBackground}`}
                   >
-                    {/* Single Line: Icon + Title + Snippet */}
-                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                      {isDirect ? (
-                        avatarUrl ? (
-                          <img
-                            src={avatarUrl}
-                            alt={displayTitle}
-                            className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
-                          />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow-xs">
-                            {displayTitle.charAt(0).toUpperCase()}
-                          </div>
-                        )
+                    {/* Room Avatar */}
+                    {isDirect ? (
+                      avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt={displayTitle}
+                          className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700"
+                        />
                       ) : (
-                        <div
-                          className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-white shadow-xs ${
-                            isActivity ? "bg-emerald-500" : "bg-orange-500"
-                          }`}
-                        >
-                          {isActivity ? <Users className="w-4 h-4" /> : <Compass className="w-4 h-4" />}
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center shrink-0 shadow-xs">
+                          {displayTitle.charAt(0).toUpperCase()}
                         </div>
-                      )}
+                      )
+                    ) : (
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white shadow-xs ${
+                          isActivity ? "bg-emerald-500" : "bg-orange-500"
+                        }`}
+                      >
+                        {isActivity ? <Users className="w-4.5 h-4.5" /> : <Compass className="w-4.5 h-4.5" />}
+                      </div>
+                    )}
 
-                      <div className="flex items-center gap-1.5 min-w-0 flex-1 text-xs">
-                        {/* Title */}
-                        <span className={`font-semibold text-slate-800 dark:text-slate-100 truncate shrink-0 max-w-[170px] xs:max-w-[210px] sm:max-w-[280px] transition-colors ${titleHover}`}>
+                    {/* Content: Name on top, Snippet below */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2 mb-0.5">
+                        <span className={`font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate transition-colors ${titleHover}`}>
                           {displayTitle}
                         </span>
-
-                        {/* Divider & Snippet */}
-                        <span className="text-slate-500 dark:text-slate-400 truncate min-w-0">
-                          • {!isDirect && senderDisplayName ? `${senderDisplayName}: ` : ""}{snippet}
-                        </span>
+                        <div className="flex items-center gap-1 shrink-0 text-slate-400 dark:text-slate-500 text-[11px]">
+                          <span className="whitespace-nowrap">{timeDisplay}</span>
+                          <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 transition-colors" />
+                        </div>
                       </div>
-                    </div>
 
-                    {/* Time & Chevron on the right */}
-                    <div className="flex items-center gap-1.5 shrink-0 text-slate-400 dark:text-slate-500 text-[11px]">
-                      <span className="whitespace-nowrap">{timeDisplay}</span>
-                      <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 transition-colors" />
+                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                        {!isDirect && senderDisplayName ? `${senderDisplayName}: ` : ""}{snippet}
+                      </p>
                     </div>
                   </Link>
                 );
