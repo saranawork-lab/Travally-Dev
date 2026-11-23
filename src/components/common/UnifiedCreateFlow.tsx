@@ -792,14 +792,14 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
               onClick={() => handleCategoryClick("grow")}
               className={`flex flex-col items-center justify-center p-2.5 sm:p-3 rounded-2xl border transition-all text-center select-none cursor-pointer group ${
                 mode === "grow"
-                  ? "bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-md shadow-teal-600/20 border-teal-600 font-black scale-[1.02]"
+                  ? "bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 text-white shadow-md shadow-emerald-400/25 border-transparent font-black scale-[1.02]"
                   : "bg-slate-50/80 dark:bg-[#16201b] border-slate-200/90 dark:border-emerald-950/70 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#1c2a22]"
               }`}
             >
               <div
                 className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 transition-transform group-hover:scale-110 ${
                   mode === "grow"
-                    ? "bg-white/20 text-white"
+                    ? "bg-white/25 text-white shadow-xs"
                     : "bg-white dark:bg-[#101713] text-slate-700 dark:text-slate-300 shadow-2xs"
                 }`}
               >
@@ -809,8 +809,8 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 Nature & Humanity
               </span>
               <span
-                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-80 ${
-                  mode === "grow" ? "text-white/90" : "text-slate-400"
+                className={`text-[9.5px] hidden sm:block truncate max-w-full opacity-90 ${
+                  mode === "grow" ? "text-white" : "text-slate-400"
                 }`}
               >
                 Grow Cause
