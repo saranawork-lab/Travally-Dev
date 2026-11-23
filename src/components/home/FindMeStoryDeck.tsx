@@ -542,27 +542,10 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
               </span>
             )}
           </button>
-
-          <button
-            type="button"
-            onClick={() => setTab("mine")}
-            className={`px-4 py-2 rounded-2xl text-xs font-bold transition-all flex items-center gap-1.5 ${
-              tab === "mine"
-                ? "bg-emerald-600 text-white shadow-sm"
-                : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16221c]"
-            }`}
-          >
-            <span>📝 My Beacons</span>
-            {myClues.length > 0 && (
-              <span className="min-w-[18px] h-4 px-1 rounded-full text-[9px] font-black inline-flex items-center justify-center bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-slate-200">
-                {myClues.length}
-              </span>
-            )}
-          </button>
         </div>
 
-        {tab === "deck" && deckClues.length > 0 && (
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          {tab === "deck" && deckClues.length > 0 && (
             <button
               type="button"
               onClick={loadDeck}
@@ -570,8 +553,21 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
             >
               Refresh Deck
             </button>
-          </div>
-        )}
+          )}
+          {myClues.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setTab(tab === "mine" ? "deck" : "mine")}
+              className={`text-xs font-semibold px-2.5 py-1 rounded-xl transition ${
+                tab === "mine"
+                  ? "bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 font-bold"
+                  : "text-slate-400 hover:text-slate-600 dark:hover:text-slate-300"
+              }`}
+            >
+              My Beacons ({myClues.length})
+            </button>
+          )}
+        </div>
       </div>
 
       {/* ── TOAST NOTIFICATION ── */}
@@ -671,6 +667,16 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
                     title="Send a message with your connection"
                   >
                     <MessageCircle className="w-5 h-5" />
+                  </button>
+
+                  {/* Drop Clue / Post (+) Button Down Below */}
+                  <button
+                    type="button"
+                    onClick={() => requireAuth(() => onOpenCreate && onOpenCreate())}
+                    className="w-11 h-11 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-300 dark:border-emerald-800 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-100 hover:border-emerald-400 shadow-sm transition-all active:scale-90 flex items-center justify-center"
+                    title="Post a Beacon (+)"
+                  >
+                    <Plus className="w-5 h-5 stroke-[2.5]" />
                   </button>
 
                   {/* Accept / Connect Button */}
@@ -930,6 +936,17 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
           </div>
         </div>
       )}
+
+      {/* Floating '+' Button Down Below To Post */}
+      <button
+        type="button"
+        onClick={() => requireAuth(() => onOpenCreate && onOpenCreate())}
+        className="fixed bottom-20 sm:bottom-24 right-4 sm:right-6 z-40 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white shadow-xl shadow-emerald-950/30 flex items-center justify-center transition-all duration-200 active:scale-90 hover:scale-105 border-2 border-white/40 dark:border-emerald-400/40 cursor-pointer group hover:shadow-emerald-500/30"
+        title="Post a Beacon (+)"
+        aria-label="Post a Beacon"
+      >
+        <Plus className="w-6 h-6 sm:w-7 sm:h-7 stroke-[2.8] text-white transition-transform group-hover:rotate-90 duration-300" />
+      </button>
     </div>
   );
 };
