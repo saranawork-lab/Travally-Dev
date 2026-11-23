@@ -300,11 +300,16 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                    <span className="truncate">
+                  <div className="flex items-center justify-between gap-1 text-[11px] text-slate-500 dark:text-slate-400 min-w-0">
+                    <span className={`truncate ${conv.unreadCount > 0 ? "font-semibold text-slate-800 dark:text-slate-200" : ""}`}>
                       {!isDirect && senderDisplayName ? `${senderDisplayName}: ` : ""}
                       {snippet}
                     </span>
+                    {conv.unreadCount > 0 && (
+                      <span className="px-1.5 py-0.2 rounded-full text-[9px] font-black bg-emerald-600 text-white min-w-[16px] h-4 inline-flex items-center justify-center shrink-0 shadow-xs">
+                        {conv.unreadCount > 99 ? "99+" : conv.unreadCount}
+                      </span>
+                    )}
                   </div>
                 </div>
               </button>

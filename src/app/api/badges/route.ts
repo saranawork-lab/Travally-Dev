@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import db from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
+import { getDb } from "@/lib/mongo";
 
 export const dynamic = "force-dynamic";
 
@@ -27,23 +28,49 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(cached.data);
     }
 
-    // Count unread messages in conversations where user is participant
-    const participations = await db.participant.findMany({
-      where: { userId: user.id },
-      select: { activityId: true, travelPlanId: true },
-    });
+    // Count unread messages in conversations where user is participant or organizer, plus direct chats
+    const [participations, organizedActivities, organizedTrips, mongoDirectDocs] = await Promise.all([
+      db.participant.findMany({
+        where: { userId: user.id },
+        select: { activityId: true, travelPlanId: true },
+      }),
+      db.activity.findMany({
+        where: { organizerId: user.id },
+        select: { id: true },
+      }),
+      db.travelPlan.findMany({
+        where: { organizerId: user.id },
+        select: { id: true },
+      }),
+      (async () => {
+        try {
+          const mongo = await getDb();
+          return await mongo
+            .collection("Conversation")
+            .find({ type: "DIRECT", participantIds: user.id }, { projection: { _id: 1 } })
+            .toArray();
+        } catch {
+          return [];
+        }
+      })(),
+    ]);
 
-    const activityIds = participations.map((p) => p.activityId).filter(Boolean) as string[];
-    const travelPlanIds = participations.map((p) => p.travelPlanId).filter(Boolean) as string[];
+    const participantActivityIds = participations.map((p) => p.activityId).filter(Boolean) as string[];
+    const participantTravelIds = participations.map((p) => p.travelPlanId).filter(Boolean) as string[];
+
+    const allActivityIds = Array.from(new Set([...participantActivityIds, ...organizedActivities.map((a) => a.id)]));
+    const allTravelPlanIds = Array.from(new Set([...participantTravelIds, ...organizedTrips.map((t) => t.id)]));
+    const directConvIds = mongoDirectDocs.map((d: any) => d._id.toString());
 
     let unreadChatsCount = 0;
     let totalUnreadMessages = 0;
 
-    if (activityIds.length > 0 || travelPlanIds.length > 0) {
-      const orFilters = [];
-      if (activityIds.length > 0) orFilters.push({ activityId: { in: activityIds } });
-      if (travelPlanIds.length > 0) orFilters.push({ travelPlanId: { in: travelPlanIds } });
+    const orFilters = [];
+    if (allActivityIds.length > 0) orFilters.push({ activityId: { in: allActivityIds } });
+    if (allTravelPlanIds.length > 0) orFilters.push({ travelPlanId: { in: allTravelPlanIds } });
+    if (directConvIds.length > 0) orFilters.push({ id: { in: directConvIds } });
 
+    if (orFilters.length > 0) {
       const conversations = await db.conversation.findMany({
         where: {
           OR: orFilters,

@@ -231,8 +231,44 @@ export async function GET(req: NextRequest) {
       })
     );
 
+    // Calculate unread message counts for each conversation
+    const allConvIds = allConvs.map((c) => c.id);
+    const unreadCountsByConv: Record<string, number> = {};
+
+    if (allConvIds.length > 0) {
+      try {
+        const unreadMessages = await db.message.findMany({
+          where: {
+            conversationId: { in: allConvIds },
+            senderId: { not: user.id },
+          },
+          select: {
+            id: true,
+            conversationId: true,
+            readBy: true,
+          },
+        });
+
+        for (const msg of unreadMessages) {
+          try {
+            const readList: string[] = JSON.parse(msg.readBy || "[]");
+            if (!readList.includes(user.id)) {
+              unreadCountsByConv[msg.conversationId] =
+                (unreadCountsByConv[msg.conversationId] || 0) + 1;
+            }
+          } catch {
+            unreadCountsByConv[msg.conversationId] =
+              (unreadCountsByConv[msg.conversationId] || 0) + 1;
+          }
+        }
+      } catch (err) {
+        console.warn("Failed to compute unread counts for conversations:", err);
+      }
+    }
+
     const decorated = allConvs.map((conv) => ({
       ...conv,
+      unreadCount: unreadCountsByConv[conv.id] || 0,
       retentionInfo: getChatRetentionInfo(conv as any),
     }));
 

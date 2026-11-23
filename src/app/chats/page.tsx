@@ -255,8 +255,13 @@ function ChatsContent() {
                 const displayTitle = conv.otherUser?.displayName || conv.title;
                 const avatarUrl = conv.otherUser?.avatarUrl;
 
+                const unreadCount = typeof conv.unreadCount === "number" ? conv.unreadCount : 0;
+                const hasUnread = unreadCount > 0;
+
                 const cardBackground = isDirect
-                  ? "bg-white dark:bg-[#111815] border-slate-200/80 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-[#15201b]"
+                  ? hasUnread
+                    ? "bg-emerald-50/70 dark:bg-[#13221b] border-emerald-300/90 dark:border-emerald-800/80 hover:border-emerald-400 hover:bg-emerald-100/70 dark:hover:bg-[#172b22]"
+                    : "bg-white dark:bg-[#111815] border-slate-200/80 dark:border-slate-800/70 hover:border-slate-300 dark:hover:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-[#15201b]"
                   : isActivity
                   ? "bg-emerald-50/75 dark:bg-emerald-950/25 border-emerald-200/80 dark:border-emerald-900/50 hover:bg-emerald-100/70 dark:hover:bg-emerald-950/40 hover:border-emerald-300 dark:hover:border-emerald-800/70"
                   : "bg-orange-50/75 dark:bg-orange-950/25 border-orange-200/80 dark:border-orange-900/50 hover:bg-orange-100/70 dark:hover:bg-orange-950/40 hover:border-orange-300 dark:hover:border-orange-800/70";
@@ -299,18 +304,39 @@ function ChatsContent() {
                     {/* Content: Name on top, Snippet below */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2 mb-0.5">
-                        <span className={`font-semibold text-xs sm:text-sm text-slate-800 dark:text-slate-100 truncate transition-colors ${titleHover}`}>
+                        <span className={`font-semibold text-xs sm:text-sm truncate transition-colors ${
+                          hasUnread
+                            ? "font-bold text-slate-900 dark:text-white"
+                            : "text-slate-800 dark:text-slate-100"
+                        } ${titleHover}`}>
                           {displayTitle}
                         </span>
-                        <div className="flex items-center gap-1 shrink-0 text-slate-400 dark:text-slate-500 text-[11px]">
-                          <span className="whitespace-nowrap">{timeDisplay}</span>
+                        <div className="flex items-center gap-1.5 shrink-0 text-[11px]">
+                          <span className={`whitespace-nowrap ${
+                            hasUnread
+                              ? "text-emerald-600 dark:text-emerald-400 font-bold"
+                              : "text-slate-400 dark:text-slate-500"
+                          }`}>
+                            {timeDisplay}
+                          </span>
                           <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 transition-colors" />
                         </div>
                       </div>
 
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                        {!isDirect && senderDisplayName ? `${senderDisplayName}: ` : ""}{snippet}
-                      </p>
+                      <div className="flex items-center justify-between gap-2 min-w-0">
+                        <p className={`text-xs truncate ${
+                          hasUnread
+                            ? "font-semibold text-slate-800 dark:text-slate-200"
+                            : "text-slate-500 dark:text-slate-400"
+                        }`}>
+                          {!isDirect && senderDisplayName ? `${senderDisplayName}: ` : ""}{snippet}
+                        </p>
+                        {hasUnread && (
+                          <span className="px-1.5 py-0.2 rounded-full text-[10px] font-black bg-emerald-600 dark:bg-emerald-500 text-white min-w-[18px] h-4.5 inline-flex items-center justify-center shrink-0 shadow-xs animate-pulse">
+                            {unreadCount > 99 ? "99+" : unreadCount}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </Link>
                 );
