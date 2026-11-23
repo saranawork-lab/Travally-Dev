@@ -206,36 +206,27 @@ export default function ActiveChatPage() {
   const router = useRouter();
   const conversationId = params?.id as string;
 
-  const [conversation, setConversation] = useState<any>(() => {
-    if (memoryConvMap.has(conversationId)) return memoryConvMap.get(conversationId);
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem(`travally_chat_conv_${conversationId}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          memoryConvMap.set(conversationId, parsed);
-          return parsed;
-        }
-      } catch {}
-    }
-    return null;
-  });
-  const [messages, setMessages] = useState<any[]>(() => {
-    if (memoryMsgsMap.has(conversationId)) return memoryMsgsMap.get(conversationId)!;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          memoryMsgsMap.set(conversationId, parsed);
-          return parsed;
-        }
-      } catch {}
-    }
-    return [];
-  });
+  const [conversation, setConversation] = useState<any>(null);
+  const [messages, setMessages] = useState<any[]>([]);
   const { currentUser: authUser } = useAuth();
   const [currentUser, setCurrentUser] = useState<any>(authUser || null);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const cachedConv = sessionStorage.getItem(`travally_chat_conv_${conversationId}`);
+        if (cachedConv) {
+          const parsed = JSON.parse(cachedConv);
+          setConversation(parsed);
+          setLoading(false);
+        }
+        const cachedMsgs = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
+        if (cachedMsgs) {
+          setMessages(JSON.parse(cachedMsgs));
+        }
+      } catch {}
+    }
+  }, [conversationId]);
 
   useEffect(() => {
     if (authUser) {
@@ -249,16 +240,7 @@ export default function ActiveChatPage() {
   }, [authUser]);
 
   const [inputMessage, setInputMessage] = useState("");
-  const [loading, setLoading] = useState(() => {
-    if (memoryMsgsMap.has(conversationId) || memoryConvMap.has(conversationId)) return false;
-    if (typeof window !== "undefined") {
-      try {
-        const cached = sessionStorage.getItem(`travally_chat_msgs_${conversationId}`);
-        if (cached) return false;
-      } catch {}
-    }
-    return true;
-  });
+  const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [accessDenied, setAccessDenied] = useState(false);
   const [isChatExpired, setIsChatExpired] = useState(false);
@@ -2019,7 +2001,7 @@ export default function ActiveChatPage() {
               title={isDirectChat ? `View ${directTitle}'s profile` : "Click to view all group members & details"}
             >
               {isDirectChat ? (
-                <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full shrink-0 shadow-xs ring-1 ring-slate-200/80 dark:ring-emerald-500/20 overflow-hidden bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xs sm:text-sm">
+                <div suppressHydrationWarning className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full shrink-0 shadow-xs ring-1 ring-slate-200/80 dark:ring-emerald-500/20 overflow-hidden bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xs sm:text-sm">
                   {directAvatarUrl ? (
                     <img
                       src={directAvatarUrl}
@@ -2031,7 +2013,7 @@ export default function ActiveChatPage() {
                   )}
                 </div>
               ) : groupImageUrl ? (
-                <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-2xl shrink-0 shadow-xs ring-1 ring-slate-200/80 dark:ring-emerald-500/20 overflow-hidden">
+                <div suppressHydrationWarning className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-2xl shrink-0 shadow-xs ring-1 ring-slate-200/80 dark:ring-emerald-500/20 overflow-hidden">
                   <img
                     src={groupImageUrl}
                     alt={conversation?.title || "Group"}
@@ -2040,6 +2022,7 @@ export default function ActiveChatPage() {
                 </div>
               ) : (
                 <div
+                  suppressHydrationWarning
                   className={`w-8 h-8 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center shrink-0 border shadow-xs ${
                     isActivity
                       ? "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 dark:from-emerald-950/80 dark:to-teal-900/60 text-emerald-700 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-700/60"
@@ -2220,8 +2203,8 @@ export default function ActiveChatPage() {
         ) : messages.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center text-center space-y-3 px-4">
             {isDirectChat ? (
-              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md">
-                <div className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-[#111815] flex items-center justify-center">
+              <div suppressHydrationWarning className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-400 p-0.5 shadow-md">
+                <div suppressHydrationWarning className="w-full h-full rounded-full overflow-hidden bg-white dark:bg-[#111815] flex items-center justify-center">
                   {directAvatarUrl ? (
                     <img src={directAvatarUrl} alt={directTitle} className="w-full h-full object-cover" />
                   ) : (
