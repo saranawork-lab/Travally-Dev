@@ -42,6 +42,13 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
     return () => window.removeEventListener("scroll", handleScroll);
   }, [handleScroll]);
 
+  // Determine active tab - ALWAYS call hooks at the top level
+  const [optimisticTab, setOptimisticTab] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOptimisticTab(null);
+  }, [searchParams, pathname]);
+
   // Hide on auth, landing, onboarding, single chats
   if (!initialUser) return null;
   const isAuthOrLandingPage = pathname === "/" || pathname === "/login" || pathname === "/register";
@@ -55,8 +62,6 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
   if (pathname?.startsWith("/safety")) return null;
   if (pathname?.startsWith("/admin")) return null;
 
-  // Determine active tab
-  const [optimisticTab, setOptimisticTab] = useState<string | null>(null);
   const mode = searchParams.get("mode");
   let resolvedActiveTab: string | null = null;
 
@@ -71,10 +76,6 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
   }
 
   const activeTab = optimisticTab || resolvedActiveTab;
-
-  useEffect(() => {
-    setOptimisticTab(null);
-  }, [searchParams, pathname]);
 
   const navItems = [
     {
