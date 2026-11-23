@@ -14,13 +14,11 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import { VerificationBadge } from "@/components/common/VerificationBadge";
-import { safeJsonParse } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 import { VirtualMembershipCard } from "@/components/profile/VirtualMembershipCard";
 import { UserProfileTabs } from "@/components/profile/UserProfileTabs";
-import { LifestyleBadges } from "@/components/profile/LifestyleBadges";
 import { useLanguage } from "@/context/LanguageContext";
 
 export default function MyProfilePage() {
@@ -126,15 +124,6 @@ export default function MyProfilePage() {
   const membershipNum = profile?.membershipNumber || `TRV-${String(userRank).padStart(4, "0")}`;
   const currentAvatarSrc = avatarUrl || currentUser?.avatarUrl;
 
-  const connPrefs: any = safeJsonParse(profile?.connectionPreferences, {});
-  const lifestyle = {
-    smokingHabit: connPrefs.smokingHabit,
-    drinkingHabit: connPrefs.drinkingHabit,
-    dietaryPreference: connPrefs.dietaryPreference,
-    lifestyleTags: connPrefs.lifestyleTags,
-    showLifestylePublic: connPrefs.showLifestylePublic,
-  };
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 pb-28">
       {fromUrl && (
@@ -153,7 +142,7 @@ export default function MyProfilePage() {
       <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/80 p-6 sm:p-8 shadow-sm flex flex-col gap-6 relative">
         <div className="flex flex-col items-center justify-center gap-4 text-center">
           {/* Avatar with Dropdown */}
-          <div className="relative">
+          <div className="relative inline-block">
             <div
               className="relative cursor-pointer group"
               onClick={() => setIsAvatarMenuOpen(!isAvatarMenuOpen)}
@@ -172,6 +161,15 @@ export default function MyProfilePage() {
                 <Camera className="w-8 h-8 text-white opacity-80" />
               </div>
             </div>
+
+            {/* Settings button at top right of the profile photo */}
+            <Link
+              href="/settings"
+              className="absolute -top-1 -right-1 z-30 w-8 h-8 rounded-full bg-white dark:bg-[#16201b] border border-slate-200/90 dark:border-emerald-800/80 shadow-md flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:scale-110 active:scale-95 transition-all cursor-pointer"
+              title="Settings & Edit Profile"
+            >
+              <Settings className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            </Link>
 
             {isAvatarMenuOpen && (
               <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-48 bg-white dark:bg-[#1a231f] border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl z-50 overflow-hidden text-sm">
@@ -245,8 +243,8 @@ export default function MyProfilePage() {
             )}
           </div>
 
-          {/* Action Bar (Travally Pass & Settings button) */}
-          <div className="flex items-center justify-center gap-2.5 flex-wrap pt-1">
+          {/* Action Bar (Travally Pass) */}
+          <div className="flex items-center justify-center pt-1">
             <button
               type="button"
               onClick={() => setIsCardModalOpen(true)}
@@ -255,21 +253,7 @@ export default function MyProfilePage() {
               <CreditCard className="w-4 h-4" />
               <span>{t.travallyCardBtn}</span>
             </button>
-
-            {/* Edit is ONLY through settings as requested */}
-            <Link
-              href="/settings"
-              className="px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-[#16221c] dark:hover:bg-[#1e2f27] text-slate-700 dark:text-slate-200 font-bold text-xs flex items-center gap-2 transition-colors border border-slate-200/80 dark:border-emerald-950 shadow-xs"
-            >
-              <Settings className="w-4 h-4 text-emerald-500" />
-              <span>Settings &amp; Edit Profile</span>
-            </Link>
           </div>
-        </div>
-
-        {/* ── LIFESTYLE BADGES (Smoker / Drinker / Diet) ── */}
-        <div className="pt-4 border-t border-slate-100 dark:border-emerald-950/60">
-          <LifestyleBadges lifestyle={lifestyle} isOwn={true} />
         </div>
       </div>
 
