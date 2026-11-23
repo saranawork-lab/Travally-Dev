@@ -216,8 +216,7 @@ export default function ActiveChatPage() {
   const liveLocationWatchIdRef = useRef<number | null>(null);
   const lastLiveBroadcastRef = useRef<number>(0);
 
-  // WhatsApp-style message hover actions, reactions bar, context menu, pinned message & select mode
-  const [reactionBarMsgId, setReactionBarMsgId] = useState<string | null>(null);
+  // WhatsApp-style message hover actions, unified context menu with reactions, pinned message & select mode
   const [contextMenuMsg, setContextMenuMsg] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
   const [messageInfoTarget, setMessageInfoTarget] = useState<{ msg: any; parsed: MessagePayload } | null>(null);
   const [pinnedMessage, setPinnedMessage] = useState<{ id: string; text: string; senderName: string } | null>(null);
@@ -225,14 +224,13 @@ export default function ActiveChatPage() {
   const [isSelectMode, setIsSelectMode] = useState<boolean>(false);
   const [selectedMsgIds, setSelectedMsgIds] = useState<Set<string>>(new Set());
 
-  // Click outside to dismiss floating reaction bar and context menu
+  // Click outside to dismiss context menu
   useEffect(() => {
-    if (!reactionBarMsgId && !contextMenuMsg) return;
+    if (!contextMenuMsg) return;
 
     const handleOutsideClick = (e: MouseEvent | TouchEvent) => {
       const target = e.target as HTMLElement;
       if (target && target.closest && target.closest("[data-chat-actions]")) return;
-      setReactionBarMsgId(null);
       setContextMenuMsg(null);
     };
 
@@ -242,7 +240,7 @@ export default function ActiveChatPage() {
       document.removeEventListener("mousedown", handleOutsideClick);
       document.removeEventListener("touchstart", handleOutsideClick);
     };
-  }, [reactionBarMsgId, contextMenuMsg]);
+  }, [contextMenuMsg]);
 
   // Safety & E2EE modals
   const [securityModalOpen, setSecurityModalOpen] = useState(false);
@@ -792,7 +790,7 @@ export default function ActiveChatPage() {
 
     if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
     longPressTimerRef.current = setTimeout(() => {
-      setSelectedMessage({ msg, parsed });
+      setContextMenuMsg({ msg, parsed });
       setSwipingMsgId(null);
       setSwipeOffset(0);
       if (typeof navigator !== "undefined" && navigator.vibrate) {
@@ -858,7 +856,6 @@ export default function ActiveChatPage() {
     e.preventDefault();
     if (parsed.isDeleted) return;
     setContextMenuMsg({ msg, parsed });
-    setReactionBarMsgId(null);
   };
 
   const handleForwardMessage = (text: string) => {
@@ -1696,109 +1693,108 @@ export default function ActiveChatPage() {
                         </div>
                       )}
 
-                      {/* ── WHATSAPP HOVER ACTIONS CAPSULE (SMILE + DROPDOWN ARROW) ── */}
+                      {/* ── UNIFIED HOVER / TAP ACTION CAPSULE (SMILE + CHEVRON) ── */}
                       {!isSelectMode && !parsed.isDeleted && (
                         <div
                           data-chat-actions="true"
-                          className={`absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity z-20 ${
-                            isMe ? "-left-16" : "-right-16"
+                          className={`absolute top-1.5 flex items-center opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
+                            isMe ? "-left-14" : "-right-14"
                           }`}
                         >
-                          {/* ☺ Smile Emoji Reaction Trigger */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReactionBarMsgId(reactionBarMsgId === msg.id ? null : msg.id);
-                              setContextMenuMsg(null);
-                            }}
-                            className="w-7 h-7 rounded-full bg-white dark:bg-[#1c2722] shadow-md border border-slate-200/80 dark:border-emerald-950/80 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                            title="React"
-                          >
-                            <Smile className="w-4 h-4" />
-                          </button>
-
-                          {/* ⌵ Context Menu Trigger */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
-                              setReactionBarMsgId(null);
-                            }}
-                            className="w-7 h-7 rounded-full bg-white dark:bg-[#1c2722] shadow-md border border-slate-200/80 dark:border-emerald-950/80 flex items-center justify-center text-slate-500 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                            title="More options"
-                          >
-                            <ChevronDown className="w-4 h-4" />
-                          </button>
-                        </div>
-                      )}
-
-                      {/* ── WHATSAPP FLOATING REACTION BAR ── */}
-                      {reactionBarMsgId === msg.id && (
-                        <div
-                          data-chat-actions="true"
-                          className="absolute -top-11 z-40 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#1c2722] dark:bg-[#0f1713] text-white shadow-2xl border border-emerald-900/40 backdrop-blur-md animate-scale-up select-none"
-                          style={{
-                            [isMe ? "right" : "left"]: "0px",
-                          }}
-                        >
-                          {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                          <div className="flex items-center h-7 px-1 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all">
+                            {/* ☺ Smile Emoji Reaction Trigger */}
                             <button
-                              key={emoji}
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleToggleReaction(msg.id, emoji);
-                                setReactionBarMsgId(null);
+                                setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
                               }}
-                              className="w-7 h-7 rounded-full hover:scale-130 active:scale-95 transition-transform flex items-center justify-center text-base cursor-pointer"
-                              title={`React ${emoji}`}
+                              className="w-5 h-5 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer"
+                              title="React with emoji"
                             >
-                              <RealisticEmoji emoji={emoji} size={20} />
+                              <Smile className="w-3.5 h-3.5" />
                             </button>
-                          ))}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setReactionBarMsgId(null);
-                              setIsEmojiPickerOpen(true);
-                            }}
-                            className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white flex items-center justify-center transition-all hover:scale-110 ml-0.5 cursor-pointer"
-                            title="More reactions"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                          </button>
+
+                            {/* Subtle vertical separator */}
+                            <div className="w-px h-3 bg-slate-200 dark:bg-emerald-800/40 mx-0.5" />
+
+                            {/* ⌵ Context Menu Trigger */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setContextMenuMsg(contextMenuMsg?.msg?.id === msg.id ? null : { msg, parsed });
+                              }}
+                              className="w-5 h-5 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-100 hover:bg-slate-100 dark:hover:bg-emerald-900/30 transition-colors cursor-pointer"
+                              title="Message options"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
                         </div>
                       )}
 
-                      {/* ── WHATSAPP CONTEXT MENU DROPDOWN ── */}
+                      {/* ── UNIFIED CONTEXT MENU DROPDOWN WITH ATTRACTIVE QUICK REACTIONS HEADER ── */}
                       {contextMenuMsg?.msg?.id === msg.id && (
                         <div
                           data-chat-actions="true"
-                          className="absolute z-50 min-w-[195px] py-1.5 rounded-2xl bg-[#1c2722] text-white shadow-2xl border border-emerald-950/80 backdrop-blur-md animate-scale-up text-xs select-none"
+                          className="absolute z-50 min-w-[215px] p-1.5 rounded-2xl bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/50 shadow-[0_12px_36px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.65)] animate-scale-up text-xs select-none"
                           style={{
-                            top: "100%",
+                            top: idx >= messages.length - 2 && idx > 2 ? "auto" : "100%",
+                            bottom: idx >= messages.length - 2 && idx > 2 ? "100%" : "auto",
                             [isMe ? "right" : "left"]: "0px",
-                            marginTop: "4px",
+                            marginTop: idx >= messages.length - 2 && idx > 2 ? "0px" : "6px",
+                            marginBottom: idx >= messages.length - 2 && idx > 2 ? "6px" : "0px",
                           }}
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {/* 1. Message info */}
+                          {/* 1. Quick Reactions Tray at top of Dropdown */}
+                          <div className="flex items-center justify-between gap-1 px-1.5 py-1 mb-1 rounded-xl bg-slate-100/80 dark:bg-emerald-950/40 border border-slate-200/60 dark:border-emerald-800/30">
+                            {["👍", "❤️", "😂", "😮", "😢", "🙏"].map((emoji) => (
+                              <button
+                                key={emoji}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleToggleReaction(msg.id, emoji);
+                                  setContextMenuMsg(null);
+                                }}
+                                className="w-7 h-7 rounded-lg hover:scale-130 active:scale-95 transition-transform flex items-center justify-center hover:bg-white dark:hover:bg-emerald-900/50 shadow-xs cursor-pointer"
+                                title={`React ${emoji}`}
+                              >
+                                <RealisticEmoji emoji={emoji} size={19} />
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setContextMenuMsg(null);
+                                setIsEmojiPickerOpen(true);
+                              }}
+                              className="w-6 h-6 rounded-lg bg-slate-200/80 dark:bg-white/10 hover:bg-slate-300 dark:hover:bg-white/20 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white flex items-center justify-center transition-all hover:scale-110 cursor-pointer"
+                              title="More reactions"
+                            >
+                              <Plus className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          <div className="h-px bg-slate-200/70 dark:bg-emerald-900/30 my-1 mx-1" />
+
+                          {/* 2. Message info */}
                           <button
                             type="button"
                             onClick={() => {
                               setMessageInfoTarget({ msg, parsed });
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Info className="w-4 h-4 text-slate-400" />
+                            <Info className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
                             <span className="text-[13px] font-medium">Message info</span>
                           </button>
 
-                          {/* 2. Reply */}
+                          {/* 3. Reply */}
                           <button
                             type="button"
                             onClick={() => {
@@ -1810,13 +1806,13 @@ export default function ActiveChatPage() {
                               setContextMenuMsg(null);
                               textareaRef.current?.focus();
                             }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Reply className="w-4 h-4 text-slate-400" />
+                            <Reply className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
                             <span className="text-[13px] font-medium">Reply</span>
                           </button>
 
-                          {/* 3. Copy */}
+                          {/* 4. Copy */}
                           {parsed.text && (
                             <button
                               type="button"
@@ -1824,27 +1820,27 @@ export default function ActiveChatPage() {
                                 handleCopyText(parsed.text, msg.id);
                                 setContextMenuMsg(null);
                               }}
-                              className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                              className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                             >
-                              <Copy className="w-4 h-4 text-slate-400" />
+                              <Copy className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
                               <span className="text-[13px] font-medium">Copy</span>
                             </button>
                           )}
 
-                          {/* 4. Forward */}
+                          {/* 5. Forward */}
                           <button
                             type="button"
                             onClick={() => {
                               handleForwardMessage(parsed.text || parsed.mediaType || "Shared message");
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Forward className="w-4 h-4 text-slate-400" />
+                            <Forward className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
                             <span className="text-[13px] font-medium">Forward</span>
                           </button>
 
-                          {/* 5. Pin */}
+                          {/* 6. Pin */}
                           <button
                             type="button"
                             onClick={() => {
@@ -1855,16 +1851,13 @@ export default function ActiveChatPage() {
                               });
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Pin className="w-4 h-4 text-slate-400" />
+                            <Pin className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
                             <span className="text-[13px] font-medium">Pin</span>
                           </button>
 
-                          {/* Divider */}
-                          <div className="h-px bg-white/10 my-1 mx-2" />
-
-                          {/* 6. Select */}
+                          {/* 7. Select */}
                           <button
                             type="button"
                             onClick={() => {
@@ -1872,26 +1865,25 @@ export default function ActiveChatPage() {
                               setSelectedMsgIds(new Set([msg.id]));
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-white/10 text-slate-200 hover:text-white transition-colors cursor-pointer text-left"
+                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-slate-100/90 dark:hover:bg-emerald-950/50 text-slate-700 dark:text-slate-200 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors cursor-pointer text-left group"
                           >
-                            <CheckSquare className="w-4 h-4 text-slate-400" />
+                            <CheckSquare className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 shrink-0" />
                             <span className="text-[13px] font-medium">Select</span>
                           </button>
 
-                          {/* Divider */}
-                          <div className="h-px bg-white/10 my-1 mx-2" />
+                          <div className="h-px bg-slate-200/70 dark:bg-emerald-900/30 my-1 mx-1" />
 
-                          {/* 7. Delete */}
+                          {/* 8. Delete */}
                           <button
                             type="button"
                             onClick={() => {
                               setDeleteTargetMsg({ msg, parsed });
                               setContextMenuMsg(null);
                             }}
-                            className="w-full px-4 py-2.5 flex items-center gap-3 hover:bg-rose-500/15 text-rose-400 hover:text-rose-300 transition-colors cursor-pointer text-left"
+                            className="w-full px-3 py-2 rounded-xl flex items-center gap-3 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 hover:text-rose-700 dark:hover:text-rose-300 transition-colors cursor-pointer text-left group"
                           >
-                            <Trash2 className="w-4 h-4 text-rose-500" />
-                            <span className="text-[13px] font-medium text-rose-400">Delete</span>
+                            <Trash2 className="w-4 h-4 text-rose-500 shrink-0" />
+                            <span className="text-[13px] font-medium">Delete</span>
                           </button>
                         </div>
                       )}
