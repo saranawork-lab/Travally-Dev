@@ -21,7 +21,16 @@ interface BottomNavProps {
 
 const renderGradientLabel = (label: string) => {
   return (
-    <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-emerald-500 to-teal-500 font-black">
+    <span
+      className="font-black whitespace-nowrap tracking-tight"
+      style={{
+        backgroundImage:
+          "linear-gradient(90deg, #f97316 0%, #f97316 40%, #10b981 50%, #10b981 90%, #059669 100%)",
+        WebkitBackgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        display: "inline-block",
+      }}
+    >
       {label}
     </span>
   );
@@ -92,11 +101,30 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   }, []);
 
   useEffect(() => {
-    // Immediate synchronous positioning on active change
     updatePill();
-    // Fast RAF pass for layout settling
-    rafIdRef.current = requestAnimationFrame(updatePill);
-    return () => cancelAnimationFrame(rafIdRef.current);
+
+    const raf1 = requestAnimationFrame(updatePill);
+    const t1 = setTimeout(updatePill, 40);
+    const t2 = setTimeout(updatePill, 120);
+    const t3 = setTimeout(updatePill, 200);
+
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && navRef.current) {
+      ro = new ResizeObserver(() => {
+        updatePill();
+      });
+      ro.observe(navRef.current);
+      const activeEl = navRef.current.querySelector('[data-active="true"]');
+      if (activeEl) ro.observe(activeEl);
+    }
+
+    return () => {
+      cancelAnimationFrame(raf1);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+      if (ro) ro.disconnect();
+    };
   }, [activeId, updatePill]);
 
   // 1. NEVER render bottom dock when not logged in
@@ -261,24 +289,15 @@ const BottomNav: React.FC<BottomNavProps> = () => {
               </>
             );
 
-            const baseClasses = `relative z-10 flex items-center justify-center h-full rounded-full select-none transition-all duration-150 active:scale-95 ${isActive ? "px-3 sm:px-4 shrink-0" : "flex-1"}`;
+            const baseClasses = `relative z-10 flex items-center justify-center h-full rounded-full select-none transition-all duration-200 active:scale-95 ${isActive ? "px-3 sm:px-3.5 shrink-0" : "flex-1"}`;
 
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 data-active={isActive}
-                onClick={(e) => {
+                onClick={() => {
                   setOptimisticActiveId(item.id);
-                  // Immediate measurement on the tapped link for zero latency animation
-                  const target = e.currentTarget;
-                  if (target) {
-                    setPillStyle({
-                      left: target.offsetLeft,
-                      width: target.offsetWidth,
-                      opacity: 1,
-                    });
-                  }
                 }}
                 prefetch={true}
                 scroll={false}
