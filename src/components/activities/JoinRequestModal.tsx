@@ -122,13 +122,13 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
           </div>
         )}
 
-        {/* Dual Unique Interactive Selection Cards */}
-        <div className="space-y-2.5 mb-4">
+        {/* Dual Selection Cards Side by Side */}
+        <div className="grid grid-cols-2 gap-2.5 mb-4">
           {/* Option A: Quick Request */}
           <button
             type="button"
             onClick={() => setRequestMode("QUICK")}
-            className={`w-full p-3.5 rounded-2xl border text-left transition-all relative flex items-start gap-3 ${
+            className={`p-3 rounded-2xl border text-left transition-all relative flex flex-col justify-between gap-2.5 ${
               requestMode === "QUICK"
                 ? isGreen
                   ? "bg-emerald-500/10 border-emerald-500/60 dark:border-emerald-500/50 shadow-xs ring-1 ring-emerald-500/30"
@@ -136,29 +136,29 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
                 : "bg-slate-50/70 dark:bg-[#151f1a]/70 border-slate-200 dark:border-emerald-950/60 hover:border-slate-300 dark:hover:border-emerald-900"
             }`}
           >
-            <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                requestMode === "QUICK"
-                  ? isGreen
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "bg-orange-600 text-white shadow-xs"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-500"
-              }`}
-            >
-              <Zap className="w-4 h-4" />
+            <div className="flex items-center justify-between w-full">
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  requestMode === "QUICK"
+                    ? isGreen
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-orange-600 text-white shadow-xs"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-500"
+                }`}
+              >
+                <Zap className="w-4 h-4" />
+              </div>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+                Instant
+              </span>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">
-                  Quick Join
-                </span>
-                <span className="text-[9.5px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-emerald-100 dark:bg-emerald-950/70 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
-                  Instant
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                Send a direct request with your verified profile and traveler badges.
+            <div className="w-full">
+              <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                Quick Join
+              </span>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                Instant 1-tap request
               </p>
             </div>
           </button>
@@ -167,7 +167,7 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
           <button
             type="button"
             onClick={() => setRequestMode("NOTE")}
-            className={`w-full p-3.5 rounded-2xl border text-left transition-all relative flex items-start gap-3 ${
+            className={`p-3 rounded-2xl border text-left transition-all relative flex flex-col justify-between gap-2.5 ${
               requestMode === "NOTE"
                 ? isGreen
                   ? "bg-emerald-500/10 border-emerald-500/60 dark:border-emerald-500/50 shadow-xs ring-1 ring-emerald-500/30"
@@ -175,29 +175,29 @@ export const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
                 : "bg-slate-50/70 dark:bg-[#151f1a]/70 border-slate-200 dark:border-emerald-950/60 hover:border-slate-300 dark:hover:border-emerald-900"
             }`}
           >
-            <div
-              className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${
-                requestMode === "NOTE"
-                  ? isGreen
-                    ? "bg-emerald-600 text-white shadow-xs"
-                    : "bg-orange-600 text-white shadow-xs"
-                  : "bg-slate-200 dark:bg-slate-800 text-slate-500"
-              }`}
-            >
-              <MessageSquare className="w-4 h-4" />
+            <div className="flex items-center justify-between w-full">
+              <div
+                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                  requestMode === "NOTE"
+                    ? isGreen
+                      ? "bg-emerald-600 text-white shadow-xs"
+                      : "bg-orange-600 text-white shadow-xs"
+                    : "bg-slate-200 dark:bg-slate-800 text-slate-500"
+                }`}
+              >
+                <MessageSquare className="w-4 h-4" />
+              </div>
+              <span className="text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
+                Custom
+              </span>
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center justify-between gap-1">
-                <span className="text-xs font-bold text-slate-900 dark:text-white">
-                  Add Intro Note
-                </span>
-                <span className="text-[9.5px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
-                  Custom
-                </span>
-              </div>
-              <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 leading-snug">
-                Include a friendly message to introduce yourself before connecting.
+            <div className="w-full">
+              <span className="text-xs font-bold text-slate-900 dark:text-white block">
+                Add Intro Note
+              </span>
+              <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-0.5 leading-tight">
+                Say hi with a personal note
               </p>
             </div>
           </button>
