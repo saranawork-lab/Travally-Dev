@@ -50,6 +50,7 @@ import { ProfileModal } from "@/components/profile/ProfileModal";
 import { RealisticEmoji } from "@/components/chat/RealisticEmoji";
 import { EmojiPickerPopover } from "@/components/chat/EmojiPickerPopover";
 import { VoiceCallModal, CallParticipant } from "@/components/chat/VoiceCallModal";
+import { VoiceNotePlayer } from "@/components/chat/VoiceNotePlayer";
 import { AttachmentPopover } from "@/components/chat/AttachmentPopover";
 import { ShareLocationModal } from "@/components/chat/ShareLocationModal";
 import { LiveLocationModal } from "@/components/chat/LiveLocationModal";
@@ -102,7 +103,7 @@ interface MessagePayload {
     text: string;
   };
   reactions?: Record<string, string[]>;
-  mediaType?: "PHOTO" | "LOCATION" | "TRIP" | "LIVE_LOCATION";
+  mediaType?: "PHOTO" | "LOCATION" | "TRIP" | "LIVE_LOCATION" | "AUDIO";
   mediaData?: any;
 }
 
@@ -475,21 +476,59 @@ export default function ActiveChatPage() {
   const [isTranscribing, setIsTranscribing] = useState(false);
   const recognitionRef = useRef<any>(null);
 
-  // Toggle Live Speech-to-Text Voice Transcription
-  const toggleVoiceTranscription = () => {
+  // WhatsApp-style Voice Message Recording States
+  const [isRecordingVoice, setIsRecordingVoice] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [liveWaveform, setLiveWaveform] = useState<number[]>(() =>
+    Array(20).fill(12)
+  );
+  const [recordingTooltip, setRecordingTooltip] = useState<string | null>(null);
+
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioStreamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+  const recordIntervalRef = useRef<any>(null);
+  const recordStartTimeRef = useRef<number>(0);
+  const isCancelledRef = useRef<boolean>(false);
+  const sampledWaveformRef = useRef<number[]>([]);
+  const audioChunksRef = useRef<Blob[]>([]);
+
+  // Double-tap vs Long-press detection refs
+  const tapCountRef = useRef<number>(0);
+  const lastTapTimeRef = useRef<number>(0);
+  const micLongPressTimerRef = useRef<any>(null);
+  const tooltipTimeoutRef = useRef<any>(null);
+
+  const showInstructionToast = (msg: string) => {
+    if (tooltipTimeoutRef.current) clearTimeout(tooltipTimeoutRef.current);
+    setRecordingTooltip(msg);
+    tooltipTimeoutRef.current = setTimeout(() => {
+      setRecordingTooltip(null);
+    }, 3000);
+  };
+
+  // 1. Double-Tap Voice Typing (Speech-to-Text directly into chat input box)
+  const startSpeechRecognition = () => {
     if (typeof window === "undefined") return;
 
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      alert("Live speech transcription is supported in modern browsers like Chrome, Edge, and Safari.");
+      showInstructionToast(
+        "Live speech typing is not supported in this browser. Try Chrome/Safari/Edge."
+      );
       return;
     }
 
     if (isTranscribing) {
       if (recognitionRef.current) {
-        recognitionRef.current.stop();
+        try {
+          recognitionRef.current.stop();
+        } catch {}
       }
       setIsTranscribing(false);
       return;
@@ -499,28 +538,45 @@ export default function ActiveChatPage() {
       const recognition = new SpeechRecognition();
       recognition.continuous = true;
       recognition.interimResults = true;
-      recognition.lang = "en-US";
+      recognition.lang =
+        typeof navigator !== "undefined" && navigator.language
+          ? navigator.language
+          : "en-US";
+
+      const initialBase = inputMessage;
 
       recognition.onstart = () => {
         setIsTranscribing(true);
+        showInstructionToast("🎙️ Listening... speak now. Then edit or send.");
       };
 
       recognition.onresult = (event: any) => {
-        let transcript = "";
-        for (let i = event.resultIndex; i < event.results.length; i++) {
-          transcript += event.results[i][0].transcript;
+        let finalStr = "";
+        let interimStr = "";
+
+        for (let i = 0; i < event.results.length; i++) {
+          const chunk = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalStr += (finalStr ? " " : "") + chunk.trim();
+          } else {
+            interimStr += chunk;
+          }
         }
-        if (transcript.trim()) {
-          setInputMessage((prev) => {
-            const cleanPrev = prev.trim();
-            return cleanPrev ? `${cleanPrev} ${transcript.trim()}` : transcript.trim();
-          });
-        }
+
+        const speechOutput = (finalStr + (interimStr ? " " + interimStr : "")).trim();
+        const fullMessage = initialBase.trim()
+          ? `${initialBase.trim()} ${speechOutput}`
+          : speechOutput;
+
+        setInputMessage(fullMessage);
       };
 
       recognition.onerror = (event: any) => {
         console.error("Speech recognition error:", event.error);
         setIsTranscribing(false);
+        if (event.error === "not-allowed") {
+          showInstructionToast("Microphone access denied in browser settings");
+        }
       };
 
       recognition.onend = () => {
@@ -530,9 +586,295 @@ export default function ActiveChatPage() {
       recognitionRef.current = recognition;
       recognition.start();
     } catch (err) {
-      console.error(err);
+      console.error("Failed to start speech recognition:", err);
       setIsTranscribing(false);
     }
+  };
+
+  // 2. WhatsApp-style Long-Press Voice Recording & Direct Send
+  const startVoiceRecording = async () => {
+    if (isTranscribing) {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.stop();
+        } catch {}
+      }
+      setIsTranscribing(false);
+    }
+
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showInstructionToast("Microphone recording not supported");
+        return;
+      }
+
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+      audioStreamRef.current = stream;
+
+      const mimeTypes = [
+        "audio/webm;codecs=opus",
+        "audio/webm",
+        "audio/ogg;codecs=opus",
+        "audio/mp4",
+        "audio/aac",
+      ];
+      let selectedMimeType = "";
+      for (const mt of mimeTypes) {
+        if (
+          typeof MediaRecorder !== "undefined" &&
+          MediaRecorder.isTypeSupported(mt)
+        ) {
+          selectedMimeType = mt;
+          break;
+        }
+      }
+
+      const options = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
+      const mediaRecorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = mediaRecorder;
+      audioChunksRef.current = [];
+      sampledWaveformRef.current = [];
+      isCancelledRef.current = false;
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          audioChunksRef.current.push(e.data);
+        }
+      };
+
+      // Real-time Soundwave Graph Visualizer via Web Audio API
+      try {
+        const AudioCtx =
+          window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioCtx) {
+          const audioCtx = new AudioCtx();
+          audioContextRef.current = audioCtx;
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 64;
+          source.connect(analyser);
+          analyserRef.current = analyser;
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          const updateWaveform = () => {
+            if (!analyserRef.current) return;
+            analyserRef.current.getByteFrequencyData(dataArray);
+
+            const barsCount = 20;
+            const step = Math.max(1, Math.floor(dataArray.length / barsCount));
+            const newWave: number[] = [];
+
+            for (let i = 0; i < barsCount; i++) {
+              const val = dataArray[i * step] || 0;
+              const normalized = Math.max(
+                12,
+                Math.min(100, Math.round((val / 255) * 100))
+              );
+              newWave.push(normalized);
+            }
+
+            setLiveWaveform(newWave);
+
+            if (Math.random() < 0.25 && sampledWaveformRef.current.length < 24) {
+              const avg = Math.round(
+                newWave.reduce((a, b) => a + b, 0) / newWave.length
+              );
+              sampledWaveformRef.current.push(avg);
+            }
+
+            animFrameRef.current = requestAnimationFrame(updateWaveform);
+          };
+
+          animFrameRef.current = requestAnimationFrame(updateWaveform);
+        }
+      } catch (audioCtxErr) {
+        console.warn("Audio visualizer unavailable:", audioCtxErr);
+      }
+
+      mediaRecorder.start(100);
+      recordStartTimeRef.current = Date.now();
+      setIsRecordingVoice(true);
+      setRecordingDuration(0);
+
+      recordIntervalRef.current = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } catch (err: any) {
+      console.error("Failed to start voice recording:", err);
+      if (err.name === "NotAllowedError") {
+        showInstructionToast("Microphone access denied in browser settings");
+      } else {
+        showInstructionToast("Could not access microphone");
+      }
+    }
+  };
+
+  const stopVoiceRecording = (cancelled = false) => {
+    isCancelledRef.current = cancelled;
+
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (recordIntervalRef.current) {
+      clearInterval(recordIntervalRef.current);
+      recordIntervalRef.current = null;
+    }
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close();
+      } catch {}
+      audioContextRef.current = null;
+    }
+
+    const mediaRecorder = mediaRecorderRef.current;
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
+      setIsRecordingVoice(false);
+      return;
+    }
+
+    const elapsedMs = Date.now() - recordStartTimeRef.current;
+
+    // Buffer of 220ms ensures the final syllable is NOT cut off when released
+    setTimeout(() => {
+      try {
+        if (mediaRecorder.state !== "inactive") {
+          mediaRecorder.requestData();
+        }
+      } catch {}
+
+      mediaRecorder.onstop = () => {
+        if (audioStreamRef.current) {
+          audioStreamRef.current.getTracks().forEach((track) => track.stop());
+          audioStreamRef.current = null;
+        }
+
+        setIsRecordingVoice(false);
+
+        if (isCancelledRef.current) {
+          audioChunksRef.current = [];
+          return;
+        }
+
+        // Accidental brief tap protection (< 500ms)
+        if (elapsedMs < 500) {
+          showInstructionToast("Hold to record voice message, release to send");
+          audioChunksRef.current = [];
+          return;
+        }
+
+        const mimeType = mediaRecorder.mimeType || "audio/webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+
+        if (audioBlob.size < 500) {
+          audioChunksRef.current = [];
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onloadend = async () => {
+          const base64Audio = reader.result as string;
+          const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
+          const waveform =
+            sampledWaveformRef.current.length >= 8
+              ? sampledWaveformRef.current
+              : undefined;
+
+          await handleSendMessage({
+            text: "🎤 Voice message",
+            mediaType: "AUDIO",
+            mediaData: {
+              audioUrl: base64Audio,
+              duration: durationSeconds,
+              waveform,
+            },
+          });
+        };
+        reader.readAsDataURL(audioBlob);
+      };
+
+      try {
+        mediaRecorder.stop();
+      } catch (err) {
+        console.error("Error stopping mediaRecorder:", err);
+        setIsRecordingVoice(false);
+      }
+    }, 220);
+  };
+
+  const handleMicPointerDown = (e: React.PointerEvent) => {
+    // If speech-to-text is already running, tap stops it
+    if (isTranscribing) {
+      startSpeechRecognition();
+      return;
+    }
+
+    const now = Date.now();
+    const timeSinceLastTap = now - lastTapTimeRef.current;
+
+    // Double-tap check (< 350ms)
+    if (timeSinceLastTap < 350 && tapCountRef.current === 1) {
+      if (micLongPressTimerRef.current) {
+        clearTimeout(micLongPressTimerRef.current);
+        micLongPressTimerRef.current = null;
+      }
+      tapCountRef.current = 0;
+      lastTapTimeRef.current = 0;
+      startSpeechRecognition();
+      return;
+    }
+
+    // First tap or start of long press
+    tapCountRef.current = 1;
+    lastTapTimeRef.current = now;
+
+    micLongPressTimerRef.current = setTimeout(() => {
+      tapCountRef.current = 0;
+      startVoiceRecording();
+    }, 180);
+  };
+
+  const handleMicPointerUp = () => {
+    if (micLongPressTimerRef.current) {
+      clearTimeout(micLongPressTimerRef.current);
+      micLongPressTimerRef.current = null;
+    }
+
+    if (isRecordingVoice) {
+      // Released long-press: automatically send the voice message!
+      stopVoiceRecording(false);
+    } else {
+      // Single tap: give helpful guide note after delay
+      setTimeout(() => {
+        if (tapCountRef.current === 1 && !isTranscribing && !isRecordingVoice) {
+          showInstructionToast(
+            "Hold to record voice message • Double-tap to voice type"
+          );
+        }
+      }, 360);
+    }
+  };
+
+  const handleMicPointerCancel = () => {
+    if (micLongPressTimerRef.current) {
+      clearTimeout(micLongPressTimerRef.current);
+      micLongPressTimerRef.current = null;
+    }
+    if (isRecordingVoice) {
+      stopVoiceRecording(true);
+    }
+  };
+
+  const formatRecordingTimer = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? "0" : ""}${s}`;
   };
 
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -814,6 +1156,13 @@ export default function ActiveChatPage() {
 
   // Send message with instant split-second optimistic rendering
   const handleSendMessage = async (customPayload?: MessagePayload) => {
+    if (isTranscribing && recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+      setIsTranscribing(false);
+    }
+
     const textToSend = customPayload ? customPayload.text : inputMessage.trim();
     if (!textToSend && !customPayload?.mediaType) return;
     if (sending) return;
@@ -2264,6 +2613,40 @@ export default function ActiveChatPage() {
                             </div>
                           );
                         })()
+                      ) : parsed.mediaType === "AUDIO" && parsed.mediaData?.audioUrl ? (
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <VoiceNotePlayer
+                            audioUrl={parsed.mediaData.audioUrl}
+                            duration={parsed.mediaData.duration}
+                            waveform={parsed.mediaData.waveform}
+                            isMe={isMe}
+                            isTravel={isTravel}
+                          />
+                          <div
+                            className={`inline-flex items-center gap-0.5 ml-auto pl-1.5 self-end shrink-0 select-none pb-0.5 ${
+                              isMe
+                                ? isTravel
+                                  ? "text-orange-950/60 dark:text-orange-300/60"
+                                  : "text-emerald-950/60 dark:text-emerald-300/60"
+                                : "text-slate-400 dark:text-slate-500"
+                            }`}
+                          >
+                            <span
+                              className="text-[8.5px] font-medium tracking-tight whitespace-nowrap"
+                              title={formatTimeAgo(msg.createdAt)}
+                            >
+                              {formatMessageTime(msg.createdAt)}
+                            </span>
+                            {isMe && (
+                              <MessageStatusBeacon
+                                status={deliveryStatus}
+                                size={12}
+                                recipientName={otherParticipantName}
+                                timestamp={formatMessageTime(msg.createdAt)}
+                              />
+                            )}
+                          </div>
+                        </div>
                       ) : (
                         <div className="flex items-end justify-between gap-x-2 min-w-0">
                           <span className="whitespace-pre-wrap text-[13px] sm:text-[13.5px] leading-snug font-normal break-words select-text">
@@ -2533,7 +2916,7 @@ export default function ActiveChatPage() {
                       )}
 
                       {/* ── IN-BUBBLE TIMESTAMP & STATUS INDICATOR (For media messages & deleted placeholders) ── */}
-                      {!isEmojiOnly && (parsed.mediaType || parsed.isDeleted) && (
+                      {!isEmojiOnly && (parsed.mediaType || parsed.isDeleted) && parsed.mediaType !== "AUDIO" && (
                         <div
                           className={`flex items-center justify-end gap-1 mt-1 select-none ${
                             isMe
@@ -2700,82 +3083,142 @@ export default function ActiveChatPage() {
             onSelectAttachment={handleSelectAttachment}
           />
 
-          {/* Attachment Toggle (+) */}
-          <button
-            type="button"
-            data-attachment-toggle="true"
-            onClick={() => {
-              setIsAttachmentOpen(!isAttachmentOpen);
-              setIsEmojiPickerOpen(false);
-            }}
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-transform active:scale-95 ${
-              isAttachmentOpen
-                ? isTravel
-                  ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 text-orange-700 dark:from-orange-950/80 dark:to-amber-900/60 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60 shadow-xs"
-                  : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs"
-                : "bg-white dark:bg-[#18241f] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#203029] border border-slate-200/90 dark:border-emerald-950/80 shadow-xs"
-            }`}
-            title="Attach photo, location, or voice"
-          >
-            <Plus className={`w-5 h-5 transition-transform ${isAttachmentOpen ? "rotate-45" : ""}`} />
-          </button>
+          {isRecordingVoice ? (
+            /* WhatsApp-style Live Audio Recording Bar with Soundwave Visualizer Graph */
+            <div className="flex-1 bg-gradient-to-r from-rose-50 via-white to-rose-50 dark:from-[#25151a] dark:via-[#1c181a] dark:to-[#25151a] rounded-2xl border border-rose-300 dark:border-rose-900/70 shadow-sm flex items-center justify-between px-3 py-1.5 min-h-[46px] animate-in fade-in duration-150">
+              {/* Cancel Button */}
+              <button
+                type="button"
+                onClick={() => stopVoiceRecording(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-100/70 dark:text-rose-400 dark:hover:bg-rose-950/60 transition cursor-pointer shrink-0"
+                title="Cancel voice recording"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span className="hidden sm:inline">Cancel</span>
+              </button>
 
-          {/* Auto-expanding Input Box */}
-          <div
-            className={`flex-1 bg-white dark:bg-[#16201b] rounded-2xl border border-slate-200/90 dark:border-emerald-950/80 shadow-sm focus-within:ring-2 ${
-              isTravel
-                ? "focus-within:ring-orange-500/30 focus-within:border-orange-500"
-                : "focus-within:ring-emerald-500/30 focus-within:border-emerald-500"
-            } transition-all flex items-end px-3 py-1.5 min-h-[46px]`}
-          >
-            <textarea
-              ref={textareaRef}
-              value={inputMessage}
-              onChange={handleInputChange}
-              onBlur={() => sendTypingStatus(false)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-              placeholder={t.tapToMessage}
-              className="flex-1 max-h-32 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none leading-relaxed py-1.5"
-              rows={1}
-            />
+              {/* Pulsing Red Dot & Timer */}
+              <div className="flex items-center gap-1.5 select-none shrink-0 px-1">
+                <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+                <span className="text-xs font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                  {formatRecordingTimer(recordingDuration)}
+                </span>
+              </div>
 
-            {/* Emoji / Keyboard Toggle inside bar */}
-            <button
-              type="button"
-              data-emoji-toggle="true"
-              onClick={() => {
-                if (isEmojiPickerOpen) {
+              {/* Real-Time Live Waveform Graph Animation */}
+              <div className="flex items-center gap-[2.5px] h-7 px-2 overflow-hidden flex-1 justify-center max-w-[160px] sm:max-w-[220px]">
+                {liveWaveform.map((val, idx) => {
+                  const heightPx = Math.max(
+                    4,
+                    Math.min(26, Math.round((val / 100) * 26))
+                  );
+                  return (
+                    <div
+                      key={idx}
+                      style={{ height: `${heightPx}px` }}
+                      className="w-1 bg-rose-500 dark:bg-rose-400 rounded-full transition-all duration-75"
+                    />
+                  );
+                })}
+              </div>
+
+              {/* Release to Send Note */}
+              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 select-none hidden md:block shrink-0">
+                Release to send
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Attachment Toggle (+) */}
+              <button
+                type="button"
+                data-attachment-toggle="true"
+                onClick={() => {
+                  setIsAttachmentOpen(!isAttachmentOpen);
                   setIsEmojiPickerOpen(false);
-                  textareaRef.current?.focus();
-                } else {
-                  setIsEmojiPickerOpen(true);
-                  setIsAttachmentOpen(false);
-                }
-              }}
-              className={`p-1.5 rounded-xl transition-all shrink-0 active:scale-90 ${
-                isEmojiPickerOpen
-                  ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60"
-                  : isTravel
-                  ? "text-slate-400 hover:text-orange-500"
-                  : "text-slate-400 hover:text-emerald-500"
-              }`}
-              title={isEmojiPickerOpen ? "Switch to keyboard" : "Emoji picker"}
-            >
-              {isEmojiPickerOpen ? (
-                <Keyboard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-              ) : (
-                <Smile className="w-5 h-5" />
-              )}
-            </button>
-          </div>
+                }}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-transform active:scale-95 ${
+                  isAttachmentOpen
+                    ? isTravel
+                      ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 text-orange-700 dark:from-orange-950/80 dark:to-amber-900/60 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60 shadow-xs"
+                      : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs"
+                    : "bg-white dark:bg-[#18241f] text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-[#203029] border border-slate-200/90 dark:border-emerald-950/80 shadow-xs"
+                }`}
+                title="Attach photo, location, or voice"
+              >
+                <Plus
+                  className={`w-5 h-5 transition-transform ${
+                    isAttachmentOpen ? "rotate-45" : ""
+                  }`}
+                />
+              </button>
 
-          {/* Dynamic Action Button: Send message when text exists, or Live Speech-to-Text Voice Transcription */}
-          {inputMessage.trim() ? (
+              {/* Auto-expanding Input Box */}
+              <div
+                className={`flex-1 bg-white dark:bg-[#16201b] rounded-2xl border ${
+                  isTranscribing
+                    ? "border-emerald-500 ring-2 ring-emerald-500/30"
+                    : "border-slate-200/90 dark:border-emerald-950/80"
+                } shadow-sm focus-within:ring-2 ${
+                  isTravel
+                    ? "focus-within:ring-orange-500/30 focus-within:border-orange-500"
+                    : "focus-within:ring-emerald-500/30 focus-within:border-emerald-500"
+                } transition-all flex items-end px-3 py-1.5 min-h-[46px]`}
+              >
+                <textarea
+                  ref={textareaRef}
+                  value={inputMessage}
+                  onChange={handleInputChange}
+                  onBlur={() => sendTypingStatus(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder={
+                    isTranscribing
+                      ? "🎙️ Listening... speak now. Edit or send anytime."
+                      : t.tapToMessage
+                  }
+                  className="flex-1 max-h-32 bg-transparent text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none resize-none leading-relaxed py-1.5"
+                  rows={1}
+                />
+
+                {/* Emoji / Keyboard Toggle inside bar */}
+                <button
+                  type="button"
+                  data-emoji-toggle="true"
+                  onClick={() => {
+                    if (isEmojiPickerOpen) {
+                      setIsEmojiPickerOpen(false);
+                      textareaRef.current?.focus();
+                    } else {
+                      setIsEmojiPickerOpen(true);
+                      setIsAttachmentOpen(false);
+                    }
+                  }}
+                  className={`p-1.5 rounded-xl transition-all shrink-0 active:scale-90 ${
+                    isEmojiPickerOpen
+                      ? "text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60"
+                      : isTravel
+                      ? "text-slate-400 hover:text-orange-500"
+                      : "text-slate-400 hover:text-emerald-500"
+                  }`}
+                  title={isEmojiPickerOpen ? "Switch to keyboard" : "Emoji picker"}
+                >
+                  {isEmojiPickerOpen ? (
+                    <Keyboard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                  ) : (
+                    <Smile className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Dynamic Action Button: Send message when text exists, or WhatsApp-style Hold-to-Record / Double-Tap Voice Button */}
+          {inputMessage.trim() && !isRecordingVoice ? (
             <button
               type="button"
               onClick={() => handleSendMessage()}
@@ -2784,24 +3227,45 @@ export default function ActiveChatPage() {
                 isTravel
                   ? "bg-gradient-to-br from-orange-100 via-amber-50 to-orange-100 hover:from-orange-200 hover:to-amber-100 text-orange-700 dark:from-orange-950/80 dark:to-amber-900/60 dark:text-orange-300 border border-orange-300/80 dark:border-orange-700/60"
                   : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60"
-              } shadow-xs flex items-center justify-center shrink-0 transition-transform active:scale-95 disabled:opacity-50`}
+              } shadow-xs flex items-center justify-center shrink-0 transition-transform active:scale-95 disabled:opacity-50 cursor-pointer`}
               title="Send message"
             >
               <Send className="w-5 h-5 ml-0.5" />
             </button>
           ) : (
-            <button
-              type="button"
-              onClick={toggleVoiceTranscription}
-              className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all active:scale-95 shadow-xs ${
-                isTranscribing
-                  ? "bg-rose-100 dark:bg-rose-950/80 text-rose-700 dark:text-rose-300 border border-rose-300 dark:border-rose-700 ring-2 ring-rose-400/50 animate-pulse"
-                  : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60"
-              }`}
-              title={isTranscribing ? "Transcribing voice... tap to stop" : "Voice transcription (Speech-to-Text)"}
-            >
-              <Mic className={`w-5 h-5 ${isTranscribing ? "animate-bounce" : ""}`} />
-            </button>
+            <div className="relative shrink-0">
+              {/* Floating Instruction Tooltip */}
+              {recordingTooltip && (
+                <div className="absolute right-0 bottom-full mb-2.5 z-30 pointer-events-none animate-in fade-in slide-in-from-bottom-1 duration-150">
+                  <div className="bg-slate-900/95 text-white text-[11px] font-medium py-1.5 px-3 rounded-xl shadow-lg border border-slate-700/60 whitespace-nowrap flex items-center gap-1.5 backdrop-blur-xs">
+                    <Mic className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                    <span>{recordingTooltip}</span>
+                  </div>
+                </div>
+              )}
+
+              <button
+                type="button"
+                onPointerDown={handleMicPointerDown}
+                onPointerUp={handleMicPointerUp}
+                onPointerLeave={handleMicPointerCancel}
+                onContextMenu={(e) => e.preventDefault()}
+                className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all select-none cursor-pointer ${
+                  isRecordingVoice
+                    ? "bg-rose-500 text-white ring-4 ring-rose-400/50 scale-105 shadow-md animate-pulse"
+                    : isTranscribing
+                    ? "bg-emerald-600 text-white ring-4 ring-emerald-400/50 shadow-md animate-pulse"
+                    : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs active:scale-95"
+                }`}
+                title="Hold to record voice message • Double-tap to voice type"
+              >
+                <Mic
+                  className={`w-5 h-5 ${
+                    isRecordingVoice || isTranscribing ? "animate-bounce" : ""
+                  }`}
+                />
+              </button>
+            </div>
           )}
         </div>
 

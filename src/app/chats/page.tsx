@@ -23,6 +23,7 @@ const parseLastMessageSnippet = (content?: string): string => {
   try {
     const parsed = JSON.parse(content);
     if (parsed.mediaType === "PHOTO") return parsed.text ? `📷 ${parsed.text}` : "📷 Photo";
+    if (parsed.mediaType === "AUDIO") return "🎤 Voice message";
     if (parsed.mediaType === "LOCATION") return "📍 Meetup point";
     if (parsed.mediaType === "TRIP") return "🎒 Trip itinerary";
     if (parsed.text) return parsed.text;
