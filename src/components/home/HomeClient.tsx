@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
@@ -38,6 +38,7 @@ import {
   MessageCircle,
   Reply,
   CornerDownRight,
+  RotateCw,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useLanguage } from "@/context/LanguageContext";
@@ -354,6 +355,120 @@ export default function HomeClient() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // ── Pull-to-Refresh & Navigation Refresh States ──
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartYRef = useRef(0);
+  const isPullingRef = useRef(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      const [instantsRes, growRes, treasureRes, findMeRes] = await Promise.allSettled([
+        fetch("/api/home/instants").then((r) => (r.ok ? r.json() : null)),
+        fetch("/api/home/grow").then((r) => (r.ok ? r.json() : null)),
+        fetch("/api/home/treasure").then((r) => (r.ok ? r.json() : null)),
+        fetch("/api/home/find-me").then((r) => (r.ok ? r.json() : null)),
+      ]);
+
+      if (instantsRes.status === "fulfilled" && instantsRes.value?.posts) {
+        setInstants(instantsRes.value.posts);
+        cachedInstantsList = instantsRes.value.posts;
+        try {
+          sessionStorage.setItem("travally_instants_cache", JSON.stringify(instantsRes.value.posts));
+        } catch {}
+      }
+      if (growRes.status === "fulfilled" && growRes.value?.initiatives) {
+        setGrowList(growRes.value.initiatives);
+      }
+      if (treasureRes.status === "fulfilled" && treasureRes.value?.treasures) {
+        setTreasures(treasureRes.value.treasures);
+        if (treasureRes.value.treasures.length > 0) {
+          setSelectedTreasure((prev) => prev || treasureRes.value.treasures[0]);
+        }
+      }
+      if (findMeRes.status === "fulfilled" && findMeRes.value?.clues) {
+        setFindMeClues(findMeRes.value.clues);
+      }
+
+      // Notify story deck and any child sections
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("travally:refresh-deck"));
+      }
+    } catch (e) {
+      console.error("Home refresh error:", e);
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 400);
+    }
+  }, []);
+
+  // Listen for Home nav click to trigger refresh & scroll to top
+  useEffect(() => {
+    const handleNavClick = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest('a[href="/"], [data-nav="home"]');
+      if (link) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(25);
+        }
+        handleRefresh();
+      }
+    };
+
+    document.addEventListener("click", handleNavClick);
+    return () => document.removeEventListener("click", handleNavClick);
+  }, [handleRefresh]);
+
+  // Pull down to refresh gesture on mobile / touch devices
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.scrollY <= 5) {
+        touchStartYRef.current = e.touches[0].clientY;
+        isPullingRef.current = true;
+      } else {
+        isPullingRef.current = false;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPullingRef.current || isRefreshing) return;
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - touchStartYRef.current;
+      if (diff > 0 && window.scrollY <= 5) {
+        const distance = Math.min(diff * 0.45, 85);
+        setPullDistance(distance);
+      } else {
+        setPullDistance(0);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (!isPullingRef.current) return;
+      isPullingRef.current = false;
+      if (pullDistance >= 50 && !isRefreshing) {
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(30);
+        }
+        handleRefresh();
+      } else {
+        setPullDistance(0);
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [pullDistance, isRefreshing, handleRefresh]);
 
   // Require auth or show prompt
   const requireAuth = (action: () => void) => {
@@ -953,6 +1068,34 @@ export default function HomeClient() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#090d0b] text-slate-900 dark:text-slate-100 relative overflow-hidden pb-24 font-sans select-none">
+      {/* ── PULL TO REFRESH INDICATOR ── */}
+      {(pullDistance > 0 || isRefreshing) && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-150 ease-out flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-xl border border-emerald-500/30 shadow-[0_8px_30px_rgba(0,0,0,0.15)] text-xs font-bold text-emerald-800 dark:text-emerald-200"
+          style={{
+            top: isRefreshing ? "20px" : `${Math.min(pullDistance, 70)}px`,
+            opacity: isRefreshing ? 1 : Math.min(1, pullDistance / 35),
+            transform: `translate(-50%, 0) scale(${isRefreshing ? 1 : Math.min(1, 0.85 + pullDistance / 250)})`,
+          }}
+        >
+          <RotateCw
+            className={`w-4 h-4 text-emerald-600 dark:text-emerald-400 ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+            style={{
+              transform: isRefreshing ? undefined : `rotate(${pullDistance * 4.5}deg)`,
+            }}
+          />
+          <span>
+            {isRefreshing
+              ? "Refreshing feed..."
+              : pullDistance >= 50
+              ? "Release to refresh"
+              : "Pull down to refresh"}
+          </span>
+        </div>
+      )}
+
       {/* Background Glows */}
       <div className="absolute top-[-10%] right-[-10%] w-[50%] h-[50%] bg-emerald-500/10 dark:bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
       <div className="absolute top-[25%] left-[-10%] w-[45%] h-[45%] bg-teal-500/10 dark:bg-teal-500/5 blur-[120px] rounded-full pointer-events-none" />

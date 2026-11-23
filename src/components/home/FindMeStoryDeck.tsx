@@ -366,6 +366,17 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
     loadMine();
   }, [loadDeck, loadSaved, loadMine]);
 
+  // Listen for global pull-to-refresh or nav refresh events
+  useEffect(() => {
+    const handleRefreshEvent = () => {
+      loadDeck();
+      loadSaved();
+      loadMine();
+    };
+    window.addEventListener("travally:refresh-deck", handleRefreshEvent);
+    return () => window.removeEventListener("travally:refresh-deck", handleRefreshEvent);
+  }, [loadDeck, loadSaved, loadMine]);
+
   // Periodic interval to clean up expired cards in UI
   useEffect(() => {
     const interval = setInterval(() => {
@@ -521,16 +532,6 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {tab === "deck" && deckClues.length > 0 && (
-            <button
-              type="button"
-              onClick={loadDeck}
-              className="text-xs text-slate-500 hover:text-emerald-600 font-medium cursor-pointer"
-            >
-              Refresh Deck
-            </button>
-          )}
-
           <button
             type="button"
             onClick={() => setTab(tab === "saved" ? "deck" : "saved")}

@@ -1,13 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { ModeToggle, AppMode } from "@/components/common/ModeToggle";
 import { ActivityCard } from "@/components/activities/ActivityCard";
 import { ActivityFilters } from "@/components/activities/ActivityFilters";
 import { TripCard } from "@/components/travel/TripCard";
 import { TripFilters } from "@/components/travel/TripFilters";
-import { PlusCircle, SearchX, Compass, Search, MapPin, Users, Calendar, Luggage } from "lucide-react";
+import { PlusCircle, SearchX, Compass, Search, MapPin, Users, Calendar, Luggage, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";
 
@@ -199,6 +199,93 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
     }
   };
 
+  // ── Pull-to-Refresh & Navigation Refresh States ──
+  const [pullDistance, setPullDistance] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const touchStartYRef = useRef(0);
+  const isPullingRef = useRef(false);
+
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    try {
+      await Promise.allSettled([
+        fetchActivities(true),
+        fetchTravelPlans(true),
+      ]);
+    } catch (e) {
+      console.error("Discover refresh error:", e);
+    } finally {
+      setTimeout(() => {
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 400);
+    }
+  }, []);
+
+  // Listen for Discover nav click to trigger refresh & scroll to top
+  useEffect(() => {
+    const handleNavClick = (e: MouseEvent) => {
+      const link = (e.target as HTMLElement).closest('a[href="/discover"], a[href^="/discover"], [data-nav="discover"]');
+      if (link) {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(25);
+        }
+        handleRefresh();
+      }
+    };
+
+    document.addEventListener("click", handleNavClick);
+    return () => document.removeEventListener("click", handleNavClick);
+  }, [handleRefresh]);
+
+  // Pull down to refresh gesture on mobile / touch devices
+  useEffect(() => {
+    const handleTouchStart = (e: TouchEvent) => {
+      if (window.scrollY <= 5) {
+        touchStartYRef.current = e.touches[0].clientY;
+        isPullingRef.current = true;
+      } else {
+        isPullingRef.current = false;
+      }
+    };
+
+    const handleTouchMove = (e: TouchEvent) => {
+      if (!isPullingRef.current || isRefreshing) return;
+      const currentY = e.touches[0].clientY;
+      const diff = currentY - touchStartYRef.current;
+      if (diff > 0 && window.scrollY <= 5) {
+        const distance = Math.min(diff * 0.45, 85);
+        setPullDistance(distance);
+      } else {
+        setPullDistance(0);
+      }
+    };
+
+    const handleTouchEnd = () => {
+      if (!isPullingRef.current) return;
+      isPullingRef.current = false;
+      if (pullDistance >= 50 && !isRefreshing) {
+        if (typeof navigator !== "undefined" && navigator.vibrate) {
+          navigator.vibrate(30);
+        }
+        handleRefresh();
+      } else {
+        setPullDistance(0);
+      }
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchmove", handleTouchMove, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd);
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchmove", handleTouchMove);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [pullDistance, isRefreshing, handleRefresh]);
+
   // Fetch companion activities and prefetch travel plans in background
   useEffect(() => {
     if (mode === "companion") {
@@ -286,6 +373,33 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
 
   return (
     <div className="w-full flex flex-col min-h-screen">
+      {/* ── PULL TO REFRESH INDICATOR ── */}
+      {(pullDistance > 0 || isRefreshing) && (
+        <div
+          className="fixed left-1/2 -translate-x-1/2 z-50 pointer-events-none transition-all duration-150 ease-out flex items-center gap-2 px-4 py-2 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-xl border border-emerald-500/30 shadow-[0_8px_30px_rgba(0,0,0,0.15)] text-xs font-bold text-emerald-800 dark:text-emerald-200"
+          style={{
+            top: isRefreshing ? "20px" : `${Math.min(pullDistance, 70)}px`,
+            opacity: isRefreshing ? 1 : Math.min(1, pullDistance / 35),
+            transform: `translate(-50%, 0) scale(${isRefreshing ? 1 : Math.min(1, 0.85 + pullDistance / 250)})`,
+          }}
+        >
+          <RotateCw
+            className={`w-4 h-4 text-emerald-600 dark:text-emerald-400 ${
+              isRefreshing ? "animate-spin" : ""
+            }`}
+            style={{
+              transform: isRefreshing ? undefined : `rotate(${pullDistance * 4.5}deg)`,
+            }}
+          />
+          <span>
+            {isRefreshing
+              ? "Refreshing feed..."
+              : pullDistance >= 50
+              ? "Release to refresh"
+              : "Pull down to refresh"}
+          </span>
+        </div>
+      )}
       
       {/* ── HERO SECTION ── */}
       <div className="w-full relative h-[25vh] sm:h-[30vh] min-h-[200px] max-h-[280px] bg-slate-100 mb-10 sm:mb-8">
