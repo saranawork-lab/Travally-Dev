@@ -2067,15 +2067,13 @@ export default function ActiveChatPage() {
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
                     Active now
                   </span>
-                  <span className="text-slate-300 dark:text-slate-700">•</span>
-                  {isDirectChat ? (
-                    <span className="text-slate-500 dark:text-slate-400 font-medium">
-                      Direct chat
-                    </span>
-                  ) : (
-                    <span className="text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition font-medium underline underline-offset-2 truncate">
-                      {conversation?.activity?.participants?.length || conversation?.travelPlan?.participants?.length || otherParticipants.length + 1} members
-                    </span>
+                  {!isDirectChat && (
+                    <>
+                      <span className="text-slate-300 dark:text-slate-700">•</span>
+                      <span className="text-slate-500 dark:text-slate-400 hover:text-emerald-500 transition font-medium underline underline-offset-2 truncate">
+                        {conversation?.activity?.participants?.length || conversation?.travelPlan?.participants?.length || otherParticipants.length + 1} members
+                      </span>
+                    </>
                   )}
                 </div>
               </div>
