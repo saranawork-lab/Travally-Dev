@@ -63,6 +63,7 @@ import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { encryptChatMessage, decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
 import { useLanguage } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
+import { getTripImage, getActivityImage } from "@/lib/images";
 
 // Quick reactions shown on the floating pill
 const QUICK_REACTIONS = ["❤️", "😂", "😮", "😢", "🔥", "👍"];
@@ -1920,7 +1921,10 @@ export default function ActiveChatPage() {
     "Travel Companion";
 
   const directAvatarUrl = conversation?.otherUser?.avatarUrl || otherParticipants[0]?.avatarUrl;
-  const groupImageUrl = conversation?.activity?.imageUrl || conversation?.travelPlan?.imageUrl;
+  const groupImageUrl =
+    conversation?.activity?.imageUrl ||
+    conversation?.travelPlan?.imageUrl ||
+    (conversation?.travelPlan ? getTripImage(conversation.travelPlan) : conversation?.activity ? getActivityImage(conversation.activity) : null);
   const isDirectVerified = Boolean(conversation?.otherUser?.isVerified);
   const isGroupRoom = !isDirectChat;
 
@@ -1970,6 +1974,7 @@ export default function ActiveChatPage() {
             {isSidebarCollapsed && (
               <button
                 type="button"
+                suppressHydrationWarning
                 onClick={() => {
                   setIsSidebarCollapsed(false);
                   if (typeof window !== "undefined") {
@@ -2800,6 +2805,10 @@ export default function ActiveChatPage() {
                               />
                             )}
                           </div>
+                        </div>
+                      ) : (parsed.mediaType === "TRIP" || parsed.mediaType === "LOCATION") && parsed.text && parsed.text !== "📍 Location Pin" ? (
+                        <div className="text-[12px] font-bold text-slate-800 dark:text-slate-100 opacity-90 px-0.5 pt-0.5">
+                          {parsed.text}
                         </div>
                       ) : !parsed.mediaType ? (
                         <div className="flex items-end justify-between gap-x-2 min-w-0">

@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { formatTimeAgo } from "@/lib/utils";
 import { decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
+import { getTripImage, getActivityImage } from "@/lib/images";
 
 interface ChatsSidebarProps {
   activeConversationId: string;
@@ -232,7 +233,10 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
               lastMsg?.sender?.profile?.displayName || lastMsg?.sender?.email?.split("@")[0];
             const snippet = parseLastMessageSnippet(lastMsg?.content);
             const timeAgo = lastMsg ? formatTimeAgo(lastMsg.createdAt) : formatTimeAgo(conv.updatedAt);
-            const groupImageUrl = conv.activity?.imageUrl || conv.travelPlan?.imageUrl;
+            const groupImageUrl =
+              conv.activity?.imageUrl ||
+              conv.travelPlan?.imageUrl ||
+              (conv.travelPlan ? getTripImage(conv.travelPlan) : conv.activity ? getActivityImage(conv.activity) : null);
 
             const cardBg = isDirect
               ? isActive

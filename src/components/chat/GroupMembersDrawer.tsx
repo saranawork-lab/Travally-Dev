@@ -24,6 +24,7 @@ import {
   Loader2,
   ArrowLeft,
 } from "lucide-react";
+import { getTripImage, getActivityImage } from "@/lib/images";
 
 interface GroupMembersDrawerProps {
   isOpen: boolean;
@@ -57,9 +58,15 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
   // Group Photo Edit state
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const [groupPhoto, setGroupPhoto] = useState<string | null>(
-    conversation?.activity?.imageUrl || conversation?.travelPlan?.imageUrl || null
-  );
+  const resolveDefaultPhoto = (conv: any) => {
+    return (
+      conv?.activity?.imageUrl ||
+      conv?.travelPlan?.imageUrl ||
+      (conv?.travelPlan ? getTripImage(conv.travelPlan) : conv?.activity ? getActivityImage(conv.activity) : null)
+    );
+  };
+
+  const [groupPhoto, setGroupPhoto] = useState<string | null>(() => resolveDefaultPhoto(conversation));
 
   // Add Participant state
   const [showAddView, setShowAddView] = useState(false);
@@ -70,8 +77,7 @@ export const GroupMembersDrawer: React.FC<GroupMembersDrawerProps> = ({
 
   // Sync photo with conversation changes
   useEffect(() => {
-    const photo = conversation?.activity?.imageUrl || conversation?.travelPlan?.imageUrl || null;
-    setGroupPhoto(photo);
+    setGroupPhoto(resolveDefaultPhoto(conversation));
   }, [conversation]);
 
   if (!isOpen) return null;

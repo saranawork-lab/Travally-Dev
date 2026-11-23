@@ -17,6 +17,7 @@ import { useLanguage } from "@/context/LanguageContext";
 import { useBadges } from "@/hooks/useBadges";
 import { RequestsView } from "@/components/requests/RequestsView";
 import { decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
+import { getTripImage, getActivityImage } from "@/lib/images";
 
 const parseLastMessageSnippet = (content?: string): string => {
   if (!content) return "No messages yet";
@@ -255,7 +256,10 @@ function ChatsContent() {
                 const timeDisplay = lastMsg ? formatTimeAgo(lastMsg.createdAt) : formatTimeAgo(conv.updatedAt);
                 const displayTitle = conv.otherUser?.displayName || conv.title;
                 const avatarUrl = conv.otherUser?.avatarUrl;
-                const groupImageUrl = conv.activity?.imageUrl || conv.travelPlan?.imageUrl;
+                const groupImageUrl =
+                  conv.activity?.imageUrl ||
+                  conv.travelPlan?.imageUrl ||
+                  (conv.travelPlan ? getTripImage(conv.travelPlan) : conv.activity ? getActivityImage(conv.activity) : null);
 
                 const unreadCount = typeof conv.unreadCount === "number" ? conv.unreadCount : 0;
                 const hasUnread = unreadCount > 0;
