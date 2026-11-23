@@ -31,9 +31,11 @@ const Navbar: React.FC<NavbarProps> = ({
 
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const mobileSearchInputRef = useRef<HTMLInputElement>(null);
 
   // Sync search query and mode with URL params
   useEffect(() => {
@@ -74,14 +76,18 @@ const Navbar: React.FC<NavbarProps> = ({
   // Reset states on route change
   useEffect(() => {
     setIsSidebarOpen(false);
+    setIsSearchOpen(false);
   }, [pathname]);
 
-  // Global keyboard shortcut for search (⌘K or Ctrl+K)
+  // Global keyboard shortcuts (⌘K / Ctrl+K and Escape)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
-        searchInputRef.current?.focus();
+        setIsSearchOpen(true);
+        setTimeout(() => mobileSearchInputRef.current?.focus() || searchInputRef.current?.focus(), 80);
+      } else if (e.key === "Escape") {
+        setIsSearchOpen(false);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -210,12 +216,28 @@ const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
 
-        {/* Right Actions: Theme Toggle, Notifications & Profile / Auth */}
+        {/* Right Actions: Search, Notifications & Auth */}
         <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0 ml-auto">
-
-          {/* In-App Notifications Dropdown */}
+          {/* Search Icon & In-App Notifications Dropdown */}
           {isLoggedInApp ? (
-            <NotificationDropdown />
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearchOpen(!isSearchOpen);
+                  if (!isSearchOpen) {
+                    setTimeout(() => mobileSearchInputRef.current?.focus(), 80);
+                  }
+                }}
+                className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16201b] transition-all relative cursor-pointer"
+                aria-label="Search"
+                title="Search anything (trips, companions, destinations)"
+              >
+                <Search className="w-5 h-5" />
+              </button>
+
+              <NotificationDropdown />
+            </div>
           ) : (
             <div className="flex items-center gap-1.5 sm:gap-2">
               {pathname === "/login" ? (
@@ -248,6 +270,44 @@ const Navbar: React.FC<NavbarProps> = ({
           )}
         </div>
       </div>
+
+      {/* Search Bar Overlay when Search button is active */}
+      {isSearchOpen && (
+        <div className="absolute inset-x-0 top-0 h-14 bg-white dark:bg-[#0f1713] px-3 sm:px-6 flex items-center gap-2 z-50 border-b border-slate-200 dark:border-emerald-900/30 shadow-md animate-in fade-in duration-150">
+          <Search className="w-4 h-4 text-emerald-500 shrink-0 ml-1" />
+          <input
+            ref={mobileSearchInputRef}
+            type="text"
+            value={searchQuery}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                setIsSearchOpen(false);
+              }
+            }}
+            placeholder={t.searchPlaceholder || "Search anything (trips, companions, destinations)..."}
+            className="flex-1 bg-transparent text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+            autoFocus
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => handleSearchChange("")}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition cursor-pointer"
+              title="Clear search"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(false)}
+            className="px-3 py-1.5 rounded-full text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
     </header>
   );
 };
