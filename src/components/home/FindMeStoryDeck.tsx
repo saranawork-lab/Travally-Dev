@@ -266,6 +266,11 @@ const StoryCardItem: React.FC<{
   );
 };
 
+// Module-level in-memory cache for 0ms instant deck rendering
+let cachedDeckClues: FindMeCard[] | null = null;
+let cachedSavedClues: FindMeCard[] | null = null;
+let cachedMyClues: FindMeCard[] | null = null;
+
 // ─── MAIN FIND ME STORY DECK COMPONENT ───
 export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
   onOpenCreate,
@@ -273,10 +278,10 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
 }) => {
   const { currentUser } = useAuth();
   const [tab, setTab] = useState<"deck" | "saved" | "mine">("deck");
-  const [deckClues, setDeckClues] = useState<FindMeCard[]>([]);
-  const [savedClues, setSavedClues] = useState<FindMeCard[]>([]);
-  const [myClues, setMyClues] = useState<FindMeCard[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [deckClues, setDeckClues] = useState<FindMeCard[]>(() => cachedDeckClues || []);
+  const [savedClues, setSavedClues] = useState<FindMeCard[]>(() => cachedSavedClues || []);
+  const [myClues, setMyClues] = useState<FindMeCard[]>(() => cachedMyClues || []);
+  const [loading, setLoading] = useState(() => !cachedDeckClues);
   const [replyingCard, setReplyingCard] = useState<FindMeCard | null>(null);
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
@@ -310,10 +315,11 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
   // Fetch Deck
   const loadDeck = useCallback(async () => {
     try {
-      setLoading(true);
+      if (!cachedDeckClues) setLoading(true);
       const res = await fetch("/api/home/find-me");
       const data = await res.json();
       if (data.clues) {
+        cachedDeckClues = data.clues;
         setDeckClues(data.clues);
       }
     } catch (err) {
@@ -333,6 +339,7 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
       const res = await fetch("/api/home/find-me?view=saved");
       const data = await res.json();
       if (data.clues) {
+        cachedSavedClues = data.clues;
         setSavedClues(data.clues);
       }
     } catch (err) {
@@ -350,6 +357,7 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
       const res = await fetch("/api/home/find-me?view=mine");
       const data = await res.json();
       if (data.clues) {
+        cachedMyClues = data.clues;
         setMyClues(data.clues);
       }
     } catch (err) {

@@ -57,7 +57,7 @@ export const GlobalIncomingCallListener: React.FC = () => {
     };
 
     checkIncomingCalls();
-    const interval = setInterval(checkIncomingCalls, 3000);
+    const interval = setInterval(checkIncomingCalls, 10000);
 
     return () => {
       isMounted = false;

@@ -27,7 +27,9 @@ export async function GET(req: Request) {
       _id: undefined,
     }));
 
-    return NextResponse.json({ success: true, treasures: formatted });
+    const res = NextResponse.json({ success: true, treasures: formatted });
+    res.headers.set("Cache-Control", "private, max-age=5, stale-while-revalidate=30");
+    return res;
   } catch (error) {
     console.error("Error fetching treasure drops:", error);
     return NextResponse.json({ error: "Failed to fetch treasure drops" }, { status: 500 });

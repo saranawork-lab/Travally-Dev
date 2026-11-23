@@ -135,6 +135,8 @@ interface FindMeClue {
 
 // Module-level in-memory cache for instantaneous 0ms frame rendering
 let cachedInstantsList: CommunityPost[] | null = null;
+let cachedGrowList: GrowInitiative[] | null = null;
+let cachedTreasuresList: TreasureItem[] | null = null;
 
 export default function HomeClient() {
   const router = useRouter();
@@ -148,8 +150,14 @@ export default function HomeClient() {
     if (cachedInstantsList && cachedInstantsList.length > 0) return cachedInstantsList;
     return [];
   });
-  const [growList, setGrowList] = useState<GrowInitiative[]>([]);
-  const [treasures, setTreasures] = useState<TreasureItem[]>([]);
+  const [growList, setGrowList] = useState<GrowInitiative[]>(() => {
+    if (cachedGrowList && cachedGrowList.length > 0) return cachedGrowList;
+    return [];
+  });
+  const [treasures, setTreasures] = useState<TreasureItem[]>(() => {
+    if (cachedTreasuresList && cachedTreasuresList.length > 0) return cachedTreasuresList;
+    return [];
+  });
   const [findMeClues, setFindMeClues] = useState<FindMeClue[]>([]);
 
   // Loading states
@@ -326,7 +334,10 @@ export default function HomeClient() {
       fetch("/api/home/grow")
         .then((res) => (res.ok ? res.json() : null))
         .then((d) => {
-          if (d?.initiatives) setGrowList(d.initiatives);
+          if (d?.initiatives) {
+            cachedGrowList = d.initiatives;
+            setGrowList(d.initiatives);
+          }
         })
         .catch(() => {});
 
@@ -334,6 +345,7 @@ export default function HomeClient() {
         .then((res) => (res.ok ? res.json() : null))
         .then((d) => {
           const list = d?.treasures || [];
+          cachedTreasuresList = list;
           setTreasures(list);
           if (list.length > 0) {
             setSelectedTreasure((prev) => prev || list[0]);
@@ -1218,10 +1230,9 @@ export default function HomeClient() {
         </div>
 
         {/* ── TAB 1: INSTANTS (REAL COMMUNITY FEED) ── */}
-        {activeTab === "instants" && (
-          <div className="space-y-4">
-            {loading && instants.length === 0 ? (
-              <div className="columns-1 md:columns-2 gap-4">
+        <div className={activeTab === "instants" ? "space-y-4" : "hidden"}>
+          {loading && instants.length === 0 ? (
+            <div className="columns-1 md:columns-2 gap-4">
                 {[1, 2, 3, 4].map((n) => (
                   <div
                     key={n}
@@ -1735,14 +1746,12 @@ export default function HomeClient() {
               </div>
             )}
           </div>
-        )}
 
         {/* ── TAB 2: HUMANITY AND NATURE GROW ── */}
-        {activeTab === "grow" && (
-          <div className="space-y-4">
-            {loading ? (
-              <div className="text-center py-16 text-xs text-slate-400">Loading Humanity and Nature Grow initiatives...</div>
-            ) : growList.length === 0 ? (
+        <div className={activeTab === "grow" ? "space-y-4" : "hidden"}>
+          {loading && growList.length === 0 ? (
+            <div className="text-center py-16 text-xs text-slate-400">Loading Humanity and Nature Grow initiatives...</div>
+          ) : growList.length === 0 ? (
               <div className="text-center py-16 px-4 bg-white dark:bg-[#111815] rounded-3xl border border-slate-200 dark:border-emerald-950/70 shadow-sm">
                 <div className="w-12 h-12 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center mx-auto mb-3">
                   <Sprout className="w-6 h-6" />
@@ -1785,12 +1794,10 @@ export default function HomeClient() {
               </div>
             )}
           </div>
-        )}
 
         {/* ── TAB 3: TREASURE FIND (INTERACTIVE MAP & GEOCACHING) ── */}
-        {activeTab === "treasure" && (
-          <div className="space-y-4">
-            {/* Map Header */}
+        <div className={activeTab === "treasure" ? "space-y-4" : "hidden"}>
+          {/* Map Header */}
             <div className="bg-white dark:bg-[#111815] rounded-3xl border border-slate-200/90 dark:border-emerald-950/70 p-4 sm:p-5 shadow-sm space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
@@ -1871,17 +1878,16 @@ export default function HomeClient() {
               </div>
             )}
           </div>
-        )}
 
         {/* ── TAB 4: FIND ME (STORY-BASED SWIPING & SAVED MATCHES) ── */}
-        {activeTab === "find-me" && (
+        <div className={activeTab === "find-me" ? "" : "hidden"}>
           <FindMeStoryDeck
             requireAuth={requireAuth}
             onOpenCreate={() => {
-              window.location.href = "/activities/create?type=find-me";
+              router.push("/activities/create?type=find-me");
             }}
           />
-        )}
+        </div>
       </div>
 
       {/* ── MODAL 1: POST INSTANT ── */}

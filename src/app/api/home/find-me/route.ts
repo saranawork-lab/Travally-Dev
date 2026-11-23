@@ -72,8 +72,12 @@ const SAMPLE_STORY_CARDS = [
 ];
 
 // Helper: purge expired clues and saved records
+let lastFindMePurgeTime = 0;
 async function purgeExpiredFindMe(mongo: any) {
-  const now = new Date().toISOString();
+  const nowMs = Date.now();
+  if (nowMs - lastFindMePurgeTime < 60000) return;
+  lastFindMePurgeTime = nowMs;
+  const now = new Date(nowMs).toISOString();
   try {
     await Promise.all([
       mongo.collection("find_me_clues").deleteMany({

@@ -10,6 +10,10 @@ let serverInstantsCache: any = null;
 let serverInstantsCacheTime = 0;
 const CACHE_TTL_MS = 10000; // 10 seconds
 
+let cachedPrismaUsers: any[] | null = null;
+let cachedPrismaUsersTime = 0;
+const PRISMA_USERS_CACHE_TTL = 60000; // 60 seconds
+
 // GET /api/home/instants?userId=xxx
 export async function GET(req: Request) {
   try {
@@ -22,13 +26,17 @@ export async function GET(req: Request) {
       return cachedRes;
     }
 
-    // Fetch active users to enforce cascade visibility (no orphaned posts from deleted accounts)
-    const prismaUsers = await dbPrisma.user.findMany({
-      select: {
-        id: true,
-        profile: { select: { displayName: true, avatarUrl: true, isVerified: true } },
-      },
-    });
+    // Fetch active users with 60s cache to avoid querying full user directory on every feed load
+    if (!cachedPrismaUsers || Date.now() - cachedPrismaUsersTime > PRISMA_USERS_CACHE_TTL) {
+      cachedPrismaUsers = await dbPrisma.user.findMany({
+        select: {
+          id: true,
+          profile: { select: { displayName: true, avatarUrl: true, isVerified: true } },
+        },
+      });
+      cachedPrismaUsersTime = Date.now();
+    }
+    const prismaUsers = cachedPrismaUsers;
     const validUserMap = new Map(prismaUsers.map((u) => [u.id, u]));
     const validUserIds = new Set(prismaUsers.map((u) => u.id));
 

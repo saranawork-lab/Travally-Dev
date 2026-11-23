@@ -27,7 +27,9 @@ export async function GET(req: Request) {
       _id: undefined,
     }));
 
-    return NextResponse.json({ success: true, initiatives: formatted });
+    const res = NextResponse.json({ success: true, initiatives: formatted });
+    res.headers.set("Cache-Control", "private, max-age=5, stale-while-revalidate=30");
+    return res;
   } catch (error) {
     console.error("Error fetching grow initiatives:", error);
     return NextResponse.json({ error: "Failed to fetch initiatives" }, { status: 500 });
