@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -19,24 +19,23 @@ interface BottomNavProps {
   initialUser?: any;
 }
 
-const renderGradientLabel = (label: string) => {
+function renderGradientLabel(label: string) {
   return (
     <span
-      className="font-black whitespace-nowrap tracking-tight"
+      className="font-black whitespace-nowrap tracking-tight inline-block"
       style={{
         backgroundImage:
           "linear-gradient(90deg, #f97316 0%, #f97316 40%, #10b981 50%, #10b981 90%, #059669 100%)",
         WebkitBackgroundClip: "text",
         WebkitTextFillColor: "transparent",
-        display: "inline-block",
       }}
     >
       {label}
     </span>
   );
-};
+}
 
-const BottomNav: React.FC<BottomNavProps> = () => {
+export default function BottomNav({ initialUser }: BottomNavProps) {
   const pathname = usePathname();
   const { currentUser } = useAuth();
   const { t } = useLanguage();
@@ -45,7 +44,6 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   const [mounted, setMounted] = useState(false);
   const [optimisticActiveId, setOptimisticActiveId] = useState<string | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
-  const rafIdRef = useRef<number>(0);
 
   useEffect(() => {
     setMounted(true);
@@ -203,7 +201,6 @@ const BottomNav: React.FC<BottomNavProps> = () => {
 
   return (
     <>
-
       {/* Floating Bottom Navigation Dock */}
       <nav
         className="md:hidden fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 sm:left-1/2 sm:-translate-x-1/2 sm:w-[460px] z-50 pointer-events-none select-none"
@@ -312,6 +309,4 @@ const BottomNav: React.FC<BottomNavProps> = () => {
       </nav>
     </>
   );
-};
-
-export default BottomNav;
+}
