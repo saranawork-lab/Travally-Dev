@@ -100,6 +100,10 @@ export async function deleteUserAndCascade(userId: string): Promise<{ success: b
   });
   details.findMeCluesDeleted = clueRes.deletedCount;
 
+  await mongo.collection("find_me_saved").deleteMany({
+    $or: [{ userId: userQuery }, { creatorId: userQuery }],
+  });
+
   // 2. Prisma Relational Cascades
 
   // 2a. Activities organized by user

@@ -39,6 +39,8 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({ userId, userNa
   const [travelList, setTravelList] = useState<any[]>([]);
   const [companionList, setCompanionList] = useState<any[]>([]);
   const [findMeList, setFindMeList] = useState<any[]>([]);
+  const [savedFindMeList, setSavedFindMeList] = useState<any[]>([]);
+  const [findMeSubTab, setFindMeSubTab] = useState<"beacons" | "saved">("beacons");
   const [treasureList, setTreasureList] = useState<any[]>([]);
 
   const [loadingGrow, setLoadingGrow] = useState(false);
@@ -80,12 +82,15 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({ userId, userNa
           .catch(console.error)
           .finally(() => setLoadingCompanion(false));
       }
-    } else if (activeTab === "find-me" && isOwn && findMeList.length === 0) {
+    } else if (activeTab === "find-me" && isOwn && (findMeList.length === 0 || savedFindMeList.length === 0)) {
       setLoadingFindMe(true);
-      fetch(`/api/home/find-me?userId=${userId}`)
-        .then(res => res.json())
-        .then(data => {
-          if (data.clues) setFindMeList(data.clues);
+      Promise.all([
+        fetch(`/api/home/find-me?userId=${userId}`).then(res => res.json()).catch(() => ({ clues: [] })),
+        fetch(`/api/home/find-me?view=saved`).then(res => res.json()).catch(() => ({ clues: [] })),
+      ])
+        .then(([beaconsData, savedData]) => {
+          if (beaconsData?.clues) setFindMeList(beaconsData.clues);
+          if (savedData?.clues) setSavedFindMeList(savedData.clues);
         })
         .catch(console.error)
         .finally(() => setLoadingFindMe(false));
@@ -484,69 +489,151 @@ export const UserProfileTabs: React.FC<UserProfileTabsProps> = ({ userId, userNa
         {/* 3. FIND ME TAB (OWNER ONLY) */}
         {activeTab === "find-me" && isOwn && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h4 className="font-black text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
                   <Flame className="w-4 h-4 text-rose-500" />
-                  <span>My Find Me Beacons</span>
+                  <span>Find Me Beacons & Matches</span>
                   <span className="text-[10px] font-semibold text-slate-400 px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800">
                     Private to you
                   </span>
                 </h4>
-                <p className="text-[11px] text-slate-400">Live clues & hangout signals you dropped</p>
+                <p className="text-[11px] text-slate-400">
+                  Ephemeral hangout signals & story connections. Deletes completely once timer expires.
+                </p>
               </div>
               <Link
-                href="/?tab=find-me"
-                className="px-3 py-1.5 rounded-full text-xs font-bold text-rose-900 dark:text-rose-300 bg-rose-100 dark:bg-rose-950 border border-rose-300 dark:border-rose-800/60 hover:scale-105 transition flex items-center gap-1"
+                href="/activities/create?type=find-me"
+                className="px-3.5 py-1.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-teal-600 hover:scale-105 transition flex items-center gap-1 self-start sm:self-auto shadow-xs"
               >
                 <Plus className="w-3.5 h-3.5" />
-                <span>Drop Clue</span>
+                <span>Drop Beacon</span>
               </Link>
+            </div>
+
+            {/* Sub-toggle: My Beacons vs Saved Story Matches */}
+            <div className="flex items-center gap-2 border-b border-slate-200/80 dark:border-emerald-950/60 pb-2">
+              <button
+                type="button"
+                onClick={() => setFindMeSubTab("beacons")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  findMeSubTab === "beacons"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#16221c]"
+                }`}
+              >
+                <span>My Beacons</span>
+                {findMeList.length > 0 && (
+                  <span className="min-w-[16px] h-3.5 px-1 rounded-full text-[9px] bg-white/20 text-white font-bold inline-flex items-center justify-center">
+                    {findMeList.length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFindMeSubTab("saved")}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  findMeSubTab === "saved"
+                    ? "bg-emerald-600 text-white shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-[#16221c]"
+                }`}
+              >
+                <span>Saved Matches</span>
+                {savedFindMeList.length > 0 && (
+                  <span className="min-w-[16px] h-3.5 px-1 rounded-full text-[9px] bg-emerald-500 text-white font-bold inline-flex items-center justify-center">
+                    {savedFindMeList.length}
+                  </span>
+                )}
+              </button>
             </div>
 
             {loadingFindMe ? (
               <div className="py-12 text-center text-xs text-slate-400 animate-pulse">Loading clues...</div>
-            ) : findMeList.length === 0 ? (
-              <div className="py-12 px-4 rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/70 text-center space-y-2">
-                <Flame className="w-8 h-8 text-rose-500 mx-auto opacity-60" />
-                <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No active Find Me beacons</p>
-                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                  Drop a clue about where you are right now (e.g., a cafe or bookstore) to let serendipity connect you with travelers.
-                </p>
-              </div>
+            ) : findMeSubTab === "beacons" ? (
+              findMeList.length === 0 ? (
+                <div className="py-12 px-4 rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/70 text-center space-y-2">
+                  <Flame className="w-8 h-8 text-rose-500 mx-auto opacity-60" />
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No active Find Me beacons</p>
+                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                    Drop a clue about where you are right now to let serendipity connect you with travelers.
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {findMeList.map((clue) => (
+                    <div
+                      key={clue.id}
+                      className="rounded-3xl bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 p-4 space-y-3 shadow-sm hover:border-emerald-500/50 transition-all"
+                    >
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-200 dark:border-emerald-800">
+                          {clue.vibeTag || "Beacon"}
+                        </span>
+                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-500" />
+                          <span>{formatTimeAgo(clue.createdAt)}</span>
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 leading-relaxed italic">
+                          &ldquo;{clue.story || clue.clueText}&rdquo;
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100 dark:border-emerald-950/60">
+                        <span className="flex items-center gap-1 text-slate-500">
+                          <MapPin className="w-3 h-3 text-rose-500" />
+                          <span>Near {clue.hintArea}</span>
+                        </span>
+                        <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                          {clue.savedCount || 0} saves • {clue.guessesCount || 0} guesses
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {findMeList.map((clue) => (
-                  <div
-                    key={clue.id}
-                    className="rounded-3xl bg-white dark:bg-[#111815] border border-slate-200 dark:border-emerald-950/80 p-4 space-y-3 shadow-sm hover:border-rose-500/50 transition-all"
-                  >
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="px-2.5 py-0.5 rounded-full bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 font-bold text-[10px] border border-rose-200 dark:border-rose-800">
-                        {clue.vibeTag || "Beacon"}
-                      </span>
-                      <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        <span>{formatTimeAgo(clue.createdAt)}</span>
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-200 leading-relaxed italic">
-                        &ldquo;{clue.clueText}&rdquo;
+              /* SAVED STORY MATCHES */
+              savedFindMeList.length === 0 ? (
+                <div className="py-12 px-4 rounded-3xl bg-white dark:bg-[#111815] border border-slate-200/80 dark:border-emerald-950/70 text-center space-y-2">
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">No active saved matches</p>
+                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                    Swipe right on story cards in the Discover tab to connect and save them here before they expire!
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {savedFindMeList.map((clue) => (
+                    <div
+                      key={clue.id}
+                      className="rounded-3xl bg-[#faf8f5] dark:bg-[#121915] border border-emerald-900/10 dark:border-emerald-800/40 p-4 space-y-3 shadow-sm"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-serif italic text-emerald-800 dark:text-emerald-300 text-sm font-semibold">
+                          say hello to {clue.creatorName} {clue.creatorAge ? `(${clue.creatorAge})` : ""}
+                        </span>
+                        <span className="text-[10px] text-amber-700 dark:text-amber-400 font-bold flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-amber-500" />
+                          <span>Active Beacon</span>
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed line-clamp-3">
+                        &ldquo;{clue.story || clue.clueText}&rdquo;
                       </p>
+                      <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-200/70 dark:border-emerald-950/60">
+                        <span className="text-slate-500">📍 {clue.hintArea}</span>
+                        <Link
+                          href="/chats"
+                          className="px-3 py-1 rounded-lg text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 transition"
+                        >
+                          Open Chat
+                        </Link>
+                      </div>
                     </div>
-                    <div className="flex items-center justify-between text-[11px] pt-2 border-t border-slate-100 dark:border-emerald-950/60">
-                      <span className="flex items-center gap-1 text-slate-500">
-                        <MapPin className="w-3 h-3 text-rose-500" />
-                        <span>Near {clue.hintArea}</span>
-                      </span>
-                      <span className="font-bold text-rose-600 dark:text-rose-400">
-                        {clue.guessesCount || 0} guesses
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )
             )}
           </div>
         )}

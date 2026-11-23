@@ -24,6 +24,7 @@ import {
   Info,
   ShieldCheck,
   Lock,
+  Clock,
 } from "lucide-react";
 import { useIdentityVerification } from "@/hooks/useIdentityVerification";
 import { IdentityVerificationModal } from "@/components/verification/IdentityVerificationModal";
@@ -363,7 +364,13 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
   const [findMeData, setFindMeData] = useState({
     clueText: "",
     hintArea: "",
+    story: "",
+    profession: "",
+    age: "",
+    nativeCity: "",
+    relationshipStatus: "Single",
     vibeTag: "Coffee & Books",
+    durationHours: 24,
   });
 
   // Localized companion categories
@@ -657,7 +664,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
   const handleFindMeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!findMeData.clueText.trim() || !findMeData.hintArea.trim()) {
-      setError("Please fill in all required clue fields.");
+      setError("Please fill in both your mystery clue and vicinity area.");
       return;
     }
     setIsSubmitting(true);
@@ -669,7 +676,13 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
         body: JSON.stringify({
           clueText: findMeData.clueText.trim(),
           hintArea: findMeData.hintArea.trim(),
+          story: findMeData.story.trim() || findMeData.clueText.trim(),
+          profession: findMeData.profession.trim(),
+          age: findMeData.age ? Number(findMeData.age) : undefined,
+          nativeCity: findMeData.nativeCity.trim(),
+          relationshipStatus: findMeData.relationshipStatus,
           vibeTag: findMeData.vibeTag,
+          durationHours: Number(findMeData.durationHours) || 24,
         }),
       });
       const data = await res.json();
@@ -1889,41 +1902,104 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 </div>
                 <div>
                   <h3 className="text-xs font-bold text-rose-950 dark:text-rose-200">
-                    Drop a Mystery Dating Clue
+                    Match Based on Story, Not Selfies to Swipe
                   </h3>
                   <p className="text-[11px] text-rose-700/80 dark:text-rose-300/80">
-                    Leave a playful hint about your spot and let someone guess to connect for a date
+                    Drop an authentic story and hangout clue. When the beacon expires, it automatically deletes from all profiles completely!
                   </p>
                 </div>
               </div>
             </div>
 
+            {/* Story / About Me */}
             <div>
               <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                Your Mystery Clue *
+                Your Story / About Me *
               </label>
               <textarea
                 required
                 rows={3}
-                placeholder="e.g. Reading Murakami by the corner window with a yellow matchbook on the saucer..."
+                placeholder="e.g. I find peace in early morning walks and a good book. Sunsets, soulful music and meaningful conversations matter to me..."
+                value={findMeData.story}
+                onChange={(e) => setFindMeData({ ...findMeData, story: e.target.value })}
+                className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
+              />
+              <p className="text-[10px] text-slate-400 mt-1">
+                Share what moves you, your weekend vibe, or what makes you smile.
+              </p>
+            </div>
+
+            {/* Identity details (Profession, Age, Native City) */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Profession / Role
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Design Lead or Business"
+                  value={findMeData.profession}
+                  onChange={(e) => setFindMeData({ ...findMeData, profession: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[42px]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Age
+                </label>
+                <input
+                  type="number"
+                  min={18}
+                  max={99}
+                  placeholder="e.g. 26"
+                  value={findMeData.age}
+                  onChange={(e) => setFindMeData({ ...findMeData, age: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[42px]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Native City / Hometown
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Hyderabad or Coimbatore"
+                  value={findMeData.nativeCity}
+                  onChange={(e) => setFindMeData({ ...findMeData, nativeCity: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[42px]"
+                />
+              </div>
+            </div>
+
+            {/* Mystery Clue */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                Your Mystery Hangout Clue *
+              </label>
+              <textarea
+                required
+                rows={2}
+                placeholder="e.g. Reading by the corner glass window with a yellow matchbook on the saucer..."
                 value={findMeData.clueText}
                 onChange={(e) => setFindMeData({ ...findMeData, clueText: e.target.value })}
                 className="w-full p-3 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs sm:text-sm text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
-                  Neighborhood Area / Vicinity *
+                  Neighborhood / Area *
                 </label>
                 <input
                   required
                   type="text"
-                  placeholder="e.g. Bandra West, Mumbai or Indiranagar, Bangalore"
+                  placeholder="e.g. Indiranagar, Bangalore"
                   value={findMeData.hintArea}
                   onChange={(e) => setFindMeData({ ...findMeData, hintArea: e.target.value })}
-                  className="w-full px-4 py-3 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[44px]"
+                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[42px]"
                 />
               </div>
 
@@ -1934,7 +2010,7 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                 <select
                   value={findMeData.vibeTag}
                   onChange={(e) => setFindMeData({ ...findMeData, vibeTag: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[44px]"
+                  className="w-full px-3 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[42px]"
                 >
                   <option value="Coffee & Books">☕ Coffee & Books</option>
                   <option value="Sunset & Chai">🌅 Sunset & Chai</option>
@@ -1943,6 +2019,28 @@ function UnifiedCreateFlowContent({ initialMode = "companion" }: UnifiedCreateFl
                   <option value="Rooftop Drinks">🍸 Rooftop Drinks</option>
                 </select>
               </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
+                  Beacon Duration
+                </label>
+                <select
+                  value={findMeData.durationHours}
+                  onChange={(e) => setFindMeData({ ...findMeData, durationHours: Number(e.target.value) })}
+                  className="w-full px-3 py-2.5 rounded-2xl bg-slate-50 dark:bg-[#16201b] border border-slate-200 dark:border-emerald-950 text-xs text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-rose-500/20 min-h-[42px]"
+                >
+                  <option value={12}>⏱️ 12 Hours</option>
+                  <option value={24}>⏱️ 24 Hours (Standard)</option>
+                  <option value={48}>⏱️ 48 Hours</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/50 text-[11px] text-amber-800 dark:text-amber-300 flex items-center gap-2">
+              <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Ephemeral Guarantee:</strong> When the duration expires, your beacon and all saved cards across other profiles are completely and permanently deleted.
+              </span>
             </div>
 
             <div className="pt-3 flex justify-end gap-2 border-t border-slate-100 dark:border-emerald-950/60">
