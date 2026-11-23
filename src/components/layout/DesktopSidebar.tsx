@@ -86,8 +86,9 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
     dispatchSidebarState(false);
   };
 
-  // Click handler: immediately shrink sidebar back to icons-only mode
-  const handleItemClick = () => {
+  // Click handler: immediately shrink sidebar back to icons-only mode & trigger 0ms optimistic active switch
+  const handleItemClick = (id?: string | React.MouseEvent) => {
+    if (typeof id === "string") setOptimisticActiveId(id);
     setForceCollapsed(true);
     setIsHovered(false);
     dispatchSidebarState(false);
@@ -103,6 +104,12 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   }, [isExpanded]);
 
   // Active item determination
+  const [optimisticActiveId, setOptimisticActiveId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setOptimisticActiveId(null);
+  }, [pathname]);
+
   const isHome = pathname === "/";
   const isDiscover = pathname.startsWith("/discover");
   const isCreate =
@@ -112,6 +119,20 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const isChats = pathname.startsWith("/chats") || pathname.startsWith("/requests");
   const isSafety = pathname.startsWith("/safety");
   const isProfileActive = pathname.startsWith("/profile") || pathname.startsWith("/settings");
+
+  const resolvedActiveId = isHome
+    ? "home"
+    : isDiscover
+      ? "discover"
+      : isCreate
+        ? "create"
+        : isChats
+          ? "chats"
+          : isSafety
+            ? "safety"
+            : "home";
+
+  const activeId = optimisticActiveId || resolvedActiveId;
 
   // Hide sidebar when not logged in, or on full-screen onboarding, login, register, and single chat rooms
   if (
@@ -139,7 +160,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
       label: t.home || "Home",
       href: "/",
       icon: Home,
-      isActive: isHome,
+      isActive: activeId === "home",
       badge: 0,
       badgeColor: "bg-emerald-500",
     },
@@ -148,7 +169,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
       label: t.discover,
       href: `/discover?mode=${mode}`,
       icon: Compass,
-      isActive: isDiscover,
+      isActive: activeId === "discover",
       badge: 0,
       badgeColor: "bg-emerald-500",
     },
@@ -157,7 +178,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
       label: t.create,
       href: "/activities/create",
       icon: PlusCircle,
-      isActive: isCreate,
+      isActive: activeId === "create",
       badge: 0,
       badgeColor: "bg-emerald-500",
     },
@@ -166,7 +187,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
       label: t.chats,
       href: "/chats",
       icon: MessageSquare,
-      isActive: isChats,
+      isActive: activeId === "chats",
       badge: chatsBadgeDisplay,
       badgeColor: "bg-gradient-to-r from-emerald-100 to-teal-100 text-emerald-900 border border-emerald-300/80 shadow-xs",
     },
@@ -175,7 +196,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
       label: "Safety",
       href: "/safety",
       icon: Shield,
-      isActive: isSafety,
+      isActive: activeId === "safety",
       badge: 0,
       badgeColor: "bg-emerald-500",
     },
@@ -213,7 +234,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
               <Link
                 key={item.id}
                 href={item.href}
-                onClick={handleItemClick}
+                onClick={() => handleItemClick(item.id)}
                 prefetch={true}
                 scroll={false}
                 title={!isExpanded ? item.label : undefined}
@@ -285,7 +306,7 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
           <div className="relative">
             <Link
               href="/profile"
-              onClick={handleItemClick}
+              onClick={() => handleItemClick("profile")}
               title={!isExpanded ? (currentUser.displayName || "My Profile") : undefined}
               className={`group relative flex items-center h-12 w-full rounded-2xl overflow-hidden transition-colors duration-200 ${isProfileActive
                   ? "bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-emerald-500/5 dark:from-emerald-950/80 dark:to-teal-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-400/40 dark:border-emerald-600/50 shadow-xs"

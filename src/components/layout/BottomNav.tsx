@@ -34,6 +34,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
   const [pillStyle, setPillStyle] = useState({ left: 0, width: 0, opacity: 0 });
   const [mounted, setMounted] = useState(false);
+  const [optimisticActiveId, setOptimisticActiveId] = useState<string | null>(null);
   const navRef = useRef<HTMLDivElement>(null);
   const rafIdRef = useRef<number>(0);
 
@@ -44,7 +45,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   const userRank = currentUser?.joinRank || parseRankFromMembership(currentUser?.membershipNumber);
   const userBadge = getBadgeForRank(userRank);
 
-  // Determine active item
+  // Determine active item from pathname
   const isHome = pathname === "/";
   const isDiscover = pathname.startsWith("/discover");
   const isCreate =
@@ -58,7 +59,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
     pathname.startsWith("/safety") ||
     pathname.startsWith("/admin");
 
-  const activeId = isHome
+  const resolvedActiveId = isHome
     ? "home"
     : isDiscover
       ? "discover"
@@ -69,6 +70,14 @@ const BottomNav: React.FC<BottomNavProps> = () => {
           : isProfile
             ? "profile"
             : "home";
+
+  // Prioritize optimistic click state for 0ms instant feedback
+  const activeId = optimisticActiveId || resolvedActiveId;
+
+  // Clear optimistic state when route transition completes
+  useEffect(() => {
+    setOptimisticActiveId(null);
+  }, [pathname]);
 
   const updatePill = useCallback(() => {
     if (!navRef.current) return;
@@ -83,12 +92,12 @@ const BottomNav: React.FC<BottomNavProps> = () => {
   }, []);
 
   useEffect(() => {
-    // Immediate positioning on mount + path change
+    // Immediate synchronous positioning on active change
     updatePill();
-    // Deferred re-measure after flex layout settles
+    // Fast RAF pass for layout settling
     rafIdRef.current = requestAnimationFrame(updatePill);
     return () => cancelAnimationFrame(rafIdRef.current);
-  }, [activeId, pathname, updatePill]);
+  }, [activeId, updatePill]);
 
   // 1. NEVER render bottom dock when not logged in
   if (!currentUser) return null;
@@ -169,7 +178,7 @@ const BottomNav: React.FC<BottomNavProps> = () => {
 
       {/* Floating Bottom Navigation Dock */}
       <nav
-        className="md:hidden fixed bottom-3 left-3 right-3 sm:left-1/2 sm:-translate-x-1/2 sm:w-[460px] z-50 pointer-events-none select-none"
+        className="md:hidden fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom,0px))] left-2.5 right-2.5 sm:left-1/2 sm:-translate-x-1/2 sm:w-[460px] z-50 pointer-events-none select-none"
         aria-label="Mobile Navigation"
       >
         <svg width="0" height="0" className="absolute pointer-events-none">
@@ -182,15 +191,16 @@ const BottomNav: React.FC<BottomNavProps> = () => {
         </svg>
 
         {/* 100% Circular pill container (rounded-full) */}
-        <div ref={navRef} className="pointer-events-auto relative w-full h-[52px] rounded-full bg-white/95 dark:bg-[#0c1410]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/60 shadow-[0_12px_36px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.65),0_0_0_1px_rgba(16,185,129,0.25)] px-1.5 py-1.5 flex items-center justify-between gap-1">
+        <div ref={navRef} className="pointer-events-auto relative w-full h-[50px] sm:h-[52px] rounded-full bg-white/95 dark:bg-[#0c1410]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/60 shadow-[0_12px_36px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_14px_40px_rgba(0,0,0,0.65),0_0_0_1px_rgba(16,185,129,0.25)] px-1 py-1 flex items-center justify-between gap-0.5">
           <div 
-            className="absolute top-1.5 bottom-1.5 rounded-full transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] z-0"
+            className="absolute top-1 bottom-1 rounded-full transition-all duration-200 ease-out z-0 pointer-events-none"
             style={{
               left: `${pillStyle.left}px`,
               width: `${pillStyle.width}px`,
               opacity: pillStyle.opacity,
-              background: "transparent",
-              border: "1px solid rgba(148, 163, 184, 0.4)"
+              background: "linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(20, 184, 166, 0.08))",
+              border: "1px solid rgba(16, 185, 129, 0.35)",
+              boxShadow: "0 2px 10px rgba(16, 185, 129, 0.12)"
             }}
           />
           
@@ -251,13 +261,25 @@ const BottomNav: React.FC<BottomNavProps> = () => {
               </>
             );
 
-            const baseClasses = `relative z-10 flex items-center justify-center h-full rounded-full select-none ${isActive ? "px-4 shrink-0" : "flex-1"}`;
+            const baseClasses = `relative z-10 flex items-center justify-center h-full rounded-full select-none transition-all duration-150 active:scale-95 ${isActive ? "px-3 sm:px-4 shrink-0" : "flex-1"}`;
 
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 data-active={isActive}
+                onClick={(e) => {
+                  setOptimisticActiveId(item.id);
+                  // Immediate measurement on the tapped link for zero latency animation
+                  const target = e.currentTarget;
+                  if (target) {
+                    setPillStyle({
+                      left: target.offsetLeft,
+                      width: target.offsetWidth,
+                      opacity: 1,
+                    });
+                  }
+                }}
                 prefetch={true}
                 scroll={false}
                 className={baseClasses}

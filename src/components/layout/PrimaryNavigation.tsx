@@ -56,18 +56,25 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
   if (pathname?.startsWith("/admin")) return null;
 
   // Determine active tab
+  const [optimisticTab, setOptimisticTab] = useState<string | null>(null);
   const mode = searchParams.get("mode");
-  let activeTab: string | null = null;
+  let resolvedActiveTab: string | null = null;
 
   if (pathname === "/discover") {
-    if (mode === "travel") activeTab = "travel";
-    else if (mode === "companion") activeTab = "companion";
-    else if (mode === "near-you") activeTab = "near-you";
+    if (mode === "travel") resolvedActiveTab = "travel";
+    else if (mode === "companion") resolvedActiveTab = "companion";
+    else if (mode === "near-you") resolvedActiveTab = "near-you";
   } else if (pathname?.startsWith("/travel")) {
-    activeTab = "travel";
+    resolvedActiveTab = "travel";
   } else if (pathname?.startsWith("/activities")) {
-    activeTab = "companion";
+    resolvedActiveTab = "companion";
   }
+
+  const activeTab = optimisticTab || resolvedActiveTab;
+
+  useEffect(() => {
+    setOptimisticTab(null);
+  }, [searchParams, pathname]);
 
   const navItems = [
     {
@@ -110,6 +117,7 @@ const PrimaryNavigationContent: React.FC<PrimaryNavigationProps> = ({ initialUse
             <Link
               key={item.id}
               href={item.href}
+              onClick={() => setOptimisticTab(item.id)}
               prefetch={true}
               className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 flex-1 sm:flex-none h-full border-b-[3px] transition-all ${
                 isActive

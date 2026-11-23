@@ -1698,10 +1698,10 @@ export default function ActiveChatPage() {
                         <div
                           data-chat-actions="true"
                           className={`absolute top-1.5 flex items-center opacity-0 group-hover/bubble:opacity-100 focus-within:opacity-100 transition-all duration-150 z-20 ${
-                            isMe ? "-left-14" : "-right-14"
+                            isMe ? "-left-12 sm:-left-14" : "-right-12 sm:-right-14"
                           }`}
                         >
-                          <div className="flex items-center h-7 px-1 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all">
+                          <div className="flex items-center h-6.5 sm:h-7 px-1 rounded-full bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-800/40 shadow-sm hover:shadow-md transition-all">
                             {/* ☺ Smile Emoji Reaction Trigger */}
                             <button
                               type="button"
@@ -1738,7 +1738,7 @@ export default function ActiveChatPage() {
                       {contextMenuMsg?.msg?.id === msg.id && (
                         <div
                           data-chat-actions="true"
-                          className="absolute z-50 min-w-[215px] p-1.5 rounded-2xl bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/50 shadow-[0_12px_36px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.65)] animate-scale-up text-xs select-none"
+                          className="absolute z-50 min-w-[215px] max-w-[calc(100vw-32px)] p-1.5 rounded-2xl bg-white/95 dark:bg-[#121c17]/95 backdrop-blur-2xl border border-slate-200/90 dark:border-emerald-800/50 shadow-[0_12px_36px_rgba(0,0,0,0.12),0_2px_8px_rgba(0,0,0,0.06)] dark:shadow-[0_16px_40px_rgba(0,0,0,0.65)] animate-scale-up text-xs select-none"
                           style={{
                             top: idx >= messages.length - 2 && idx > 2 ? "auto" : "100%",
                             bottom: idx >= messages.length - 2 && idx > 2 ? "100%" : "auto",
