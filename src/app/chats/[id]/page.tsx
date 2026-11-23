@@ -1422,6 +1422,7 @@ export default function ActiveChatPage() {
     "Travel Companion";
 
   const directAvatarUrl = conversation?.otherUser?.avatarUrl || otherParticipants[0]?.avatarUrl;
+  const groupImageUrl = conversation?.activity?.imageUrl || conversation?.travelPlan?.imageUrl;
   const isDirectVerified = Boolean(conversation?.otherUser?.isVerified);
   const isGroupRoom = !isDirectChat;
 
@@ -1512,6 +1513,14 @@ export default function ActiveChatPage() {
                   ) : (
                     <span>{directTitle.charAt(0).toUpperCase()}</span>
                   )}
+                </div>
+              ) : groupImageUrl ? (
+                <div className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-2xl shrink-0 shadow-xs ring-1 ring-slate-200/80 dark:ring-emerald-500/20 overflow-hidden">
+                  <img
+                    src={groupImageUrl}
+                    alt={conversation?.title || "Group"}
+                    className="w-full h-full object-cover"
+                  />
                 </div>
               ) : (
                 <div
@@ -2894,6 +2903,19 @@ export default function ActiveChatPage() {
         currentUser={currentUser}
         onMemberRemoved={() => {
           fetchChatData();
+        }}
+        onMemberAdded={() => {
+          fetchChatData();
+        }}
+        onGroupProfileUpdated={(newImageUrl) => {
+          setConversation((prev: any) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              activity: prev.activity ? { ...prev.activity, imageUrl: newImageUrl } : prev.activity,
+              travelPlan: prev.travelPlan ? { ...prev.travelPlan, imageUrl: newImageUrl } : prev.travelPlan,
+            };
+          });
         }}
         onOpenReport={(target) => {
           setReportTarget(target);

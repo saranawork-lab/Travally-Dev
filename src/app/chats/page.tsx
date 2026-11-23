@@ -254,6 +254,7 @@ function ChatsContent() {
                 const timeDisplay = lastMsg ? formatTimeAgo(lastMsg.createdAt) : formatTimeAgo(conv.updatedAt);
                 const displayTitle = conv.otherUser?.displayName || conv.title;
                 const avatarUrl = conv.otherUser?.avatarUrl;
+                const groupImageUrl = conv.activity?.imageUrl || conv.travelPlan?.imageUrl;
 
                 const unreadCount = typeof conv.unreadCount === "number" ? conv.unreadCount : 0;
                 const hasUnread = unreadCount > 0;
@@ -291,6 +292,12 @@ function ChatsContent() {
                           {displayTitle.charAt(0).toUpperCase()}
                         </div>
                       )
+                    ) : groupImageUrl ? (
+                      <img
+                        src={groupImageUrl}
+                        alt={displayTitle}
+                        className="w-10 h-10 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-xs"
+                      />
                     ) : (
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white shadow-xs ${

@@ -231,6 +231,7 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
               lastMsg?.sender?.profile?.displayName || lastMsg?.sender?.email?.split("@")[0];
             const snippet = parseLastMessageSnippet(lastMsg?.content);
             const timeAgo = lastMsg ? formatTimeAgo(lastMsg.createdAt) : formatTimeAgo(conv.updatedAt);
+            const groupImageUrl = conv.activity?.imageUrl || conv.travelPlan?.imageUrl;
 
             const cardBg = isDirect
               ? isActive
@@ -267,6 +268,12 @@ export const ChatsSidebar: React.FC<ChatsSidebarProps> = ({
                       <span>{displayTitle.charAt(0).toUpperCase()}</span>
                     )}
                   </div>
+                ) : groupImageUrl ? (
+                  <img
+                    src={groupImageUrl}
+                    alt={displayTitle}
+                    className="w-8 h-8 rounded-full object-cover shrink-0 border border-slate-200 dark:border-slate-700 shadow-xs"
+                  />
                 ) : (
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border shadow-xs ${
