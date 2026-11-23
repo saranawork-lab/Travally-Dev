@@ -78,12 +78,9 @@ const StoryCardItem: React.FC<{
     const timer = setInterval(() => {
       const res = formatCountdown(card.expiresAt);
       setCountdown(res);
-      if (res.isExpired) {
-        onSwipe("reject"); // Card automatically expires from deck
-      }
     }, 1000);
     return () => clearInterval(timer);
-  }, [card.expiresAt, onSwipe]);
+  }, [card.expiresAt]);
 
   // Framer Motion Drag values
   const x = useMotionValue(0);
@@ -377,21 +374,23 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
     return () => window.removeEventListener("travally:refresh-deck", handleRefreshEvent);
   }, [loadDeck, loadSaved, loadMine]);
 
-  // Periodic interval to clean up expired cards in UI
+  // Periodic interval to clean up expired cards in UI only when something actually expired
   useEffect(() => {
     const interval = setInterval(() => {
       const nowMs = Date.now();
-      // Remove any card from saved whose expiresAt has passed
-      setSavedClues((prev) =>
-        prev.filter((c) => new Date(c.expiresAt).getTime() > nowMs)
-      );
-      setDeckClues((prev) =>
-        prev.filter((c) => new Date(c.expiresAt).getTime() > nowMs)
-      );
-      setMyClues((prev) =>
-        prev.filter((c) => new Date(c.expiresAt).getTime() > nowMs)
-      );
-    }, 5000);
+      setSavedClues((prev) => {
+        const hasExpired = prev.some((c) => new Date(c.expiresAt).getTime() <= nowMs);
+        return hasExpired ? prev.filter((c) => new Date(c.expiresAt).getTime() > nowMs) : prev;
+      });
+      setDeckClues((prev) => {
+        const hasExpired = prev.some((c) => new Date(c.expiresAt).getTime() <= nowMs);
+        return hasExpired ? prev.filter((c) => new Date(c.expiresAt).getTime() > nowMs) : prev;
+      });
+      setMyClues((prev) => {
+        const hasExpired = prev.some((c) => new Date(c.expiresAt).getTime() <= nowMs);
+        return hasExpired ? prev.filter((c) => new Date(c.expiresAt).getTime() > nowMs) : prev;
+      });
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -472,7 +471,7 @@ export const FindMeStoryDeck: React.FC<FindMeStoryDeckProps> = ({
   const nextCard = deckClues[1];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" data-no-ptr="true">
       {/* ── ONCE-A-DAY POPUP (MAX 3 DAYS TOTAL FOR USER) ── */}
       {showStoryPopup && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in select-none">

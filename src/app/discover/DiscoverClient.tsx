@@ -203,6 +203,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
   const [pullDistance, setPullDistance] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const touchStartYRef = useRef(0);
+  const touchStartXRef = useRef(0);
   const isPullingRef = useRef(false);
 
   const handleRefresh = useCallback(async () => {
@@ -218,20 +219,22 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
       setTimeout(() => {
         setIsRefreshing(false);
         setPullDistance(0);
-      }, 400);
+      }, 500);
     }
   }, []);
 
   // Listen for Discover nav click to trigger refresh & scroll to top
   useEffect(() => {
     const handleNavClick = (e: MouseEvent) => {
-      const link = (e.target as HTMLElement).closest('a[href="/discover"], a[href^="/discover"], [data-nav="discover"]');
-      if (link) {
+      const link = (e.target as HTMLElement).closest('[data-nav="discover"]');
+      if (link && window.location.pathname.startsWith("/discover")) {
         window.scrollTo({ top: 0, behavior: "smooth" });
-        if (typeof navigator !== "undefined" && navigator.vibrate) {
-          navigator.vibrate(25);
+        if (window.scrollY === 0) {
+          if (typeof navigator !== "undefined" && navigator.vibrate) {
+            navigator.vibrate(25);
+          }
+          handleRefresh();
         }
-        handleRefresh();
       }
     };
 
@@ -239,33 +242,61 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
     return () => document.removeEventListener("click", handleNavClick);
   }, [handleRefresh]);
 
-  // Pull down to refresh gesture on mobile / touch devices
+  // Pull down to refresh gesture (Chrome & Instagram style: only at complete top, with resistance and threshold)
   useEffect(() => {
     const handleTouchStart = (e: TouchEvent) => {
-      if (window.scrollY <= 5) {
-        touchStartYRef.current = e.touches[0].clientY;
-        isPullingRef.current = true;
-      } else {
+      // Must be scrolled completely up to the top (window.scrollY === 0)
+      if (window.scrollY > 0 || isRefreshing) {
         isPullingRef.current = false;
+        return;
       }
+
+      const target = e.target as HTMLElement | null;
+      if (target && target.closest('[data-no-ptr], button, input, textarea, a, [role="button"]')) {
+        isPullingRef.current = false;
+        return;
+      }
+
+      touchStartYRef.current = e.touches[0].clientY;
+      touchStartXRef.current = e.touches[0].clientX;
+      isPullingRef.current = true;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isPullingRef.current || isRefreshing) return;
-      const currentY = e.touches[0].clientY;
-      const diff = currentY - touchStartYRef.current;
-      if (diff > 0 && window.scrollY <= 5) {
-        const distance = Math.min(diff * 0.45, 85);
-        setPullDistance(distance);
-      } else {
+
+      // Must strictly remain at the top of the page
+      if (window.scrollY > 0) {
+        isPullingRef.current = false;
         setPullDistance(0);
+        return;
       }
+
+      const currentX = e.touches[0].clientX;
+      const currentY = e.touches[0].clientY;
+      const diffX = currentX - touchStartXRef.current;
+      const diffY = currentY - touchStartYRef.current;
+
+      // Cancel if moving horizontally or moving upwards
+      if (Math.abs(diffX) * 1.2 > diffY || diffY <= 0) {
+        if (diffY <= 0) {
+          isPullingRef.current = false;
+        }
+        setPullDistance(0);
+        return;
+      }
+
+      // Rubber-band resistance just like Chrome and Instagram
+      const distance = Math.min(Math.pow(diffY, 0.8) * 1.6, 80);
+      setPullDistance(distance);
     };
 
     const handleTouchEnd = () => {
       if (!isPullingRef.current) return;
       isPullingRef.current = false;
-      if (pullDistance >= 50 && !isRefreshing) {
+
+      // Only refresh if user deliberately pulled down past threshold (>= 65px)
+      if (pullDistance >= 65 && !isRefreshing && window.scrollY === 0) {
         if (typeof navigator !== "undefined" && navigator.vibrate) {
           navigator.vibrate(30);
         }
@@ -394,7 +425,7 @@ function DiscoverContent({ initialUser }: DiscoverClientProps) {
           <span>
             {isRefreshing
               ? "Refreshing feed..."
-              : pullDistance >= 50
+              : pullDistance >= 65
               ? "Release to refresh"
               : "Pull down to refresh"}
           </span>
