@@ -70,11 +70,11 @@ export function safeJsonParse<T>(jsonString: string | null | undefined, fallback
 }
 
 export function formatLastSeen(lastSeenAt: string | Date | null | undefined): string {
-  if (!lastSeenAt) return "Offline";
+  if (!lastSeenAt) return "Last seen recently";
 
   const date = typeof lastSeenAt === "string" ? new Date(lastSeenAt) : lastSeenAt;
   const timeMs = date.getTime();
-  if (isNaN(timeMs)) return "Offline";
+  if (isNaN(timeMs)) return "Last seen recently";
 
   const nowMs = Date.now();
   const diffMs = Math.max(0, nowMs - timeMs);

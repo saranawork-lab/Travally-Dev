@@ -271,7 +271,16 @@ export const ChatService = {
     }
 
     // Resolve other user's clean profile name when 2 persons are in the conversation
-    let otherUserProfile: { id: string; displayName: string; avatarUrl?: string | null; isVerified?: boolean } | null = null;
+    let otherUserProfile: {
+      id: string;
+      displayName: string;
+      avatarUrl?: string | null;
+      isVerified?: boolean;
+      bio?: string | null;
+      city?: string | null;
+      interests?: string | string[] | null;
+      membershipTier?: string | null;
+    } | null = null;
 
     if (conversation.type === "DIRECT") {
       try {
@@ -295,6 +304,10 @@ export const ChatService = {
               displayName: targetU.profile.displayName,
               avatarUrl: targetU.profile.avatarUrl,
               isVerified: targetU.profile.isVerified,
+              bio: targetU.profile.bio,
+              city: targetU.profile.city,
+              interests: targetU.profile.interests,
+              membershipTier: targetU.profile.membershipTier,
             };
           }
         }
@@ -313,6 +326,10 @@ export const ChatService = {
             displayName: p.user.profile.displayName,
             avatarUrl: p.user.profile.avatarUrl,
             isVerified: p.user.profile.isVerified,
+            bio: (p.user.profile as any).bio,
+            city: (p.user.profile as any).city,
+            interests: (p.user.profile as any).interests,
+            membershipTier: (p.user.profile as any).membershipTier,
           };
         }
       } else if (hostId) {
@@ -324,6 +341,10 @@ export const ChatService = {
             displayName: hostProfile.displayName,
             avatarUrl: hostProfile.avatarUrl,
             isVerified: hostProfile.isVerified,
+            bio: (hostProfile as any).bio,
+            city: (hostProfile as any).city,
+            interests: (hostProfile as any).interests,
+            membershipTier: (hostProfile as any).membershipTier,
           };
         }
       }

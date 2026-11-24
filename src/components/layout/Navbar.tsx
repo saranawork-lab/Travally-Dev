@@ -229,7 +229,7 @@ const Navbar: React.FC<NavbarProps> = ({
                     setTimeout(() => mobileSearchInputRef.current?.focus(), 80);
                   }
                 }}
-                className="p-2 rounded-full text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16201b] transition-all relative cursor-pointer"
+                className="md:hidden p-2 rounded-full text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-[#16201b] transition-all relative cursor-pointer"
                 aria-label="Search"
                 title="Search anything (trips, companions, destinations)"
               >

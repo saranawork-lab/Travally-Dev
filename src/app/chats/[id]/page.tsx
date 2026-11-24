@@ -61,6 +61,7 @@ import { MessageStatusBeacon, type MessageDeliveryStatus } from "@/components/ch
 import { E2EESecurityModal } from "@/components/chat/E2EESecurityModal";
 import { ChatsSidebar } from "@/components/chat/ChatsSidebar";
 import { GroupMembersDrawer } from "@/components/chat/GroupMembersDrawer";
+import { DirectContactDrawer } from "@/components/chat/DirectContactDrawer";
 import { TypingIndicator } from "@/components/chat/TypingIndicator";
 import { encryptChatMessage, decryptChatMessage, isE2EEMessage } from "@/lib/crypto";
 import { useLanguage } from "@/context/LanguageContext";
@@ -410,6 +411,7 @@ export default function ActiveChatPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false);
   const [isMembersDrawerOpen, setIsMembersDrawerOpen] = useState(false);
+  const [isContactDrawerOpen, setIsContactDrawerOpen] = useState(false);
 
   // Restore sidebar state preference
   useEffect(() => {
@@ -2200,16 +2202,13 @@ export default function ActiveChatPage() {
               type="button"
               onClick={() => {
                 if (isDirectChat) {
-                  const targetId = conversation?.otherUser?.id || otherParticipants[0]?.id;
-                  if (targetId && targetId !== "partner-1") {
-                    router.push(`/profile/${targetId}?from=/chats/${conversationId}`);
-                  }
+                  setIsContactDrawerOpen(true);
                 } else {
                   setIsMembersDrawerOpen(true);
                 }
               }}
               className="flex items-center gap-2 sm:gap-2.5 min-w-0 flex-1 text-left hover:opacity-85 transition p-1 -ml-1 rounded-xl cursor-pointer"
-              title={isDirectChat ? `View ${directTitle}'s profile` : "Click to view all group members & details"}
+              title={isDirectChat ? `View ${directTitle}'s contact info` : "Click to view all group members & details"}
             >
               {isDirectChat ? (
                 <div suppressHydrationWarning className="relative w-8 h-8 sm:w-10 sm:h-10 rounded-full shrink-0 shadow-xs ring-1 ring-slate-200/80 dark:ring-emerald-500/20 overflow-hidden bg-gradient-to-tr from-emerald-500 to-teal-400 flex items-center justify-center text-white font-black text-xs sm:text-sm">
@@ -4027,6 +4026,34 @@ export default function ActiveChatPage() {
         }}
         onBlockUser={(targetUserId, targetName) => {
           handleBlockUser(targetUserId, targetName);
+        }}
+      />
+
+      {/* Direct Contact Profile & Details Drawer (WhatsApp Style) */}
+      <DirectContactDrawer
+        isOpen={isContactDrawerOpen}
+        onClose={() => setIsContactDrawerOpen(false)}
+        conversationId={conversationId}
+        contact={conversation?.otherUser || (otherParticipants[0] ? {
+          id: otherParticipants[0].id,
+          displayName: otherParticipants[0].displayName,
+          avatarUrl: otherParticipants[0].avatarUrl,
+          isVerified: (otherParticipants[0] as any).isVerified,
+        } : null)}
+        presence={companionPresence}
+        onStartVoiceCall={() => {
+          setIsCallModalOpen(true);
+        }}
+        onOpenReport={(target) => {
+          setReportTarget(target);
+          setReportModalOpen(true);
+        }}
+        onBlockUser={(targetUserId, targetName) => {
+          handleBlockUser(targetUserId, targetName);
+        }}
+        onClearChat={() => {
+          setMessages([]);
+          showInstructionToast("🗑️ Chat cleared successfully");
         }}
       />
 

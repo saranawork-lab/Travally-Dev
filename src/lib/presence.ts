@@ -70,6 +70,25 @@ export async function getUserPresence(
         lastSeenAt: doc.lastSeenAt,
       };
     }
+
+    // Fallback: check User collection for last activity / updatedAt
+    const { ObjectId } = await import("mongodb");
+    let userDoc: any = null;
+    try {
+      userDoc = await mongo.collection("User").findOne(
+        { _id: new ObjectId(userId) },
+        { projection: { updatedAt: 1, createdAt: 1 } }
+      );
+    } catch {
+      userDoc = await mongo.collection("User").findOne(
+        { id: userId },
+        { projection: { updatedAt: 1, createdAt: 1 } }
+      );
+    }
+    if (userDoc?.updatedAt || userDoc?.createdAt) {
+      const fallbackDate = new Date(userDoc.updatedAt || userDoc.createdAt).toISOString();
+      return { isOnline: false, lastSeenAt: fallbackDate };
+    }
   } catch {}
 
   return { isOnline: false, lastSeenAt: null };

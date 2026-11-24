@@ -26,6 +26,7 @@ interface TreasureMapProps {
   onSelectTreasure: (treasure: TreasureItem) => void;
   onMapClickCoordinates?: (lat: number, lng: number) => void;
   isPickingLocation?: boolean;
+  isVisible?: boolean;
 }
 
 export const TreasureMap: React.FC<TreasureMapProps> = ({
@@ -34,6 +35,7 @@ export const TreasureMap: React.FC<TreasureMapProps> = ({
   onSelectTreasure,
   onMapClickCoordinates,
   isPickingLocation = false,
+  isVisible = true,
 }) => {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<any>(null);
@@ -80,8 +82,14 @@ export const TreasureMap: React.FC<TreasureMapProps> = ({
         });
 
         mapInstanceRef.current = map;
+
+        // Force invalidate size across multiple frames to fill container cleanly
+        setTimeout(() => map.invalidateSize(), 60);
+        setTimeout(() => map.invalidateSize(), 250);
+        setTimeout(() => map.invalidateSize(), 500);
       } else {
         map = mapInstanceRef.current;
+        setTimeout(() => map.invalidateSize(), 60);
       }
 
       // Clear old markers
@@ -148,6 +156,32 @@ export const TreasureMap: React.FC<TreasureMapProps> = ({
       });
     }
   }, [selectedTreasure]);
+
+  // Recalculate tile sizes when map container resizes or tab becomes visible
+  useEffect(() => {
+    if (!mapInstanceRef.current) return;
+    if (isVisible) {
+      const t1 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 60);
+      const t2 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 250);
+      const t3 = setTimeout(() => mapInstanceRef.current?.invalidateSize(), 600);
+      return () => {
+        clearTimeout(t1);
+        clearTimeout(t2);
+        clearTimeout(t3);
+      };
+    }
+  }, [isVisible]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+    ro.observe(mapContainerRef.current);
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <div className="relative w-full h-[380px] sm:h-[460px] rounded-3xl overflow-hidden border border-slate-200 dark:border-emerald-950/80 shadow-md">

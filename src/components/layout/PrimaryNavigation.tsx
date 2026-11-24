@@ -11,4 +11,3 @@ export const PrimaryNavigation: React.FC<PrimaryNavigationProps> = () => {
 };
 
 export default PrimaryNavigation;
-

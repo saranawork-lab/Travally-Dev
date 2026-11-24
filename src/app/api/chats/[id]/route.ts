@@ -70,3 +70,28 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: "Failed to update group" }, { status: 500 });
   }
 }
+
+/**
+ * DELETE /api/chats/[id]
+ * Clears all messages in the conversation for the chat.
+ */
+export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  try {
+    const user = await getCurrentUser();
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const { id: conversationId } = params;
+
+    // Delete all messages belonging to this conversation
+    await db.message.deleteMany({
+      where: { conversationId },
+    });
+
+    return NextResponse.json({ success: true, message: "Chat cleared successfully" });
+  } catch (error) {
+    console.error("DELETE chat error:", error);
+    return NextResponse.json({ error: "Failed to clear chat" }, { status: 500 });
+  }
+}

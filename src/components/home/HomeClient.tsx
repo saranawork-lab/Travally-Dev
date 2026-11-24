@@ -1827,6 +1827,7 @@ export default function HomeClient() {
                 treasures={treasures}
                 selectedTreasure={selectedTreasure}
                 onSelectTreasure={(t) => setSelectedTreasure(t)}
+                isVisible={activeTab === "treasure"}
               />
             </div>
 
