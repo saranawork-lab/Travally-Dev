@@ -39,43 +39,14 @@ export function VoiceNotePlayer({
     }
 
     setHasError(false);
-    let objectUrl: string | null = null;
-    let effectiveUrl = audioUrl;
-
-    // Convert data:audio base64 URLs to Blob URLs for smoother streaming
-    if (audioUrl.startsWith("data:audio/")) {
-      try {
-        const commaIdx = audioUrl.indexOf(",");
-        if (commaIdx !== -1) {
-          const header = audioUrl.slice(0, commaIdx);
-          const base64Data = audioUrl.slice(commaIdx + 1);
-          const mimeMatch = header.match(/data:([^;]+)/);
-          const rawMime = mimeMatch ? mimeMatch[1] : "audio/webm";
-          const mimeType = rawMime.split(";")[0] || "audio/webm";
-
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: mimeType });
-          objectUrl = URL.createObjectURL(blob);
-          effectiveUrl = objectUrl;
-        }
-      } catch {
-        effectiveUrl = audioUrl.replace(/;codecs=[^;]+/, "");
-      }
-    }
-
-    let triedFallback = false;
     let audio: HTMLAudioElement;
     try {
-      audio = new Audio(effectiveUrl);
+      audio = new Audio(audioUrl);
     } catch {
       setHasError(true);
       return;
     }
+
     audio.preload = "metadata";
     audioRef.current = audio;
 
@@ -100,17 +71,6 @@ export function VoiceNotePlayer({
     };
 
     audio.onerror = () => {
-      // If objectUrl failed, attempt fallback to raw audioUrl once
-      if (objectUrl && !triedFallback && audioUrl.startsWith("data:audio/")) {
-        triedFallback = true;
-        try {
-          audio.src = audioUrl;
-          audio.load();
-          return;
-        } catch {
-          // Continue to mark error
-        }
-      }
       setIsPlaying(false);
       setHasError(true);
     };
@@ -118,9 +78,6 @@ export function VoiceNotePlayer({
     return () => {
       audio.pause();
       audio.src = "";
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
     };
   }, [audioUrl]);
 

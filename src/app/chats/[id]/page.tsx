@@ -505,9 +505,10 @@ export default function ActiveChatPage() {
   const sampledWaveformRef = useRef<number[]>([]);
   const audioChunksRef = useRef<Blob[]>([]);
 
-  // Double-tap vs Long-press detection refs
-  const tapCountRef = useRef<number>(0);
-  const lastTapTimeRef = useRef<number>(0);
+  // WhatsApp-style Voice Note Hold/Tap tracking refs
+  const isHoldingMicRef = useRef<boolean>(false);
+  const isRecordingVoiceRef = useRef<boolean>(false);
+  const pointerDownTimeRef = useRef<number>(0);
   const micLongPressTimerRef = useRef<any>(null);
   const tooltipTimeoutRef = useRef<any>(null);
 
@@ -626,6 +627,13 @@ export default function ActiveChatPage() {
         return;
       }
 
+      setIsRecordingVoice(true);
+      isRecordingVoiceRef.current = true;
+      setRecordingDuration(0);
+      audioChunksRef.current = [];
+      sampledWaveformRef.current = [];
+      isCancelledRef.current = false;
+
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: {
           echoCancellation: true,
@@ -633,6 +641,15 @@ export default function ActiveChatPage() {
           autoGainControl: true,
         },
       });
+
+      // If user released pointer while getUserMedia was resolving, stop immediately
+      if (!isHoldingMicRef.current && isCancelledRef.current) {
+        stream.getTracks().forEach((track) => track.stop());
+        setIsRecordingVoice(false);
+        isRecordingVoiceRef.current = false;
+        return;
+      }
+
       audioStreamRef.current = stream;
 
       const mimeTypes = [
@@ -656,14 +673,52 @@ export default function ActiveChatPage() {
       const options = selectedMimeType ? { mimeType: selectedMimeType } : undefined;
       const mediaRecorder = new MediaRecorder(stream, options);
       mediaRecorderRef.current = mediaRecorder;
-      audioChunksRef.current = [];
-      sampledWaveformRef.current = [];
-      isCancelledRef.current = false;
 
       mediaRecorder.ondataavailable = (e) => {
         if (e.data && e.data.size > 0) {
           audioChunksRef.current.push(e.data);
         }
+      };
+
+      mediaRecorder.onstop = () => {
+        if (audioStreamRef.current) {
+          audioStreamRef.current.getTracks().forEach((track) => track.stop());
+          audioStreamRef.current = null;
+        }
+
+        setIsRecordingVoice(false);
+        isRecordingVoiceRef.current = false;
+
+        if (isCancelledRef.current || audioChunksRef.current.length === 0) {
+          audioChunksRef.current = [];
+          return;
+        }
+
+        const holdMs = Math.max(500, Date.now() - (pointerDownTimeRef.current || recordStartTimeRef.current));
+        const durationSeconds = Math.max(1, Math.round(holdMs / 1000));
+        const mimeType = mediaRecorder.mimeType || "audio/webm";
+        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          const base64Audio = reader.result as string;
+          let waveform = sampledWaveformRef.current;
+          if (!waveform || waveform.length < 8) {
+            waveform = [
+              25, 45, 60, 35, 80, 65, 40, 90, 75, 50, 85, 95, 60, 45, 75, 55, 35,
+              65, 80, 50, 30, 60,
+            ];
+          }
+
+          // WhatsApp-style: Stage into type box for preview, review & approval before sending
+          setStagedVoiceNote({
+            audioUrl: base64Audio,
+            duration: durationSeconds,
+            waveform,
+          });
+          audioChunksRef.current = [];
+        };
+        reader.readAsDataURL(audioBlob);
       };
 
       // Real-time Soundwave Graph Visualizer via Web Audio API
@@ -717,14 +772,20 @@ export default function ActiveChatPage() {
 
       mediaRecorder.start(100);
       recordStartTimeRef.current = Date.now();
-      setIsRecordingVoice(true);
-      setRecordingDuration(0);
 
+      if (recordIntervalRef.current) clearInterval(recordIntervalRef.current);
       recordIntervalRef.current = setInterval(() => {
         setRecordingDuration((prev) => prev + 1);
       }, 1000);
+
+      // If user already released finger while stream was initializing, stop immediately
+      if (!isHoldingMicRef.current) {
+        stopVoiceRecording(false);
+      }
     } catch (err: any) {
       console.error("Failed to start voice recording:", err);
+      setIsRecordingVoice(false);
+      isRecordingVoiceRef.current = false;
       if (err.name === "NotAllowedError") {
         showInstructionToast("Microphone access denied in browser settings");
       } else {
@@ -753,78 +814,25 @@ export default function ActiveChatPage() {
 
     const mediaRecorder = mediaRecorderRef.current;
     if (!mediaRecorder || mediaRecorder.state === "inactive") {
+      if (audioStreamRef.current) {
+        audioStreamRef.current.getTracks().forEach((track) => track.stop());
+        audioStreamRef.current = null;
+      }
       setIsRecordingVoice(false);
+      isRecordingVoiceRef.current = false;
       return;
     }
 
-    const elapsedMs = Date.now() - recordStartTimeRef.current;
-
-    // Buffer of 220ms ensures the final syllable is NOT cut off when released
-    setTimeout(() => {
-      try {
-        if (mediaRecorder.state !== "inactive") {
-          mediaRecorder.requestData();
-        }
-      } catch {}
-
-      mediaRecorder.onstop = () => {
-        if (audioStreamRef.current) {
-          audioStreamRef.current.getTracks().forEach((track) => track.stop());
-          audioStreamRef.current = null;
-        }
-
-        setIsRecordingVoice(false);
-
-        if (isCancelledRef.current) {
-          audioChunksRef.current = [];
-          return;
-        }
-
-        // Accidental brief tap protection (< 500ms)
-        if (elapsedMs < 500) {
-          showInstructionToast("Hold to record voice message • Double-tap to voice type");
-          audioChunksRef.current = [];
-          return;
-        }
-
-        const rawMime = mediaRecorder.mimeType || "audio/webm";
-        const mimeType = rawMime.split(";")[0]; // Clean MIME without codecs parameter
-        const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-
-        if (audioBlob.size < 500) {
-          audioChunksRef.current = [];
-          return;
-        }
-
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64Audio = reader.result as string;
-          const durationSeconds = Math.max(1, Math.round(elapsedMs / 1000));
-          let waveform = sampledWaveformRef.current;
-          if (!waveform || waveform.length < 8) {
-            waveform = [
-              25, 45, 60, 35, 80, 65, 40, 90, 75, 50, 85, 95, 60, 45, 75, 55, 35,
-              65, 80, 50, 30, 60,
-            ];
-          }
-
-          // WhatsApp-style: Stage into type box for preview, review & approval before sending
-          setStagedVoiceNote({
-            audioUrl: base64Audio,
-            duration: durationSeconds,
-            waveform,
-          });
-        };
-        reader.readAsDataURL(audioBlob);
-      };
-
-      try {
+    try {
+      if (mediaRecorder.state === "recording") {
+        mediaRecorder.requestData();
         mediaRecorder.stop();
-      } catch (err) {
-        console.error("Error stopping mediaRecorder:", err);
-        setIsRecordingVoice(false);
       }
-    }, 220);
+    } catch (err) {
+      console.error("Error stopping mediaRecorder:", err);
+      setIsRecordingVoice(false);
+      isRecordingVoiceRef.current = false;
+    }
   };
 
   const handleMicPointerDown = (e: React.PointerEvent) => {
@@ -834,60 +842,61 @@ export default function ActiveChatPage() {
       return;
     }
 
-    const now = Date.now();
-    const timeSinceLastTap = now - lastTapTimeRef.current;
+    try {
+      (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+    } catch {}
 
-    // Double-tap check (< 400ms)
-    if (timeSinceLastTap < 400 && tapCountRef.current >= 1) {
-      if (micLongPressTimerRef.current) {
-        clearTimeout(micLongPressTimerRef.current);
-        micLongPressTimerRef.current = null;
+    isHoldingMicRef.current = true;
+    pointerDownTimeRef.current = Date.now();
+
+    if (micLongPressTimerRef.current) {
+      clearTimeout(micLongPressTimerRef.current);
+    }
+
+    // 120ms threshold cleanly differentiates a tap from a hold
+    micLongPressTimerRef.current = setTimeout(() => {
+      if (isHoldingMicRef.current) {
+        startVoiceRecording();
       }
-      tapCountRef.current = 0;
-      lastTapTimeRef.current = 0;
+    }, 120);
+  };
+
+  const handleMicPointerUp = (e: React.PointerEvent) => {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
+    if (micLongPressTimerRef.current) {
+      clearTimeout(micLongPressTimerRef.current);
+      micLongPressTimerRef.current = null;
+    }
+
+    const holdDuration = Date.now() - pointerDownTimeRef.current;
+    isHoldingMicRef.current = false;
+
+    if (holdDuration < 250 && !isRecordingVoiceRef.current) {
+      // Tap (< 250ms): toggle speech-to-text voice typing
       startSpeechRecognition();
       return;
     }
 
-    // First tap: set tap count and start long-press timer
-    tapCountRef.current = 1;
-    lastTapTimeRef.current = now;
-
-    // Long-press threshold: 350ms ensures natural double-taps are not prematurely cut off
-    micLongPressTimerRef.current = setTimeout(() => {
-      tapCountRef.current = 0;
-      startVoiceRecording();
-    }, 350);
-  };
-
-  const handleMicPointerUp = () => {
-    if (micLongPressTimerRef.current) {
-      clearTimeout(micLongPressTimerRef.current);
-      micLongPressTimerRef.current = null;
-    }
-
-    if (isRecordingVoice) {
-      // Released long-press: automatically send the voice message!
+    if (isRecordingVoiceRef.current) {
       stopVoiceRecording(false);
-    } else {
-      // Single tap timeout after double-tap window expires
-      setTimeout(() => {
-        if (tapCountRef.current === 1 && !isTranscribing && !isRecordingVoice) {
-          tapCountRef.current = 0;
-          showInstructionToast(
-            "Hold to record voice message • Double-tap to voice type"
-          );
-        }
-      }, 420);
     }
   };
 
-  const handleMicPointerCancel = () => {
+  const handleMicPointerCancel = (e: React.PointerEvent) => {
+    try {
+      (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+    } catch {}
+
     if (micLongPressTimerRef.current) {
       clearTimeout(micLongPressTimerRef.current);
       micLongPressTimerRef.current = null;
     }
-    if (isRecordingVoice) {
+
+    isHoldingMicRef.current = false;
+    if (isRecordingVoiceRef.current) {
       stopVoiceRecording(true);
     }
   };
@@ -906,45 +915,19 @@ export default function ActiveChatPage() {
         previewAudioRef.current.pause();
         previewAudioRef.current = null;
       }
-      if (previewObjectUrlRef.current) {
-        URL.revokeObjectURL(previewObjectUrlRef.current);
-        previewObjectUrlRef.current = null;
-      }
       setIsPlayingPreview(false);
       setPreviewCurrentTime(0);
       setPreviewTotalDuration(0);
       return;
     }
 
-    let objectUrl: string | null = null;
-    let effectiveUrl = stagedVoiceNote.audioUrl;
-
-    if (stagedVoiceNote.audioUrl.startsWith("data:audio/")) {
-      try {
-        const commaIdx = stagedVoiceNote.audioUrl.indexOf(",");
-        if (commaIdx !== -1) {
-          const header = stagedVoiceNote.audioUrl.slice(0, commaIdx);
-          const base64Data = stagedVoiceNote.audioUrl.slice(commaIdx + 1);
-          const mimeMatch = header.match(/data:([^;]+)/);
-          const rawMime = mimeMatch ? mimeMatch[1] : "audio/webm";
-          const mimeType = rawMime.split(";")[0];
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          const blob = new Blob([byteArray], { type: mimeType });
-          objectUrl = URL.createObjectURL(blob);
-          previewObjectUrlRef.current = objectUrl;
-          effectiveUrl = objectUrl;
-        }
-      } catch (err) {
-        effectiveUrl = stagedVoiceNote.audioUrl.replace(/;codecs=[^;]+/, "");
-      }
+    let audio: HTMLAudioElement;
+    try {
+      audio = new Audio(stagedVoiceNote.audioUrl);
+    } catch {
+      return;
     }
 
-    const audio = new Audio(effectiveUrl);
     audio.preload = "auto";
     previewAudioRef.current = audio;
 
@@ -972,10 +955,6 @@ export default function ActiveChatPage() {
     return () => {
       audio.pause();
       audio.src = "";
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-        previewObjectUrlRef.current = null;
-      }
     };
   }, [stagedVoiceNote]);
 
@@ -3737,17 +3716,9 @@ export default function ActiveChatPage() {
                 type="button"
                 onPointerDown={handleMicPointerDown}
                 onPointerUp={handleMicPointerUp}
-                onPointerLeave={handleMicPointerCancel}
-                onDoubleClick={(e) => {
-                  e.preventDefault();
-                  if (micLongPressTimerRef.current) {
-                    clearTimeout(micLongPressTimerRef.current);
-                    micLongPressTimerRef.current = null;
-                  }
-                  tapCountRef.current = 0;
-                  startSpeechRecognition();
-                }}
+                onPointerCancel={handleMicPointerCancel}
                 onContextMenu={(e) => e.preventDefault()}
+                style={{ touchAction: "none" }}
                 className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 transition-all select-none cursor-pointer ${
                   isRecordingVoice
                     ? "bg-rose-500 text-white ring-4 ring-rose-400/50 scale-105 shadow-md animate-pulse"
@@ -3755,7 +3726,7 @@ export default function ActiveChatPage() {
                     ? "bg-emerald-600 text-white ring-4 ring-emerald-400/50 shadow-md animate-pulse"
                     : "bg-gradient-to-br from-emerald-100 via-teal-50 to-emerald-100 hover:from-emerald-200 hover:to-teal-100 text-emerald-800 dark:from-emerald-950/80 dark:to-teal-900/60 dark:text-emerald-300 border border-emerald-300/80 dark:border-emerald-700/60 shadow-xs active:scale-95"
                 }`}
-                title="Hold to record voice message • Double-tap to voice type"
+                title="Hold to record voice message • Tap to voice type"
               >
                 <Mic
                   className={`w-5 h-5 ${
