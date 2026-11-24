@@ -47,8 +47,16 @@ import { AvatarBadge } from "@/components/common/AvatarBadge";
 import { getBadgeForRank, parseRankFromMembership } from "@/lib/badges";
 import type { TreasureItem } from "@/components/home/TreasureMap";
 import { ProfileModal } from "@/components/profile/ProfileModal";
-import { GrowInitiativeCard } from "@/components/home/GrowInitiativeCard";
-import { FindMeStoryDeck } from "@/components/home/FindMeStoryDeck";
+
+// Dynamically import heavy tab-specific components for faster initial load
+const GrowInitiativeCard = dynamic(
+  () => import("@/components/home/GrowInitiativeCard").then((mod) => mod.GrowInitiativeCard),
+  { loading: () => <div className="h-48 rounded-2xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
+const FindMeStoryDeck = dynamic(
+  () => import("@/components/home/FindMeStoryDeck").then((mod) => mod.FindMeStoryDeck),
+  { loading: () => <div className="h-[500px] rounded-3xl bg-slate-100 dark:bg-slate-800 animate-pulse" /> }
+);
 
 // Dynamically import TreasureMap to avoid SSR Leaflet window errors
 const TreasureMap = dynamic(

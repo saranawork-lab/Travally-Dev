@@ -2,11 +2,26 @@
 
 import React, { useState, useEffect, useMemo, useCallback, useRef, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import dynamic from "next/dynamic";
 import { ModeToggle, AppMode } from "@/components/common/ModeToggle";
-import { ActivityCard } from "@/components/activities/ActivityCard";
-import { ActivityFilters } from "@/components/activities/ActivityFilters";
-import { TripCard } from "@/components/travel/TripCard";
-import { TripFilters } from "@/components/travel/TripFilters";
+
+// Dynamic imports for heavy card/filter components — only loaded when their mode is active
+const ActivityCard = dynamic(
+  () => import("@/components/activities/ActivityCard").then((mod) => mod.ActivityCard),
+  { loading: () => <div className="h-48 rounded-2xl bg-slate-200 dark:bg-slate-800 animate-pulse" /> }
+);
+const ActivityFilters = dynamic(
+  () => import("@/components/activities/ActivityFilters").then((mod) => mod.ActivityFilters),
+  { loading: () => <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse" /> }
+);
+const TripCard = dynamic(
+  () => import("@/components/travel/TripCard").then((mod) => mod.TripCard),
+  { loading: () => <div className="h-48 rounded-2xl bg-slate-200 dark:bg-slate-800 animate-pulse" /> }
+);
+const TripFilters = dynamic(
+  () => import("@/components/travel/TripFilters").then((mod) => mod.TripFilters),
+  { loading: () => <div className="h-10 rounded-xl bg-slate-200 dark:bg-slate-800 animate-pulse" /> }
+);
 import { PlusCircle, SearchX, Compass, Search, MapPin, Users, Calendar, Luggage, RotateCw } from "lucide-react";
 import Link from "next/link";
 import { useLanguage } from "@/context/LanguageContext";

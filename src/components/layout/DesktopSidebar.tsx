@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Compass,
@@ -24,6 +24,7 @@ interface DesktopSidebarProps {
 
 const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const { currentUser, logout } = useAuth();
   const { t } = useLanguage();
   const { unreadChatsCount, pendingRequestsCount, totalUnreadMessages } = useBadges();
@@ -31,7 +32,11 @@ const DesktopSidebar: React.FC<DesktopSidebarProps> = () => {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     setMounted(true);
-  }, []);
+    // Prefetch all main routes on mount for instant navigation
+    ["/", "/discover", "/chats", "/create", "/settings"].forEach((route) => {
+      router.prefetch(route);
+    });
+  }, [router]);
 
   // State: whether user is hovering over the sidebar
   const [isHovered, setIsHovered] = useState(false);
