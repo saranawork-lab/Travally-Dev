@@ -66,9 +66,15 @@ export const startCall = async (params: {
 
   try {
     const mongo = await getDb();
-    // End any lingering ringing calls for this conversation
+    // End any lingering ringing calls for this conversation or caller
     await mongo.collection("active_calls").updateMany(
-      { conversationId: params.conversationId, status: { $ne: "ENDED" } },
+      {
+        $or: [
+          { conversationId: params.conversationId },
+          { callerId: params.callerId },
+        ],
+        status: { $ne: "ENDED" },
+      },
       { $set: { status: "ENDED", endedAt: now } }
     );
 
@@ -89,11 +95,14 @@ export const getActiveCallByConversation = async (
   try {
     const mongo = await getDb();
     const cutoff = Date.now() - 300000; // 5 min
-    const doc = await mongo.collection("active_calls").findOne({
-      conversationId,
-      status: { $in: ["RINGING", "CONNECTED"] },
-      createdAt: { $gt: cutoff },
-    });
+    const doc = await mongo.collection("active_calls").findOne(
+      {
+        conversationId,
+        status: { $in: ["RINGING", "CONNECTED"] },
+        createdAt: { $gt: cutoff },
+      },
+      { sort: { createdAt: -1 } }
+    );
 
     if (doc) {
       return {
@@ -147,16 +156,21 @@ export const hasAnyActiveCalls = async (): Promise<boolean> => {
 export const getActiveCallForUser = async (userId: string): Promise<ActiveCall | null> => {
   try {
     const mongo = await getDb();
-    const cutoff = Date.now() - 45000; // 45 seconds ringing timeout
-    const doc = await mongo.collection("active_calls").findOne({
-      status: "RINGING",
-      callerId: { $ne: userId },
-      $or: [
-        { participantIds: { $size: 0 } },
-        { participantIds: userId },
-      ],
-      createdAt: { $gt: cutoff },
-    });
+    const cutoff = Date.now() - 60000; // 60 seconds ringing timeout
+    const doc = await mongo.collection("active_calls").findOne(
+      {
+        status: "RINGING",
+        callerId: { $ne: userId },
+        $or: [
+          { participantIds: { $size: 0 } },
+          { participantIds: userId },
+          { participantIds: { $exists: false } },
+          { participantIds: null },
+        ],
+        createdAt: { $gt: cutoff },
+      },
+      { sort: { createdAt: -1 } }
+    );
 
     if (doc) {
       return {

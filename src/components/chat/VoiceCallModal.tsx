@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Phone,
   PhoneOff,
@@ -14,6 +14,7 @@ import {
   ShieldCheck,
   Radio,
   AlertCircle,
+  Volume1,
 } from "lucide-react";
 import { ringtone } from "@/lib/ringtone";
 
@@ -43,6 +44,8 @@ const ICE_SERVERS: RTCConfiguration = {
     { urls: "stun:stun.l.google.com:19302" },
     { urls: "stun:stun1.l.google.com:19302" },
     { urls: "stun:stun2.l.google.com:19302" },
+    { urls: "stun:stun3.l.google.com:19302" },
+    { urls: "stun:stun4.l.google.com:19302" },
     { urls: "stun:stun.cloudflare.com:3478" },
     { urls: "stun:stun.services.mozilla.com" },
   ],
@@ -78,32 +81,76 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
   const [isMuted, setIsMuted] = useState(false);
   const [isSpeakerOn, setIsSpeakerOn] = useState(true);
   const [micError, setMicError] = useState<string | null>(null);
+  const [needAudioUnlock, setNeedAudioUnlock] = useState(false);
+  const [micSpeakingLevel, setMicSpeakingLevel] = useState(0);
 
   const [callId, setCallId] = useState<string | null>(initialCallId || null);
 
+  const callIdRef = useRef<string | null>(initialCallId || null);
+  const isInitializingRef = useRef(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const pollRef = useRef<NodeJS.Timeout | null>(null);
   const pcRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const pendingIceCandidatesRef = useRef<any[]>([]);
+  const appliedCandidatesRef = useRef<Set<string>>(new Set());
+  const micAnalyserRef = useRef<AnalyserNode | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const animFrameRef = useRef<number | null>(null);
+
+  // Keep callIdRef in sync with prop updates
+  useEffect(() => {
+    if (initialCallId) {
+      callIdRef.current = initialCallId;
+      setCallId(initialCallId);
+    }
+  }, [initialCallId]);
 
   // Clean up all WebRTC media streams, audio ringtones & connections
-  const cleanupWebRTC = () => {
+  const cleanupWebRTC = useCallback(() => {
     ringtone.stop();
     if (pollRef.current) clearInterval(pollRef.current);
     if (timerRef.current) clearInterval(timerRef.current);
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
 
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((track) => track.stop());
       localStreamRef.current = null;
     }
 
+    if (audioContextRef.current) {
+      try {
+        audioContextRef.current.close();
+      } catch {}
+      audioContextRef.current = null;
+    }
+
     if (pcRef.current) {
-      pcRef.current.close();
+      try {
+        pcRef.current.close();
+      } catch {}
       pcRef.current = null;
     }
-  };
+
+    isInitializingRef.current = false;
+    appliedCandidatesRef.current.clear();
+    pendingIceCandidatesRef.current = [];
+    setMicSpeakingLevel(0);
+  }, []);
+
+  // Unlock browser audio upon any user interaction in modal
+  const unlockAudio = useCallback(() => {
+    if (remoteAudioRef.current) {
+      remoteAudioRef.current
+        .play()
+        .then(() => setNeedAudioUnlock(false))
+        .catch(() => {});
+    }
+    if (audioContextRef.current && audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume().catch(() => {});
+    }
+  }, []);
 
   // Reset state when modal opens
   useEffect(() => {
@@ -117,8 +164,12 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
       setIsMuted(false);
       setIsSpeakerOn(true);
       setMicError(null);
-      setCallId(initialCallId || null);
+      setNeedAudioUnlock(false);
+      const targetId = initialCallId || null;
+      callIdRef.current = targetId;
+      setCallId(targetId);
       pendingIceCandidatesRef.current = [];
+      appliedCandidatesRef.current.clear();
 
       // If outgoing call, play outgoing ring tone
       if (!isIncomingCall) {
@@ -129,7 +180,7 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
     }
 
     const handleBeforeUnload = () => {
-      const currentCallId = callId || initialCallId;
+      const currentCallId = callIdRef.current;
       if (currentCallId) {
         navigator.sendBeacon(
           `/api/calls/${currentCallId}`,
@@ -143,7 +194,7 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
       cleanupWebRTC();
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isOpen, initialCallId, isIncomingCall, callId]);
+  }, [isOpen, isIncomingCall, hasMultipleOthers, cleanupWebRTC]);
 
   // Handle call timer when CONNECTED
   useEffect(() => {
@@ -176,10 +227,47 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
     }
   }, [isSpeakerOn]);
 
-  // Setup WebRTC connection and signaling
-  const initWebRTC = async (existingCallId?: string) => {
+  // Start live microphone level analyzer for visual voice activity feedback
+  const startMicLevelMeter = (stream: MediaStream) => {
     try {
-      // 1. Get microphone access with crystal clear voice filters
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      audioContextRef.current = ctx;
+
+      const analyser = ctx.createAnalyser();
+      analyser.fftSize = 256;
+      analyser.smoothingTimeConstant = 0.5;
+      micAnalyserRef.current = analyser;
+
+      const source = ctx.createMediaStreamSource(stream);
+      source.connect(analyser);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const updateMeter = () => {
+        if (!analyser) return;
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          sum += dataArray[i];
+        }
+        const avg = sum / dataArray.length;
+        setMicSpeakingLevel(Math.min(100, Math.round(avg * 1.5)));
+        animFrameRef.current = requestAnimationFrame(updateMeter);
+      };
+      updateMeter();
+    } catch (err) {
+      console.warn("Could not start audio level meter:", err);
+    }
+  };
+
+  // Setup WebRTC connection and signaling
+  const initWebRTC = async (targetExistingId?: string) => {
+    if (isInitializingRef.current) return;
+    isInitializingRef.current = true;
+
+    try {
+      // 1. Get microphone access with robust fallback
       let stream: MediaStream | null = null;
       try {
         stream = await navigator.mediaDevices.getUserMedia({
@@ -190,13 +278,28 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
           },
           video: false,
         });
-        localStreamRef.current = stream;
       } catch (err: any) {
-        console.warn("Microphone access unavailable or denied:", err);
-        setMicError("Microphone permission required for outgoing audio.");
+        console.warn("Retrying microphone with basic constraints:", err);
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            audio: true,
+            video: false,
+          });
+        } catch (err2: any) {
+          console.error("Microphone access unavailable or denied:", err2);
+          setMicError("Microphone permission required for outgoing audio.");
+        }
       }
 
-      // 2. Initialize RTCPeerConnection with Google & Cloudflare STUN
+      if (stream) {
+        localStreamRef.current = stream;
+        stream.getAudioTracks().forEach((track) => {
+          track.enabled = !isMuted;
+        });
+        startMicLevelMeter(stream);
+      }
+
+      // 2. Initialize RTCPeerConnection with STUN servers
       const pc = new RTCPeerConnection(ICE_SERVERS);
       pcRef.current = pc;
 
@@ -207,18 +310,65 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
         });
       }
 
+      // Ensure transceiver direction is sendrecv
+      try {
+        const transceivers = pc.getTransceivers ? pc.getTransceivers() : [];
+        const audioTransceiver = transceivers.find(
+          (t) => t.receiver?.track?.kind === "audio"
+        );
+        if (audioTransceiver) {
+          audioTransceiver.direction = "sendrecv";
+        }
+      } catch {}
+
       // Receive remote audio track
       pc.ontrack = (event) => {
         const remoteStream = event.streams[0] || new MediaStream([event.track]);
         if (remoteAudioRef.current) {
           remoteAudioRef.current.srcObject = remoteStream;
-          remoteAudioRef.current.play().catch((e) => {
-            console.warn("Audio autoplay blocked by browser:", e);
-          });
+          remoteAudioRef.current.volume = 1.0;
+          remoteAudioRef.current.muted = !isSpeakerOn;
+          const playPromise = remoteAudioRef.current.play();
+          if (playPromise) {
+            playPromise
+              .then(() => setNeedAudioUnlock(false))
+              .catch((e) => {
+                console.warn("Audio autoplay blocked by browser policy:", e);
+                setNeedAudioUnlock(true);
+              });
+          }
+        }
+
+        event.track.onunmute = () => {
+          if (remoteAudioRef.current) {
+            remoteAudioRef.current
+              .play()
+              .then(() => setNeedAudioUnlock(false))
+              .catch(() => setNeedAudioUnlock(true));
+          }
+        };
+      };
+
+      // Monitor WebRTC connection states
+      pc.onconnectionstatechange = () => {
+        if (pc.connectionState === "connected") {
+          setCallStatus("CONNECTED");
+          ringtone.stop();
         }
       };
 
-      let currentCallId = existingCallId || callId;
+      pc.oniceconnectionstatechange = () => {
+        if (
+          pc.iceConnectionState === "connected" ||
+          pc.iceConnectionState === "completed"
+        ) {
+          setCallStatus("CONNECTED");
+          ringtone.stop();
+        }
+      };
+
+      // Resolve current call ID
+      let resolvedCallId = targetExistingId || initialCallId || callIdRef.current;
 
       // Helper to flush buffered ICE candidates
       const flushCandidates = (targetId: string) => {
@@ -238,52 +388,84 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
         }
       };
 
-      // Handle ICE candidates
+      // Handle ICE candidates with clean JSON serialization
       pc.onicecandidate = (event) => {
-        if (event.candidate) {
-          if (currentCallId) {
-            fetch(`/api/calls/${currentCallId}`, {
+        if (event.candidate && event.candidate.candidate) {
+          const cand = event.candidate.toJSON
+            ? event.candidate.toJSON()
+            : {
+                candidate: event.candidate.candidate,
+                sdpMid: event.candidate.sdpMid,
+                sdpMLineIndex: event.candidate.sdpMLineIndex,
+              };
+
+          const activeId = callIdRef.current;
+          if (activeId) {
+            fetch(`/api/calls/${activeId}`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
                 action: "ICE_CANDIDATE",
                 fromCaller: !isIncomingCall,
-                candidate: event.candidate,
+                candidate: cand,
               }),
             }).catch(() => {});
           } else {
-            // Buffer candidate until callId is established
-            pendingIceCandidatesRef.current.push(event.candidate);
+            pendingIceCandidatesRef.current.push(cand);
           }
         }
       };
 
       // 3. Either create Offer (Caller) or create Answer (Recipient)
-      if (isIncomingCall && incomingCallOffer && currentCallId) {
+      if (isIncomingCall && resolvedCallId) {
         // RECIPIENT: Set remote offer and create answer
-        await pc.setRemoteDescription(
-          new RTCSessionDescription(incomingCallOffer)
-        );
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
+        callIdRef.current = resolvedCallId;
+        setCallId(resolvedCallId);
 
-        await fetch(`/api/calls/${currentCallId}`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "ANSWER",
-            sdpAnswer: answer,
-          }),
-        });
+        let offerToUse = incomingCallOffer;
+        if (!offerToUse) {
+          try {
+            const res = await fetch(`/api/calls/${resolvedCallId}`);
+            if (res.ok) {
+              const data = await res.json();
+              offerToUse = data.call?.sdpOffer;
+            }
+          } catch {}
+        }
 
-        flushCandidates(currentCallId);
-        setCallStatus("CONNECTED");
+        if (offerToUse) {
+          await pc.setRemoteDescription(new RTCSessionDescription(offerToUse));
+          const answer = await pc.createAnswer();
+          await pc.setLocalDescription(answer);
+
+          const answerPayload = {
+            type: answer.type,
+            sdp: answer.sdp,
+          };
+
+          await fetch(`/api/calls/${resolvedCallId}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "ANSWER",
+              sdpAnswer: answerPayload,
+            }),
+          });
+
+          flushCandidates(resolvedCallId);
+          setCallStatus("CONNECTED");
+        }
       } else {
         // CALLER: Create offer and initiate call
         const offer = await pc.createOffer({
           offerToReceiveAudio: true,
         });
         await pc.setLocalDescription(offer);
+
+        const offerPayload = {
+          type: offer.type,
+          sdp: offer.sdp,
+        };
 
         const res = await fetch("/api/calls", {
           method: "POST",
@@ -292,29 +474,29 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
             conversationId,
             isGroup: hasMultipleOthers,
             participantIds: selectedIds,
-            sdpOffer: offer,
+            sdpOffer: offerPayload,
           }),
         });
 
         if (res.ok) {
           const data = await res.json();
-          currentCallId = data.call?.id;
-          setCallId(currentCallId);
-          if (currentCallId) {
-            flushCandidates(currentCallId);
+          resolvedCallId = data.call?.id;
+          if (resolvedCallId) {
+            callIdRef.current = resolvedCallId;
+            setCallId(resolvedCallId);
+            flushCandidates(resolvedCallId);
           }
         }
       }
 
-      const appliedCandidatesRef = new Set<string>();
-
       // 4. Poll call status & exchange signaling state
       if (pollRef.current) clearInterval(pollRef.current);
       pollRef.current = setInterval(async () => {
-        if (!currentCallId) return;
+        const currentActiveId = callIdRef.current;
+        if (!currentActiveId) return;
 
         try {
-          const res = await fetch(`/api/calls/${currentCallId}`);
+          const res = await fetch(`/api/calls/${currentActiveId}`);
           if (!res.ok) return;
 
           const data = await res.json();
@@ -355,14 +537,15 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
 
             if (candidatesToApply && candidatesToApply.length > 0) {
               for (const cand of candidatesToApply) {
-                // Use a simple hash to track applied candidates
-                const candHash = cand.candidate || JSON.stringify(cand);
-                if (!appliedCandidatesRef.has(candHash)) {
-                  appliedCandidatesRef.add(candHash);
-                  try {
-                    await pc.addIceCandidate(new RTCIceCandidate(cand));
-                  } catch (e) {
-                    console.warn("Failed to add ICE candidate", e);
+                if (cand && cand.candidate) {
+                  const candHash = cand.candidate;
+                  if (!appliedCandidatesRef.current.has(candHash)) {
+                    appliedCandidatesRef.current.add(candHash);
+                    try {
+                      await pc.addIceCandidate(new RTCIceCandidate(cand));
+                    } catch (e) {
+                      console.warn("Failed to add ICE candidate", e);
+                    }
                   }
                 }
               }
@@ -371,16 +554,19 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
         } catch (e) {
           console.error("Signaling poll error:", e);
         }
-      }, 1000);
+      }, 800);
     } catch (err) {
       console.error("WebRTC initialization error:", err);
+    } finally {
+      isInitializingRef.current = false;
     }
   };
 
   // Trigger call initiation when entering ACTIVE_CALL
   useEffect(() => {
     if (isOpen && phase === "ACTIVE_CALL") {
-      initWebRTC(callId || undefined);
+      const targetId = initialCallId || callIdRef.current || undefined;
+      initWebRTC(targetId);
     }
   }, [isOpen, phase]);
 
@@ -402,15 +588,17 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
 
   const handleStartCall = () => {
     if (selectedIds.length === 0) return;
+    unlockAudio();
     setPhase("ACTIVE_CALL");
   };
 
   const handleEndCall = async () => {
     setCallStatus("ENDED");
+    const activeId = callIdRef.current;
     cleanupWebRTC();
 
-    if (callId) {
-      fetch(`/api/calls/${callId}`, {
+    if (activeId) {
+      fetch(`/api/calls/${activeId}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "END" }),
@@ -443,7 +631,10 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
   );
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xl animate-fade-in select-none">
+    <div
+      onClick={unlockAudio}
+      className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xl animate-fade-in select-none"
+    >
       {/* Hidden HTML Audio Element to play remote WebRTC voice streams directly */}
       <audio ref={remoteAudioRef} autoPlay playsInline />
 
@@ -586,8 +777,16 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
                 </>
               )}
 
+              {/* Voice speaking ripple when connected */}
+              {callStatus === "CONNECTED" && micSpeakingLevel > 15 && (
+                <div
+                  className="absolute -inset-3 rounded-full border border-emerald-400/50 animate-ping pointer-events-none"
+                  style={{ opacity: Math.min(1, micSpeakingLevel / 80) }}
+                />
+              )}
+
               {/* Avatar Grid / Single Avatar */}
-              {activeCalledParticipants.length === 1 ? (
+              {activeCalledParticipants.length <= 1 ? (
                 <div className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1 bg-gradient-to-tr from-emerald-500 via-teal-400 to-amber-400 shadow-2xl shadow-emerald-500/20">
                   <div className="w-full h-full rounded-full bg-slate-900 overflow-hidden flex items-center justify-center text-3xl font-black text-emerald-400">
                     {activeCalledParticipants[0]?.avatarUrl ? (
@@ -658,6 +857,32 @@ export const VoiceCallModal: React.FC<VoiceCallModalProps> = ({
                 )}
               </p>
             </div>
+
+            {/* Live voice activity indicator when connected */}
+            {callStatus === "CONNECTED" && (
+              <div className="flex items-center gap-1 h-4">
+                <Volume1 className="w-3 h-3 text-emerald-400" />
+                <span className="text-[10px] text-emerald-400 font-medium">
+                  {isMuted
+                    ? "Mic Muted"
+                    : micSpeakingLevel > 15
+                    ? "Transmitting voice..."
+                    : "Microphone Active"}
+                </span>
+              </div>
+            )}
+
+            {/* Audio unlock prompt if browser autoplay blocked */}
+            {needAudioUnlock && (
+              <button
+                type="button"
+                onClick={unlockAudio}
+                className="mt-2 px-4 py-2 rounded-full bg-emerald-500 hover:bg-emerald-400 text-white font-bold text-xs flex items-center gap-2 shadow-lg animate-bounce cursor-pointer"
+              >
+                <Volume2 className="w-4 h-4" />
+                <span>Tap to hear audio</span>
+              </button>
+            )}
 
             {micError && (
               <div className="p-3 rounded-2xl bg-rose-500/20 border border-rose-500/40 text-[11px] text-rose-300 flex items-center gap-2 max-w-xs">

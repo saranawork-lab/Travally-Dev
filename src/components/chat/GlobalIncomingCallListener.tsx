@@ -11,6 +11,7 @@ export const GlobalIncomingCallListener: React.FC = () => {
   const { currentUser } = useAuth();
   const pathname = usePathname();
   const [incomingCall, setIncomingCall] = useState<any>(null);
+  const [acceptedCall, setAcceptedCall] = useState<any>(null);
   const [isCallModalOpen, setIsCallModalOpen] = useState(false);
   const [activeCallId, setActiveCallId] = useState<string | null>(null);
   const [incomingCallOffer, setIncomingCallOffer] = useState<any>(null);
@@ -68,9 +69,11 @@ export const GlobalIncomingCallListener: React.FC = () => {
 
   const handleAccept = () => {
     if (!incomingCall) return;
+    const callToAccept = incomingCall;
     ringtone.stop();
-    setActiveCallId(incomingCall.id);
-    setIncomingCallOffer(incomingCall.sdpOffer);
+    setAcceptedCall(callToAccept);
+    setActiveCallId(callToAccept.id);
+    setIncomingCallOffer(callToAccept.sdpOffer);
     setIsCallModalOpen(true);
     setIncomingCall(null);
     prevCallIdRef.current = null;
@@ -170,14 +173,15 @@ export const GlobalIncomingCallListener: React.FC = () => {
             setIsCallModalOpen(false);
             setActiveCallId(null);
             setIncomingCallOffer(null);
+            setAcceptedCall(null);
           }}
-          conversationId={incomingCall?.conversationId || ""}
+          conversationId={acceptedCall?.conversationId || incomingCall?.conversationId || ""}
           isGroup={false}
           otherParticipants={[
             {
-              id: incomingCall?.callerId || "",
-              displayName: incomingCall?.callerName || "Companion",
-              avatarUrl: incomingCall?.callerAvatar,
+              id: acceptedCall?.callerId || incomingCall?.callerId || "",
+              displayName: acceptedCall?.callerName || incomingCall?.callerName || "Companion",
+              avatarUrl: acceptedCall?.callerAvatar || incomingCall?.callerAvatar,
             },
           ]}
           currentUser={currentUser}

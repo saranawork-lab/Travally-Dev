@@ -53,6 +53,7 @@ import { RealisticEmoji } from "@/components/chat/RealisticEmoji";
 import { EmojiPickerPopover } from "@/components/chat/EmojiPickerPopover";
 import { VoiceCallModal, CallParticipant } from "@/components/chat/VoiceCallModal";
 import { VoiceNotePlayer } from "@/components/chat/VoiceNotePlayer";
+import { ringtone } from "@/lib/ringtone";
 import { AttachmentPopover } from "@/components/chat/AttachmentPopover";
 import { ShareLocationModal } from "@/components/chat/ShareLocationModal";
 import { LiveLocationModal } from "@/components/chat/LiveLocationModal";
@@ -1224,13 +1225,16 @@ export default function ActiveChatPage() {
           // If we are recipient and our modal is not already open, trigger incoming call dialog
           if (call.callerId !== currentUser.id && !isCallModalOpen) {
             setIncomingCall(call);
+            ringtone.playIncoming();
           }
         } else if (call && call.status === "CONNECTED") {
           if (!isCallModalOpen) {
             setIncomingCall(null);
+            ringtone.stop();
           }
         } else {
           setIncomingCall(null);
+          ringtone.stop();
         }
       } catch {
         // ignore network error
@@ -1245,6 +1249,7 @@ export default function ActiveChatPage() {
 
   const handleAcceptIncomingCall = () => {
     if (!incomingCall) return;
+    ringtone.stop();
     setActiveCallId(incomingCall.id);
     setIsIncomingCall(true);
     setIncomingCallOffer(incomingCall.sdpOffer);
@@ -1254,12 +1259,14 @@ export default function ActiveChatPage() {
 
   const handleDeclineIncomingCall = () => {
     if (!incomingCall) return;
-    fetch(`/api/calls/${incomingCall.id}`, {
+    ringtone.stop();
+    const callToDeclineId = incomingCall.id;
+    setIncomingCall(null);
+    fetch(`/api/calls/${callToDeclineId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "DECLINE" }),
     }).catch(() => {});
-    setIncomingCall(null);
   };
 
   const handleStartVoiceCall = () => {
@@ -2060,7 +2067,18 @@ export default function ActiveChatPage() {
 
   const otherParticipants: CallParticipant[] = [];
 
-  if (organizer && organizer.id !== currentUser?.id) {
+  // 1. Direct chat companion
+  if (conversation?.otherUser && conversation.otherUser.id !== currentUser?.id) {
+    otherParticipants.push({
+      id: conversation.otherUser.id,
+      displayName: conversation.otherUser.displayName || "Travel Companion",
+      avatarUrl: conversation.otherUser.avatarUrl,
+      isHost: false,
+    });
+  }
+
+  // 2. Activity / Trip Organizer
+  if (organizer && organizer.id !== currentUser?.id && !otherParticipants.some((p) => p.id === organizer.id)) {
     otherParticipants.push({
       id: organizer.id,
       displayName: organizer.profile?.displayName || organizer.email?.split("@")[0] || "Host Organizer",
@@ -2069,9 +2087,10 @@ export default function ActiveChatPage() {
     });
   }
 
+  // 3. Activity / Trip raw participants
   rawParticipants.forEach((p: any) => {
     const userId = p.userId || p.user?.id;
-    if (userId && userId !== currentUser?.id && userId !== organizerId) {
+    if (userId && userId !== currentUser?.id && userId !== organizerId && !otherParticipants.some((item) => item.id === userId)) {
       const u = p.user;
       otherParticipants.push({
         id: userId,
@@ -2082,7 +2101,22 @@ export default function ActiveChatPage() {
     }
   });
 
-  // Fallback if otherParticipants is empty
+  // 4. Conversation participants fallback
+  if (otherParticipants.length === 0 && Array.isArray(conversation?.participants)) {
+    conversation.participants.forEach((p: any) => {
+      const uid = p.userId || p.user?.id;
+      if (uid && uid !== currentUser?.id && !otherParticipants.some((item) => item.id === uid)) {
+        otherParticipants.push({
+          id: uid,
+          displayName: p.user?.profile?.displayName || p.user?.email?.split("@")[0] || "Travel Companion",
+          avatarUrl: p.user?.profile?.avatarUrl,
+          isHost: false,
+        });
+      }
+    });
+  }
+
+  // 5. Fallback if otherParticipants is still empty
   if (otherParticipants.length === 0) {
     otherParticipants.push({
       id: "partner-1",
@@ -4003,9 +4037,7 @@ export default function ActiveChatPage() {
           isVerified: (otherParticipants[0] as any).isVerified,
         } : null)}
         presence={companionPresence}
-        onStartVoiceCall={() => {
-          setIsCallModalOpen(true);
-        }}
+        onStartVoiceCall={handleStartVoiceCall}
         onOpenReport={(target) => {
           setReportTarget(target);
           setReportModalOpen(true);
