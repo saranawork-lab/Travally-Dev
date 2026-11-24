@@ -2325,20 +2325,11 @@ export default function ActiveChatPage() {
                   }
                 }}
                 className="px-3 py-1 rounded-2xl bg-white/95 dark:bg-[#15221c]/95 backdrop-blur-md border border-slate-200/90 dark:border-emerald-950/80 shadow-xs flex items-center justify-between gap-2.5 text-xs cursor-pointer hover:bg-slate-50 dark:hover:bg-[#1a2b23] transition-colors select-none group"
-                title={
-                  pinnedMessages.length > 1
-                    ? `Pin ${activePinIndex + 1} of ${pinnedMessages.length} (Click to scroll & cycle to next pin)`
-                    : "Click to scroll to pinned message"
-                }
+                title="Click to scroll to pinned message"
               >
                 <div className="flex items-center gap-2 truncate min-w-0">
                   <div className="relative flex items-center justify-center shrink-0">
                     <Pin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-                    {pinnedMessages.length > 1 && (
-                      <span className="absolute -top-1.5 -right-2 text-[8px] font-black text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950 px-1 rounded-full border border-emerald-500/30">
-                        {activePinIndex + 1}/{pinnedMessages.length}
-                      </span>
-                    )}
                   </div>
                   <div className="flex items-center gap-1.5 truncate text-[11px] sm:text-xs min-w-0">
                     <strong className="text-slate-800 dark:text-slate-200 shrink-0 font-bold">
