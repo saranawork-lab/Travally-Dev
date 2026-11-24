@@ -22,6 +22,7 @@ export function VoiceNotePlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [totalDuration, setTotalDuration] = useState(initialDuration || 0);
   const [playbackRate, setPlaybackRate] = useState<1 | 1.5 | 2>(1);
+  const [hasError, setHasError] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Default pleasant waveform if no sampled waveform was attached
@@ -32,12 +33,16 @@ export function VoiceNotePlayer({
   const bars = waveform && waveform.length >= 8 ? waveform : defaultWaveform;
 
   useEffect(() => {
-    if (!audioUrl) return;
+    if (!audioUrl) {
+      setHasError(true);
+      return;
+    }
 
+    setHasError(false);
     let objectUrl: string | null = null;
     let effectiveUrl = audioUrl;
 
-    // Convert data:audio base64 URLs to Blob URLs to avoid browser codec & length playback errors
+    // Convert data:audio base64 URLs to Blob URLs for smoother streaming
     if (audioUrl.startsWith("data:audio/")) {
       try {
         const commaIdx = audioUrl.indexOf(",");
@@ -46,7 +51,7 @@ export function VoiceNotePlayer({
           const base64Data = audioUrl.slice(commaIdx + 1);
           const mimeMatch = header.match(/data:([^;]+)/);
           const rawMime = mimeMatch ? mimeMatch[1] : "audio/webm";
-          const mimeType = rawMime.split(";")[0]; // Clean MIME type e.g. "audio/webm"
+          const mimeType = rawMime.split(";")[0] || "audio/webm";
 
           const byteCharacters = atob(base64Data);
           const byteNumbers = new Array(byteCharacters.length);
@@ -58,13 +63,20 @@ export function VoiceNotePlayer({
           objectUrl = URL.createObjectURL(blob);
           effectiveUrl = objectUrl;
         }
-      } catch (err) {
+      } catch {
         effectiveUrl = audioUrl.replace(/;codecs=[^;]+/, "");
       }
     }
 
-    const audio = new Audio(effectiveUrl);
-    audio.preload = "auto";
+    let triedFallback = false;
+    let audio: HTMLAudioElement;
+    try {
+      audio = new Audio(effectiveUrl);
+    } catch {
+      setHasError(true);
+      return;
+    }
+    audio.preload = "metadata";
     audioRef.current = audio;
 
     audio.onloadedmetadata = () => {
@@ -75,6 +87,7 @@ export function VoiceNotePlayer({
       ) {
         setTotalDuration(audio.duration);
       }
+      setHasError(false);
     };
 
     audio.ontimeupdate = () => {
@@ -86,9 +99,20 @@ export function VoiceNotePlayer({
       setCurrentTime(0);
     };
 
-    audio.onerror = (e) => {
-      console.warn("Audio element error on URL:", effectiveUrl?.slice(0, 60), e);
+    audio.onerror = () => {
+      // If objectUrl failed, attempt fallback to raw audioUrl once
+      if (objectUrl && !triedFallback && audioUrl.startsWith("data:audio/")) {
+        triedFallback = true;
+        try {
+          audio.src = audioUrl;
+          audio.load();
+          return;
+        } catch {
+          // Continue to mark error
+        }
+      }
       setIsPlaying(false);
+      setHasError(true);
     };
 
     return () => {
@@ -102,7 +126,7 @@ export function VoiceNotePlayer({
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!audioRef.current) return;
+    if (hasError || !audioRef.current) return;
     if (isPlaying) {
       audioRef.current.pause();
       setIsPlaying(false);
@@ -115,10 +139,11 @@ export function VoiceNotePlayer({
         .play()
         .then(() => {
           setIsPlaying(true);
+          setHasError(false);
         })
-        .catch((err) => {
-          console.error("Audio playback error:", err);
+        .catch(() => {
           setIsPlaying(false);
+          setHasError(true);
         });
     }
   };
@@ -156,14 +181,17 @@ export function VoiceNotePlayer({
       <button
         type="button"
         onClick={togglePlay}
-        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all cursor-pointer ${
-          isMe
+        disabled={hasError}
+        className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 shadow-sm active:scale-95 transition-all ${
+          hasError
+            ? "bg-slate-400 dark:bg-slate-600 text-white cursor-not-allowed opacity-60"
+            : isMe
             ? isTravel
-              ? "bg-orange-500 hover:bg-orange-600 text-white"
-              : "bg-emerald-600 hover:bg-emerald-700 text-white"
-            : "bg-emerald-600 hover:bg-emerald-700 text-white"
+              ? "bg-orange-500 hover:bg-orange-600 text-white cursor-pointer"
+              : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
+            : "bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer"
         }`}
-        title={isPlaying ? "Pause" : "Play voice note"}
+        title={hasError ? "Audio unavailable" : isPlaying ? "Pause" : "Play voice note"}
       >
         {isPlaying ? (
           <Pause className="w-4 h-4 fill-current" />
